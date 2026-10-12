@@ -80,7 +80,7 @@ jobs:
           for i in $(seq 1 30); do curl -sf localhost:8080/healthz && break; sleep 1; done
       - run: uv run rag-eval run --dataset eval/datasets/smoke.jsonl --out eval-report.json
       - run: uv run rag-eval gate --baseline eval/baselines/smoke.json --candidate eval-report.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with: { name: eval-report, path: eval-report.json }
 

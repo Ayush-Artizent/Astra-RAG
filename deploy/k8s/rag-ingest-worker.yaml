@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-ingest-worker
+spec:
+  replicas: 0 # KEDA owns the replica count
+  selector: { matchLabels: { app: rag-ingest-worker } }
+  template:
+    metadata:
+      labels: { app: rag-ingest-worker, azure.workload.identity/use: "true" }
+    spec:
+      serviceAccountName: astra-rag
+      terminationGracePeriodSeconds: 300 # let an in-flight job finish; jobs are idempotent anyway
+      securityContext: { runAsNonRoot: true, runAsUser: 10001 }
+      volumes:
+        - name: workspace # ephemeral bare-repo cache, wiped with the pod (§9)
+          emptyDir: { sizeLimit: 20Gi }
+      containers:
+        - name: worker
+          image: astra/rag-ingest:latest
+          command: ["python", "-m", "rag_ingest.worker"]
+          env: [{ name: ASTRA_ENV, value: dev }]
+          volumeMounts: [{ name: workspace, mountPath: /work }]
+          resources:
+            requests: { cpu: "1", memory: 2Gi }
+            limits: { memory: 4Gi }
+          securityContext: { allowPrivilegeEscalation: false }
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: rag-ingest-worker
+spec:
+  scaleTargetRef: { name: rag-ingest-worker }
+  minReplicaCount: 1
+  maxReplicaCount: 30
+  triggers:
+    - type: azure-servicebus
+      metadata:
+        queueName: ingest-jobs
+        namespace: "${SERVICEBUS_NAMESPACE}" # set per overlay
+        messageCount: "5"
+      authenticationRef: { name: keda-servicebus-workload-identity }

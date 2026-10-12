@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rag-reconciler
+spec:
+  schedule: "0 2 * * *" # nightly; also triggerable on demand: kubectl create job --from=cronjob/rag-reconciler
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels: { app: rag-reconciler, azure.workload.identity/use: "true" }
+        spec:
+          serviceAccountName: astra-rag
+          restartPolicy: OnFailure
+          securityContext: { runAsNonRoot: true, runAsUser: 10001 }
+          containers:
+            - name: reconciler
+              image: astra/rag-ingest:latest
+              command: ["rag-ingest-reconcile"]
+              env: [{ name: ASTRA_ENV, value: dev }]
+              resources:
+                requests: { cpu: 100m, memory: 256Mi }

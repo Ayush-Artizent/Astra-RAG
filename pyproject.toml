@@ -1,0 +1,98 @@
+[project]
+name = "astra-rag"
+version = "0.1.0"
+description = "Astra RAG — enterprise context retrieval service for the Agentic SDLC platform (workspace root)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*", "services/*", "sdk/python"]
+
+[tool.uv.sources]
+rag-core = { workspace = true }
+rag-parsers = { workspace = true }
+rag-ingest = { workspace = true }
+rag-api = { workspace = true }
+rag-mcp = { workspace = true }
+rag-eval = { workspace = true }
+astra-rag-sdk = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "rag-core",
+    "rag-parsers",
+    "rag-ingest",
+    "rag-api",
+    "rag-mcp",
+    "rag-eval",
+    "astra-rag-sdk",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5.0",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+    "poethepoet>=0.29",
+]
+
+# ---------------------------------------------------------------- tasks
+# Cross-platform task runner (works on Windows without make): `uv run poe <task>`
+[tool.poe.tasks]
+lint = { shell = "ruff check . && ruff format --check .", help = "Lint + format check" }
+fmt = { shell = "ruff check --fix . && ruff format .", help = "Auto-fix lint + format" }
+typecheck = { cmd = "mypy", help = "Static type check" }
+test = { cmd = "pytest", help = "Run all tests" }
+test-tenancy = { cmd = "pytest -m tenancy", help = "Cross-tenant leak tests only" }
+check = { sequence = ["lint", "typecheck", "test"], help = "Everything CI runs" }
+api = { cmd = "uvicorn rag_api.main:app --reload --port 8080", help = "Run rag-api locally" }
+ingest-webhook = { cmd = "uvicorn rag_ingest.webhook:app --reload --port 8081", help = "Run webhook receiver locally" }
+ingest-worker = { cmd = "python -m rag_ingest.worker", help = "Run an ingest worker locally" }
+mcp = { cmd = "python -m rag_mcp.server", help = "Run the MCP server (stdio)" }
+eval = { cmd = "rag-eval run", help = "Run the offline eval harness" }
+openapi = { cmd = "python scripts/export_openapi.py", help = "Export OpenAPI spec for SDK generation" }
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["packages/*/src", "services/*/src", "sdk/python/src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF", "S", "T20", "PT", "ASYNC"]
+ignore = ["S101"] # asserts are fine in tests
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S", "T20"]
+"scripts/**" = ["T20"]
+"**/cli.py" = ["T20"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["rag_core", "rag_parsers", "rag_ingest", "rag_api", "rag_mcp", "rag_eval", "astra_rag_sdk"]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "packages/rag-core/src:packages/rag-parsers/src:services/rag-ingest/src:services/rag-api/src:services/rag-mcp/src:services/rag-eval/src:sdk/python/src"
+files = ["packages", "services", "sdk/python"]
+exclude = ["/tests/"]
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = ["mcp.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["packages", "services", "sdk/python"]
+addopts = "-ra --strict-markers --import-mode=importlib"
+asyncio_mode = "auto"
+markers = [
+    "tenancy: cross-tenant isolation / leak tests (must never be skipped in CI)",
+    "integration: needs local infra (docker compose up)",
+]

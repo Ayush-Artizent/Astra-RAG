@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: astra-rag
+resources:
+  - namespace.yaml
+  - rag-api.yaml
+  - rag-ingest-webhook.yaml
+  - rag-ingest-worker.yaml
+  - rag-reconciler.yaml
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: astra-rag

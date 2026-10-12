@@ -1,0 +1,17 @@
+[project]
+name = "rag-core"
+version = "0.1.0"
+description = "Shared schemas, tenancy enforcement, provenance and swappable interfaces for Astra RAG"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "opentelemetry-api>=1.28",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rag_core"]

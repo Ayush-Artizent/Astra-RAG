@@ -218,3 +218,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Astra RAG ---
+.idea/
+.env.*
+!.env.example
+eval-report*.json
+eval/reports/
+openapi.json
+sdk/typescript/node_modules/
+sdk/typescript/dist/
+# never commit real eval data pulled from tenant repos; keep only synthetic/smoke sets in git
+eval/datasets/private/

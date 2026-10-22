@@ -14,7 +14,7 @@ from time import perf_counter
 from rag_api.config import ApiSettings
 from rag_api.deps import Backends
 from rag_api.retrieval.fusion import dedupe, pack, rrf
-from rag_core.interfaces import ScoredHit, SearchFilters, SearchMode
+from rag_core.interfaces import RedactionError, ScoredHit, SearchFilters, SearchMode
 from rag_core.provenance import cite, deep_link
 from rag_core.redaction import RegexSecretRedactor
 from rag_core.schemas import (
@@ -29,6 +29,15 @@ from rag_core.schemas import (
 from rag_core.tenancy import TenantContext, tenant_scope
 
 _query_redactor = RegexSecretRedactor()
+
+
+def _traceable(text: str) -> str:
+    """Query text as it may be written to the trace. Fails closed: if redaction fails, a marker is
+    stored instead of the raw text."""
+    try:
+        return _query_redactor.redact("<query>", text).text
+    except RedactionError:
+        return "[REDACTED:REDACTION_FAILED]"
 
 
 @dataclass(frozen=True)
@@ -149,8 +158,8 @@ class RetrievalService:
                 tenant_id=ctx.tenant_id,
                 tool=tool,
                 caller=caller,
-                query_original=_query_redactor.redact("<query>", query).text,
-                query_rewritten=[_query_redactor.redact("<query>", q).text for q in rewritten],
+                query_original=_traceable(query),
+                query_rewritten=[_traceable(q) for q in rewritten],
                 filters={f: v for f, v in asdict(filters).items() if v is not None},
                 candidates={
                     "lexical": [(h.chunk.chunk_id, h.score) for h in lex[:50]],

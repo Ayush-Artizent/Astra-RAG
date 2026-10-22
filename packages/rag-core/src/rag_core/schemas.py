@@ -15,7 +15,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 # Bump whenever chunking, embeddings or index schema change so eval before/after is clean (§10).
-INDEX_VERSION = 1
+INDEX_VERSION = 2  # 2: redaction adds entropy, extra secret formats and PII rules
 
 
 class DocType(StrEnum):

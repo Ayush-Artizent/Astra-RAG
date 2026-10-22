@@ -124,6 +124,18 @@ async def test_secrets_redacted_before_indexing(env) -> None:
     assert "[REDACTED:AWS_KEY]" in hits[0].chunk.text
 
 
+async def test_redaction_failure_skips_only_that_file(env) -> None:
+    pipe, git, store = env
+    pipe.redactor = RegexSecretRedactor(max_chars=5)  # cfg.py is over the limit; a.py is not
+    git.commit("c1", {"cfg.py": 'API_KEY = "AKIAIOSFODNN7EXAMPLE"\n', "a.py": "x=1\n"}, None)
+    report = await pipe.run(job("c1"))
+    assert report.files_failed_redaction == 1
+    assert report.files_indexed == 1
+    with tenant_scope(TenantContext(TENANT, "test")):
+        hits = await store.search(SearchMode.LEXICAL, text="API_KEY", filters=SearchFilters(), k=5)
+    assert all(h.chunk.path != "cfg.py" for h in hits)
+
+
 async def test_force_push_falls_back_to_full_compare(env) -> None:
     pipe, git, _ = env
     git.commit("c1", {"a.py": "x = 1\n"}, None)

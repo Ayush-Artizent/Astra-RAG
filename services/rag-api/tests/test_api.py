@@ -1,3 +1,4 @@
+import re
 from collections.abc import Iterator
 
 import pytest
@@ -5,6 +6,8 @@ from fastapi.testclient import TestClient
 
 from rag_api.deps import get_backends
 from rag_api.main import create_app
+from rag_api.retrieval import service
+from rag_core.redaction import RegexSecretRedactor, Rule
 
 A = {"Authorization": "Bearer dev-key-tenant-a"}
 B = {"Authorization": "Bearer dev-key-tenant-b"}
@@ -80,3 +83,24 @@ def test_list_repos_scoped(client: TestClient) -> None:
         r["repo"] for r in client.post("/v1/tools/list_repos", json={}, headers=B).json()["repos"]
     }
     assert repos == {"ledger"}
+
+
+def test_query_is_redacted_before_trace(client: TestClient) -> None:
+    query = "refund AKIAIOSFODNN7EXAMPLE jane.doe@contoso.io"
+    r = client.post("/v1/tools/search_code", json={"query": query, "k": 3}, headers=A)
+    rec = get_backends().traces.traces[r.json()["trace_id"]]  # type: ignore[attr-defined]
+    assert "AKIA" not in rec.query_original
+    assert "contoso" not in rec.query_original
+    assert rec.query_original == "refund [REDACTED:AWS_KEY] [REDACTED:EMAIL]"
+
+
+def test_query_trace_fails_closed(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(_: str) -> bool:
+        raise ValueError("detector bug")
+
+    broken = RegexSecretRedactor(rules=(Rule("EMAIL", re.compile(r"\bx\b"), validate=boom),))
+    monkeypatch.setattr(service, "_query_redactor", broken)
+    r = client.post("/v1/tools/search_code", json={"query": "refund x", "k": 3}, headers=A)
+    assert r.status_code == 200  # retrieval still answers; only the trace is withheld
+    rec = get_backends().traces.traces[r.json()["trace_id"]]  # type: ignore[attr-defined]
+    assert rec.query_original == "[REDACTED:REDACTION_FAILED]"

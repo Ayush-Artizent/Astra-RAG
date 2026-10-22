@@ -69,7 +69,16 @@ class IndexPipeline:
 
     async def run(self, job: IngestJob) -> IngestReport:
         with tenant_scope(TenantContext(job.tenant_id, principal="rag-ingest")):
-            return await self._run(job)
+            report = await self._run(job)
+        # Per-source redaction report: counts and types only, never values (§9).
+        log.info(
+            "redaction report repo=%s job=%s files_failed=%d counts=%s",
+            job.repo,
+            job.job_id,
+            report.files_failed_redaction,
+            dict(report.redactions),
+        )
+        return report
 
     async def _run(self, job: IngestJob) -> IngestReport:
         repo_state = await self.state.get_repo(job.repo)

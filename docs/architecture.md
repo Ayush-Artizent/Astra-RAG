@@ -47,7 +47,7 @@ is Phase 1 work. ⏳ means the work is scheduled for a later phase.
 | 8 T3 | WORM, hash-chained audit | `retrieval_traces.prev_hash/record_hash` | ⏳ Phase 3 |
 | 9 | Tenant isolation | `rag_core/tenancy.py`, RLS in `db/migrations/0001_init.sql`, `-m tenancy` tests | ✅ |
 | 9 | AuthN | `rag_api/auth.py` (dev API keys) | 🟡 Entra ID |
-| 9 | Redaction | `rag_core/redaction.py` (secrets, regex) | ✅ secrets, 🟡 entropy + PII |
+| 9 | Redaction | `rag_core/redaction.py` (secrets, regex) | ✅ secrets + entropy + regex PII, 🟡 Presidio NER |
 | 10 | Eval | `services/rag-eval`, `eval/datasets`, `eval/baselines`, CI `eval-smoke` | ✅ harness + gate, 🟡 real datasets |
 | 11 | Scale | `FileFilter` defaults, cross-repo vector reuse by content hash | ✅ partial |
 | 12 | Observability | `rag_core/observability.py`, Jaeger in compose | 🟡 Azure Monitor exporter |
@@ -69,7 +69,7 @@ These are the `TODO(<pod>)` markers in the code.
 - `GitHostClient` implementations: Azure Repos (REST + bare-repo fetch) and GitLab
 - Service Bus `JobQueue` (sessions keyed by `coalesce_key`, DLQ, scheduled debounce)
 - `worker.build_pipeline` / `reconciler.main` wiring; Postgres `StateStore`; Blob `BlobStore`
-- Redaction: entropy detector, Presidio PII tuned on real repos, per-tenant allowlists, redaction report
+- Redaction: Presidio NER PII (names, phones, addresses) tuned on real repos, per-tenant allowlists
 - Manifest dependency edges (pom, package.json, csproj, requirements, go.mod)
 
 **Index & retrieval pod**

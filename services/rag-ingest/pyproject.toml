@@ -12,7 +12,10 @@ dependencies = [
 
 [project.optional-dependencies]
 azure = ["azure-servicebus>=7.12", "azure-storage-blob>=12.23", "azure-identity>=1.19"]
-pii = ["presidio-analyzer>=2.2"]
+pii = [
+    "presidio-analyzer>=2.2",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+]
 
 [project.scripts]
 rag-ingest-worker = "rag_ingest.worker:main"
@@ -21,6 +24,10 @@ rag-ingest-reconcile = "rag_ingest.reconciler:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# Allows the pinned spaCy model URL in the pii extra (only a model wheel, no code).
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rag_ingest"]

@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -845,6 +845,14 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c9/02/bd72be9134d25ed783ecbbc38a539ffaefbf90c78418c7fb7229600dbac7/distlib-0.4.3.tar.gz", hash = "sha256:f152097224a0ae24be5a0f6bae1b9359af82133bce63f98a95f86cae1aede9ed", size = 615141, upload-time = "2026-06-12T08:04:52.847Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/02/08/9c41fb51ab5b43eb21674aff13df270e8ba6c4b29c8624e328dc7a9482af/distlib-0.4.3-py2.py3-none-any.whl", hash = "sha256:4b0ce306c966eb73bc3a7b6abad017c556dadd92c44701562cd528ac7fde4d5b", size = 470628, upload-time = "2026-06-12T08:04:50.506Z" },
+]
+
+[[package]]
+name = "en-core-web-sm"
+version = "3.8.0"
+source = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
+wheels = [
+    { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl", hash = "sha256:1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85" },
 ]
 
 [[package]]
@@ -2583,6 +2591,7 @@ azure = [
     { name = "azure-storage-blob" },
 ]
 pii = [
+    { name = "en-core-web-sm" },
     { name = "presidio-analyzer" },
 ]
 
@@ -2591,6 +2600,7 @@ requires-dist = [
     { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.19" },
     { name = "azure-servicebus", marker = "extra == 'azure'", specifier = ">=7.12" },
     { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.23" },
+    { name = "en-core-web-sm", marker = "extra == 'pii'", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "presidio-analyzer", marker = "extra == 'pii'", specifier = ">=2.2" },
     { name = "rag-core", editable = "packages/rag-core" },

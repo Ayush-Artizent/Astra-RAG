@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with: { enable-cache: true }
       - run: uv sync --python 3.12
       - run: uv run ruff check .
@@ -36,7 +36,7 @@ jobs:
         python: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with: { enable-cache: true }
       - run: uv sync --python ${{ matrix.python }}
       - run: uv run pytest --cov --cov-report=term-missing:skip-covered
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with: { enable-cache: true }
       - run: uv sync --python 3.12
       - name: Run leak tests (fails if none are collected)
@@ -71,7 +71,7 @@ jobs:
     needs: [test]
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with: { enable-cache: true }
       - run: uv sync --python 3.12
       - name: Start rag-api

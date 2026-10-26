@@ -1,3 +1,0 @@
-{"id": "smoke-001", "tool": "search_code", "query": "refund eligibility rule 30 days", "expected": [{"repo": "payments-service", "path": "src/refunds/policy.py", "grade": 3}], "source": "synthetic", "tags": ["business-rule"]}
-{"id": "smoke-002", "tool": "search_code", "query": "where is the refund endpoint created", "expected": [{"repo": "payments-service", "path": "src/refunds/api.py", "grade": 2}], "source": "synthetic", "tags": ["current-behavior"]}
-{"id": "smoke-003", "tool": "search_docs", "query": "refund eligibility requirements", "expected": [{"repo": "golden-docs", "path": "brds/refunds-v2.md", "grade": 3}], "source": "golden", "tags": ["similar-brd"]}

@@ -20,7 +20,7 @@ def create_app() -> FastAPI:
 
 
 def main() -> None:
-    """Entry point for `uv run astra-rag`."""
+    """Entry point for `uv run python -m astra_rag`."""
     import uvicorn
 
     uvicorn.run(

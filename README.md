@@ -10,15 +10,18 @@ Requires [uv](https://docs.astral.sh/uv/) and `git` on PATH. The PAT needs read 
 
 ```bash
 uv sync
-uv run astra-rag        # http://127.0.0.1:5000  (API docs at /docs)
+uv run python -m astra_rag   # http://127.0.0.1:5000  (API docs at /docs)
 ```
+
+`uv run astra-rag` also works, but some Windows setups block the generated `.exe`
+("Access is denied"); use the `python -m` form above in that case.
 
 Tests: `uv run python -m unittest discover -s tests -t .`
 
 ## Structure
 
 ```
-pyproject.toml               deps, `astra-rag` command (uv)
+pyproject.toml               deps, deps and `astra-rag` script (uv)
 src/astra_rag/
   __init__.py                FastAPI app factory + main()
   config.py                  required files/folders, paths, timeouts  <- edit rules here

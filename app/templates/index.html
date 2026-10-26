@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Astra RAG – Connect Repository</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Connect a repository</h1>
+    <p class="hint">The repo must contain
+      {% for f in required_files %}<code>{{ f }}</code>, {% endfor %}
+      {% for d in required_folders %}<code>{{ d }}/</code>{% if not loop.last %} and {% endif %}{% endfor %}
+      at its root.</p>
+
+    <form id="form" autocomplete="off">
+      <label>GitHub repository URL
+        <input id="url" type="url" placeholder="https://github.com/owner/repo" required>
+      </label>
+      <label>Personal access token (PAT)
+        <input id="token" type="password" placeholder="ghp_… or github_pat_…" required>
+      </label>
+      <button id="submit" type="submit">Check &amp; clone</button>
+    </form>
+
+    <div id="result" role="status" hidden></div>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

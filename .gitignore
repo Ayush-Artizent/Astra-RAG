@@ -1,0 +1,22 @@
+# Spike fixtures: cloned repos and copied sources (thousands of files)
+code-adapter/spikes/fixtures/
+code-adapter/spikes/index_*.log
+
+# CodeGraph data directories (generated indexes)
+.codegraph-data/
+**/.codegraph/codegraph.db*
+**/.codegraph/*.pid
+**/.codegraph/*.lock
+
+# Dependencies and build output
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+
+# Local runtime data
+data/
+*.log
+.env
+.env.*

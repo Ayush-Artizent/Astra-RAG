@@ -6,20 +6,21 @@ clones the repo into `temp_storage/`; otherwise it lists exactly what is missing
 
 ## Run
 
+Requires [uv](https://docs.astral.sh/uv/) and `git` on PATH. The PAT needs read access to repo contents.
+
 ```bash
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt   # Windows
-python run.py                                   # http://127.0.0.1:5000  (API docs at /docs)
+uv sync
+uv run astra-rag        # http://127.0.0.1:5000  (API docs at /docs)
 ```
 
-Needs `git` on PATH. The PAT needs read access to repo contents.
+Tests: `uv run python -m unittest discover -s tests -t .`
 
 ## Structure
 
 ```
-run.py                       entry point
-app/
-  __init__.py                FastAPI app factory
+pyproject.toml               deps, `astra-rag` command (uv)
+src/astra_rag/
+  __init__.py                FastAPI app factory + main()
   config.py                  required files/folders, paths, timeouts  <- edit rules here
   routes.py                  page + POST /api/validate-and-clone
   services/
@@ -29,7 +30,7 @@ app/
     errors.py                user-safe AppError
   templates/index.html       the UI
   static/                    style.css, app.js
-tests/                       python -m unittest discover -s tests -t .
+tests/                       unit tests
 temp_storage/                cloned repos (git-ignored)
 ```
 

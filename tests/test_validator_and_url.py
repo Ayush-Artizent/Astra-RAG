@@ -1,8 +1,8 @@
 import unittest
 
-from app.services.errors import AppError
-from app.services.github_client import parse_repo_url
-from app.services.validator import find_missing
+from astra_rag.services.errors import AppError
+from astra_rag.services.github_client import parse_repo_url
+from astra_rag.services.validator import find_missing
 
 FULL = [
     {"name": "policies.md", "type": "file"},

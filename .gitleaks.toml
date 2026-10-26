@@ -1,8 +1,0 @@
-# Extends the default ruleset. Test fixtures intentionally contain fake secrets to prove the
-# redaction stage works; they are allowlisted by path only.
-[extend]
-useDefault = true
-
-[allowlist]
-description = "fake secrets in redaction tests"
-paths = ['''(^|/)tests/.*\.py$''']

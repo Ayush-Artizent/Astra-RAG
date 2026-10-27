@@ -1,6 +1,7 @@
 # Changelog (newest first)
 
 ## 2026-10-27
+- Planning: W2 tool now also returns `nomenclature.md` (deterministic fetch, not RAG) and gains a nomenclature validator task; W1 noted as leaning Qdrant and scoped to `project-data/` only, pending further discussion.
 - Added `timeline/` progress folder, `CLAUDE.md` project rules and the task breakdown (`TASKS.md`).
 
 ## 2026-10-26

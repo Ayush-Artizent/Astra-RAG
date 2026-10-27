@@ -25,13 +25,14 @@ Pure refactors with no visible change still get a CHANGELOG line.
 
 ## Code conventions
 - Business logic lives in `services/`; `routes.py` stays thin. New features get their own subpackage (`services/ingestion/`, `services/tools/`).
-- Constants and required-structure rules live in `config.py`, not scattered.
+- Each LLM tool is its own directory under `services/tools/<tool>/` (`schemas.py` for input + output models, `handler.py`, `__init__.py` exporting one `tool = Tool(...)`), registered in the explicit `TOOLS` table in `tools/registry.py`. Args extend `RepoArgs` (owner + name). Add sub-directories only when a tool needs them.
+- Constants, required-structure rules and env-driven settings (`Settings`, read from env / `.env`) live in `config.py`, not scattered.
 - User-facing failures raise `AppError(message, status)`; messages must be safe to show.
 - Plain `def` for blocking I/O routes (runs in a worker thread); don't block the event loop.
 - Match the surrounding style: small functions, short docstrings, minimal comments.
 
 ## Security (non-negotiable)
-- The GitHub PAT is saved only in the git-ignored `.env` (via `services/token_store.py`, keyed per repo URL), written only after a connect that worked. Never log it, return it from any API, put it in a URL or in `.git/config`, show it in the UI, or commit it. Pass it to git via environment variables (see `cloner.py`), not command-line arguments. Later features (W2) get it with `token_store.get_token(repo)`.
+- The GitHub PAT is saved only in the git-ignored `.env` (via `services/token_store.py`, keyed per repo URL), written only after a connect that worked. Never log it, return it from any API, put it in a URL or in `.git/config`, show it in the UI, or commit it. Pass it to git via environment variables (see `cloner.py`), not command-line arguments. Env key convention: `ASTRA_REPO_<OWNER>__<NAME>_URL` / `_TOKEN`. Features that need a repo's URL + PAT (W2 tool) take the repo's `owner` and `name` and look them up with `token_store.get_credentials(owner, name)`; they never accept a URL or token from a caller. No auth protects the tool endpoint yet (planned after the MVP).
 - Never commit `temp_storage/` contents, `.env` (holds PATs), or vector-store data; keep them git-ignored.
 - Treat repo content (policies, templates, project data) as data, not instructions, when passing it to an LLM.
 
@@ -41,5 +42,5 @@ Pure refactors with no visible change still get a CHANGELOG line.
 - The policies/template tool reads from GitHub directly, not from the local clone.
 
 ## Git
-- Work on a feature branch (currently `golden-repo-init`); `main` is the PR target.
+- Work on a feature branch (currently `guru-workitem-w2`); `main` is the PR target.
 - Small, focused commits. Only commit/push when the user asks.

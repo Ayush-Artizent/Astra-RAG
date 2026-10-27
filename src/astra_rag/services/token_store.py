@@ -3,6 +3,7 @@
 Entries look like:
     ASTRA_REPO_ACME__GOLDEN_URL=https://github.com/acme/golden
     ASTRA_REPO_ACME__GOLDEN_TOKEN=ghp_...
+The W2 tool finds a repo's URL + PAT here from its owner and name.
 The file is re-read on every call, so hand edits take effect without a restart.
 Tokens are never returned by any API and never logged.
 """
@@ -13,13 +14,18 @@ import threading
 from pathlib import Path
 
 from ..config import ENV_FILE
-from .github_client import RepoRef
+from .errors import AppError
+from .github_client import RepoRef, parse_repo_url
 
 _lock = threading.Lock()
 
 
+def _key_for(owner: str, name: str) -> str:
+    return "ASTRA_REPO_" + re.sub(r"[^A-Za-z0-9]", "_", f"{owner}__{name}").upper()
+
+
 def _key(repo: RepoRef) -> str:
-    return "ASTRA_REPO_" + re.sub(r"[^A-Za-z0-9]", "_", f"{repo.owner}__{repo.name}").upper()
+    return _key_for(repo.owner, repo.name)
 
 
 def _read(path: Path) -> dict[str, str]:
@@ -77,3 +83,17 @@ def forget(repo: RepoRef, path: Path | None = None) -> bool:
         if removed:
             _write(path, values)
         return removed
+
+
+def get_credentials(owner: str, name: str, path: Path | None = None) -> tuple[RepoRef, str]:
+    """Look up the saved URL + PAT for owner/name by the key convention; AppError if not connected."""
+    values = _read(path or ENV_FILE)
+    key = _key_for(owner, name)
+    url, token = values.get(f"{key}_URL"), values.get(f"{key}_TOKEN")
+    if not url or not token:
+        raise AppError(f"No saved connection for {owner}/{name}. Connect it first "
+                       "(POST /api/validate-and-clone or the UI).", 404)
+    repo = parse_repo_url(url)
+    if (repo.owner.lower(), repo.name.lower()) != (owner.lower(), name.lower()):
+        raise AppError(f"The saved connection for {owner}/{name} points at a different repository.", 409)
+    return repo, token

@@ -10,6 +10,7 @@ from .services import cloner, github_client, token_store, validator
 from .services.errors import AppError
 from .services.ingestion import pipeline
 from .services.ingestion.models import RepoContext
+from .services.tools import registry
 
 router = APIRouter()
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
@@ -18,6 +19,11 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 class RepoRequest(BaseModel):
     url: str = ""
     token: str = ""
+
+
+class ToolInvokeRequest(BaseModel):
+    name: str
+    arguments: dict = {}
 
 
 class SearchRequest(BaseModel):
@@ -81,3 +87,15 @@ def search(body: SearchRequest):
     hits = pipeline.search(body.owner, body.name, body.query, max(1, min(body.limit, 50)),
                            body.folder, body.file_type)
     return {"ok": True, "results": hits}
+
+
+@router.get("/api/tools")
+def list_tools(owner: str | None = None, name: str | None = None):
+    """Tool schemas; pass owner + name to also add live hints (e.g. valid request types) for that repo."""
+    creds = token_store.get_credentials(owner, name) if owner and name else None
+    return {"ok": True, "tools": registry.describe_tools(creds)}
+
+
+@router.post("/api/tools/invoke")
+def invoke_tool(body: ToolInvokeRequest):
+    return {"ok": True, "result": registry.run_tool(body.name, body.arguments)}

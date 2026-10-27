@@ -11,3 +11,4 @@ temp_storage/*
 # secrets: saved GitHub tokens live here
 .env
 .env.*
+!.env.example

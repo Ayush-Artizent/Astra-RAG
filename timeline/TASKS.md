@@ -5,6 +5,7 @@ Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGEL
 ## Done
 - [x] **W0 Connector** - URL parse, GitHub root listing, golden-structure validation, clone to `temp_storage/`.
 - [x] **W1 Ingestion pipeline** - see W1 below.
+- [x] **W2 Document-context tool** - see W2 below (W2.3b deferred).
 - [x] **W3 Timeline + rules** - `timeline/` folder and root `CLAUDE.md`.
 
 ## W1 - RAG ingestion pipeline (runs after clone succeeds)
@@ -38,13 +39,13 @@ Independent of W2 except both add deps to `pyproject.toml` and a config section.
 Goal: an LLM-callable tool; when invoked with a request type (BRD, SPEC, ...), it returns
 `policies.md` plus the matching template, read **directly from GitHub** (not the local clone).
 
-- [ ] W2.1 Define the template convention: map request type -> file in `templates/` (e.g. `BRD` -> `templates/brd.md`). Check `nomenclature.md` for naming rules first; put the mapping/aliases in `config.py`. **Open question for the user:** exact template filenames in the golden repo.
-- [ ] W2.2 Extend `services/github_client.py` with `get_file(repo, path, token)` (GitHub contents API, base64 decode, size guard, clear errors for 404/403).
-- [ ] W2.3 `services/tools/document_context.py` - the tool function `get_document_context(request_type)` -> `{request_type, policies, nomenclature, template}`, all fetched whole from GitHub at call time (deterministic, **not** via RAG: these are small authoritative rulebooks that must always apply in full). Unknown type returns an error listing valid types (derive valid types by listing `templates/` from GitHub). If `nomenclature.md` proves very large (>~15k tokens), split by section and return only relevant sections.
+- [x] W2.1 Template convention: any `.md` file directly in `templates/`; request type = filename stem uppercased; `TEMPLATE_EXTENSIONS` / `TEMPLATE_ALIASES` in `config.py`; types discovered from GitHub on each call (so no fixed filename list needed).
+- [x] W2.2 Extend `services/github_client.py` with `get_file(repo, path, token)` (GitHub contents API, base64 decode, size guard, clear errors for 404/403).
+- [x] W2.3 `services/tools/document_context.py` - the tool function `get_document_context(request_type)` -> `{request_type, policies, nomenclature, template}`, all fetched whole from GitHub at call time (deterministic, **not** via RAG: these are small authoritative rulebooks that must always apply in full). Unknown type returns an error listing valid types (derive valid types by listing `templates/` from GitHub). If `nomenclature.md` proves very large (>~15k tokens), split by section and return only relevant sections.
 - [ ] W2.3b Nomenclature validator (`services/tools/nomenclature.py`) - once the format of `nomenclature.md` is known (prose vs pattern table), add a check that a generated document name/ID matches its rules (e.g. regex per doc type). The LLM applies the rule; code verifies it. **Open question:** format of `nomenclature.md`.
-- [ ] W2.4 Tool schema + dispatcher (`services/tools/registry.py`): JSON schema (name, description, `request_type` enum) in Claude tool-use format, and a `run_tool(name, args)` dispatcher.
-- [ ] W2.5 Wiring - choose the surface: a `POST /api/tools/invoke` endpoint and/or an agent loop that passes the schema to the Claude API and feeds tool results back. Repo/token come from the session/request, never persisted.
-- [ ] W2.6 Tests - mock the GitHub client; cover each request type, unknown type, missing template, missing policies.md or nomenclature.md, and the nomenclature validator.
+- [x] W2.4 Tool schema + dispatcher (`services/tools/registry.py`): JSON schema (name, description, `request_type` enum) in Claude tool-use format, and a `run_tool(name, args)` dispatcher.
+- [x] W2.5 Wiring - `POST /api/tools/invoke` + `GET /api/tools`; the caller passes `owner` + `name`, URL + PAT are looked up in `.env` via `token_store.get_credentials`. Agent loop and auth are future work.
+- [x] W2.6 Tests (`tests/test_tools.py`) - GitHub mocked; types, alias, unknown/empty/ambiguous, missing files, oversize, dir, bad UTF-8, dispatcher errors, credential lookup, PAT never in output. (Validator tests wait for W2.3b.)
 
 ## Sequencing
 W1 and W2 can proceed in parallel (separate packages under `services/`, different routes).

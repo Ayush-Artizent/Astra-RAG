@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+# cloned repos live here, never commit them
+temp_storage/*
+!temp_storage/.gitkeep

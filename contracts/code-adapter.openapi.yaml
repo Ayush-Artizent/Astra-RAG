@@ -1,0 +1,467 @@
+openapi: 3.0.3
+info:
+  title: ASTRA RAGaaS code adapter (internal)
+  version: 0.1.0-draft
+  description: |
+    DRAFT v0 for review. Internal HTTP contract between the query orchestrator (Python) and the
+    code adapter (Node, wraps CodeGraph 1.6.2). Not a public API.
+
+    Design references (ASTRA RAGaaS Architecture Design, Revision 3): F2, F4, F5, D3, D4, D6, A5,
+    section 3 (code plane), section 6 (isolation), section 7 (API).
+
+    Rules that hold for every operation:
+    - Org and project are taken ONLY from the signed envelope. They never appear in a path, query
+      string or body. The adapter builds storage paths from the envelope alone.
+    - Unknown request fields are rejected with 422 (error_code `invalid_field`, body names the field).
+    - A project that is not indexed yet returns 200 with `plane_status: not_ready`, not an error.
+    - Every code result carries `commit_sha` and `index_time`.
+    - Errors are RFC 9457 problem+json.
+
+    Findings from the Phase 0 spikes that shaped this draft are marked "(spike)".
+servers:
+  - url: http://127.0.0.1:8091
+    description: MVP local process
+security:
+  - envelope: []
+
+paths:
+  /internal/v1/code/query:
+    post:
+      operationId: codeQuery
+      summary: Query the project's code graph
+      description: |
+        Modes: `lookup`, `flow`, `callers`, `impact`.
+        Read-only, so retries are safe. A retry may return different results if a sync finished in
+        between; compare `commit_sha`.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CodeQueryRequest' }
+            examples:
+              lookup:
+                value: { mode: lookup, symbols: ["TokenService.issue"], keywords: ["token", "expiry"], path_prefix: "src/auth/", limit: 20 }
+              flow:
+                value: { mode: flow, symbols: ["AuthController.login", "TokenService.issue"] }
+              callers:
+                value: { mode: callers, symbols: ["TokenService.issue"], depth: 2 }
+      responses:
+        '200':
+          description: Query result, possibly empty or not_ready.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeQueryResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Invalid' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /internal/v1/code/status:
+    get:
+      operationId: codeStatus
+      summary: Health and freshness of the project's code index
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Index status.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeStatus' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /internal/v1/code/jobs:
+    post:
+      operationId: codeJobCreate
+      summary: Queue a bootstrap or sync job
+      description: |
+        `bootstrap` clones and indexes from scratch. `sync` moves the working tree to `commit_sha` and
+        runs an incremental sync (D4). Idempotent when `Idempotency-Key` is supplied.
+        Syncs for one project are serialized. A burst of sync jobs for one project is coalesced: only
+        the newest `commit_sha` is run, older queued ones finish as `superseded` (spike: a sync costs
+        about a minute on a 3,000-file repo whatever the number of changed files).
+        Only one bootstrap runs at a time per adapter (spike: Django bootstrap took about 7 minutes
+        and about 2 GB of memory).
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CodeJobRequest' }
+      responses:
+        '202':
+          description: Accepted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeJobAccepted' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Invalid' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /internal/v1/code/jobs/{job_id}:
+    get:
+      operationId: codeJobGet
+      summary: State of a job
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Job state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeJob' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /internal/v1/health:
+    get:
+      operationId: health
+      summary: Liveness and startup probe results
+      security: []
+      responses:
+        '200':
+          description: Adapter is up. Includes the WAL probe result (A4).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, codegraph_version, node_version, wal_probe]
+                properties:
+                  status: { type: string, enum: [ok, degraded] }
+                  codegraph_version: { type: string, example: "1.6.2" }
+                  node_version: { type: string, example: "v24.20.0" }
+                  wal_probe: { type: string, enum: [ok, failed], description: "Opens a file-backed scratch DB and checks journal_mode = wal. An in-memory DB reports `memory` and must not be used (spike)." }
+                  active_jobs: { type: integer }
+
+components:
+  securitySchemes:
+    envelope:
+      type: apiKey
+      in: header
+      name: X-Astra-Envelope
+      description: |
+        HMAC-signed internal envelope minted by the gateway: `{org_id, project_id, scopes, request_id,
+        iat, exp}`. Re-verified here on every call. Maximum lifetime 5 minutes, clock skew 30 s.
+        Required scopes: `query` for query and status, `code:sync` for jobs, `project:admin` for
+        bootstrap.
+
+  parameters:
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: Client uuid, echoed back in `request_id` and in logs and traces.
+      schema: { type: string, maxLength: 64 }
+
+  schemas:
+    CodeQueryRequest:
+      type: object
+      additionalProperties: false
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: [lookup, flow, callers, impact]
+        symbols:
+          type: array
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 300 }
+          description: |
+            Symbol names. Qualified names may use `.` or `::` (the adapter normalises `.` to `::`, spike).
+            Prefer qualified names: about 9 to 11 percent of names are shared by more than one symbol (spike).
+        keywords:
+          type: array
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 100 }
+        path_prefix:
+          type: string
+          maxLength: 300
+          description: Restrict results to files under this relative path. Traversal strings are refused.
+        depth:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: callers default 1, impact default 3. Ignored for lookup and flow.
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+        include_code:
+          type: boolean
+          default: true
+          description: Include source text per result, truncated to `max_code_chars`.
+        max_code_chars:
+          type: integer
+          minimum: 0
+          maximum: 20000
+          default: 2000
+        fallback_origin:
+          type: string
+          enum: [structured, analyzer]
+          default: structured
+          description: Set to `analyzer` by the orchestrator when symbols or keywords came from the rules-only fallback analyzer. Results are then reported as `degraded`.
+      description: |
+        Validation (error_code on 422):
+        lookup needs symbols or keywords (`no_search_terms`); flow needs at least 2 symbols
+        (`flow_needs_two_symbols`); callers and impact need exactly 1 symbol
+        (`callers_needs_one_symbol`, `impact_needs_one_symbol`); anything else unknown or out of range
+        is `invalid_field`.
+
+    CodeQueryResponse:
+      type: object
+      required: [request_id, plane_status, results, resolved_symbols, snapshot]
+      properties:
+        request_id: { type: string }
+        plane_status:
+          type: string
+          enum: [ok, degraded, not_ready]
+          description: |
+            `not_ready` when the project has no usable index yet. `degraded` when results came only from
+            fallback keywords (`fallback_origin: analyzer`) or when a requested symbol was ambiguous or unresolved.
+            `timeout` is decided by the orchestrator, never by the adapter.
+        snapshot: { $ref: '#/components/schemas/Snapshot' }
+        resolved_symbols:
+          type: array
+          items: { $ref: '#/components/schemas/ResolvedSymbol' }
+        results:
+          type: array
+          items: { $ref: '#/components/schemas/CodeResult' }
+        flow:
+          type: array
+          description: Present for mode flow. Ordered hops across consecutive symbol pairs.
+          items: { $ref: '#/components/schemas/FlowHop' }
+        truncated:
+          type: boolean
+          description: True when results were cut by `limit` or an internal cap.
+
+    Snapshot:
+      type: object
+      required: [commit_sha, index_time, index_state]
+      properties:
+        commit_sha: { type: string, nullable: true, example: a1b2c3d }
+        index_time: { type: string, format: date-time, nullable: true }
+        index_state:
+          type: string
+          enum: [indexing, complete, partial, failed]
+          description: From the library's index state. A query during `indexing` reads the last committed snapshot.
+
+    ResolvedSymbol:
+      type: object
+      required: [input, status]
+      properties:
+        input: { type: string }
+        status:
+          type: string
+          enum: [exact, fuzzy, ambiguous, not_found]
+          description: |
+            `exact`: one node by qualified name after normalisation.
+            `fuzzy`: matched by search; the best match was used.
+            `ambiguous`: more than one candidate with equal or near-equal score. The best match was used
+            and `alternatives` lists the others.
+            `not_found`: nothing matched; the symbol contributed no results.
+        node_id: { type: string, nullable: true }
+        qualified_name: { type: string, nullable: true }
+        alternatives:
+          type: array
+          maxItems: 5
+          items:
+            type: object
+            required: [qualified_name, file_path, line_start]
+            properties:
+              qualified_name: { type: string }
+              file_path: { type: string }
+              line_start: { type: integer }
+              kind: { type: string }
+
+    CodeResult:
+      type: object
+      required: [plane_rank, kind, provenance, citation]
+      properties:
+        plane_rank: { type: integer, minimum: 1 }
+        kind:
+          type: string
+          description: CodeGraph node kind, for example function, method, class, interface, property, constant.
+        score:
+          type: number
+          description: Relative ordering only. Not normalised (library note). Orchestrator fuses by rank, never by this value.
+        depth:
+          type: integer
+          description: Distance from the query symbol for callers and impact.
+        text:
+          type: string
+          nullable: true
+          description: Source text, truncated to `max_code_chars`. Null if `include_code` is false.
+        provenance: { $ref: '#/components/schemas/CodeProvenance' }
+        citation:
+          type: string
+          example: "src/auth/token.ts:42-67 (TokenService.issue @a1b2c3d)"
+
+    CodeProvenance:
+      type: object
+      required: [file_path, line_start, line_end, symbol, qualified_name, commit_sha, index_time]
+      properties:
+        file_path: { type: string, description: "Relative to the project root, forward slashes." }
+        line_start: { type: integer }
+        line_end: { type: integer }
+        symbol: { type: string }
+        qualified_name: { type: string, description: "Normalised to the `.` form on output." }
+        node_id: { type: string }
+        language: { type: string }
+        commit_sha: { type: string, nullable: true }
+        index_time: { type: string, format: date-time, nullable: true }
+
+    FlowHop:
+      type: object
+      required: [from, to, via, edge_provenance]
+      properties:
+        from: { type: string, description: Qualified name. }
+        to: { type: string, description: Qualified name. }
+        via: { type: string, example: calls }
+        edge_provenance:
+          type: string
+          enum: [static, heuristic]
+          description: Library `provenance` null maps to `static`. `heuristic` edges are synthesized (spike).
+        synthesized_by: { type: string, nullable: true, example: interface-impl }
+        registered_at: { type: string, nullable: true, example: "db/sqlite-adapter.ts:87" }
+        line: { type: integer, nullable: true, description: Call-site line. }
+        from_citation: { type: string }
+        to_citation: { type: string }
+      description: Flow mode passes edge kinds `[calls]` to the path search. Without that filter the library walks contains and imports edges too (spike).
+
+    CodeStatus:
+      type: object
+      required: [state, snapshot]
+      properties:
+        state:
+          type: string
+          enum: [not_indexed, indexing, ready, error]
+        snapshot: { $ref: '#/components/schemas/Snapshot' }
+        last_synced_sha: { type: string, nullable: true }
+        last_sync: { type: string, format: date-time, nullable: true }
+        index_lag_seconds:
+          type: integer
+          nullable: true
+          description: Seconds since `last_synced_sha` was behind the branch head. Null if unknown.
+        files: { type: integer }
+        symbols: { type: integer }
+        edges: { type: integer }
+        error: { type: string, nullable: true }
+        active_job: { type: string, nullable: true }
+
+    CodeJobRequest:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type: { type: string, enum: [bootstrap, sync, reconcile] }
+        repo_url: { type: string, description: "Required for bootstrap. Credentials are a reference resolved by the adapter, never inline." }
+        credentials_ref: { type: string }
+        branch: { type: string }
+        commit_sha: { type: string, description: "Required for sync. 7 to 40 hex characters." }
+
+    CodeJobAccepted:
+      type: object
+      required: [job_id, status_url]
+      properties:
+        job_id: { type: string }
+        status_url: { type: string }
+        coalesced_into: { type: string, nullable: true, description: Set when this sync was merged into a newer queued sync. }
+
+    CodeJob:
+      type: object
+      required: [job_id, type, state]
+      properties:
+        job_id: { type: string }
+        type: { type: string, enum: [bootstrap, sync, reconcile] }
+        state: { type: string, enum: [queued, running, done, failed, superseded] }
+        commit_sha: { type: string, nullable: true }
+        phase:
+          type: string
+          nullable: true
+          enum: [clone, scanning, parsing, resolving, linking, finalizing]
+        progress: { type: number, minimum: 0, maximum: 1, nullable: true }
+        started_at: { type: string, format: date-time, nullable: true }
+        finished_at: { type: string, format: date-time, nullable: true }
+        counts:
+          type: object
+          properties:
+            files: { type: integer }
+            symbols: { type: integer }
+            edges: { type: integer }
+        error: { type: string, nullable: true }
+
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        error_code:
+          type: string
+          enum:
+            - no_search_terms
+            - flow_needs_two_symbols
+            - callers_needs_one_symbol
+            - impact_needs_one_symbol
+            - invalid_field
+            - envelope_invalid
+            - envelope_expired
+            - envelope_lifetime_exceeded
+            - scope_missing
+            - project_unknown
+            - path_refused
+            - job_conflict
+            - rate_limited
+            - dependency_unavailable
+        field: { type: string, description: "Present for invalid_field. Names the offending field." }
+        request_id: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Envelope missing, tampered, expired, or lifetime above 5 minutes.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Unknown project, or one outside the envelope's org. Never 403, so ids do not leak.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Invalid:
+      description: Invalid request shape. `error_code` and `field` say what.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: Org quota or rate limit. Includes Retry-After.
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unavailable:
+      description: A dependency is down. Fail closed, never open. Includes Retry-After.
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }

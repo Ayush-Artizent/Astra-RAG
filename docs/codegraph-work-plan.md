@@ -169,3 +169,16 @@ upper end or later.
 - A new project goes from registration to queryable with no manual steps.
 - Eval and latency numbers are recorded against N3 and A7.
 - Runbook reviewed.
+
+## 11. Checklist
+
+Open decisions and measurements. Questions in section 9 and the open items in
+[codegraph-spike-report.md](codegraph-spike-report.md) are tracked in their own documents.
+
+- [ ] **Symbol discovery (to discuss).** How does the calling agent learn which symbols to send?
+  - D3 says ASTRA stages must supply structured fields, but it doesn't say how a stage gets symbol names.
+  - Routes today: the stage already has names; discover-then-drill-down (keyword `lookup`, then use returned qualified names); symbols named in retrieved doc chunks (needs Q3 cross-links); the orchestrator's rules-only analyzer (results marked `degraded`).
+  - Gap: conceptual questions with no names or keywords retrieve poorly (F2, no code embeddings), and the contract has no way to browse or list symbols.
+  - Decide: is keyword `lookup` plus drill-down enough, or do we add a discovery endpoint (file outline, top symbols under a path)?
+  - Measure early: quality of keyword-only `lookup` on conceptual questions (not tested yet).
+  - Related: Q3, H4 (eval on real stage prompts).

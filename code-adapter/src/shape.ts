@@ -1,4 +1,5 @@
 import type { Hit, GraphApi, GraphNode } from './modes.js';
+import type { NotReadyProject, ReadyProject } from './projects.js';
 import { toDisplayName, type Alternative, type ResolveStatus, type Resolution } from './resolve.js';
 
 export type IndexStateOut = 'indexing' | 'complete' | 'partial' | 'failed' | 'not_indexed';
@@ -8,6 +9,25 @@ export interface Snapshot {
   commit_sha: string | null;
   index_time: string | null;
   index_state: IndexStateOut;
+}
+
+/**
+ * What an answer reflects: the commit, when the index was last built, and the index state.
+ * A project that is not ready reports no commit and no time.
+ */
+export function snapshotOf(p: ReadyProject | NotReadyProject, commitSha: string | null): Snapshot {
+  if (!p.ready) {
+    return {
+      commit_sha: null,
+      index_time: null,
+      index_state: p.reason === 'not_indexed' ? 'not_indexed' : (p.indexState ?? 'failed'),
+    };
+  }
+  return {
+    commit_sha: commitSha,
+    index_time: p.lastIndexedAt === null ? null : new Date(p.lastIndexedAt).toISOString(),
+    index_state: p.indexState ?? 'complete',
+  };
 }
 
 export interface ResolvedSymbolOut {

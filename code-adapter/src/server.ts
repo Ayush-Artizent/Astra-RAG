@@ -7,7 +7,8 @@ import { ProblemError } from './errors.js';
 import type { GraphApi } from './modes.js';
 import { ProjectRegistry } from './projects.js';
 import { type AmbiguousPolicy, runCodeQuery } from './query.js';
-import type { CodeQueryResponse, Snapshot } from './shape.js';
+import { snapshotOf, type CodeQueryResponse } from './shape.js';
+import { buildStatus, type CodeStatus } from './status.js';
 import { validateCodeQuery } from './validate.js';
 import { walProbe } from './wal-probe.js';
 
@@ -88,24 +89,26 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
     const lease = await registry.acquire(env.org_id, env.project_id);
     try {
       const p = lease.project;
+      const snapshot = snapshotOf(p, commitSha(env.org_id, env.project_id));
       if (!p.ready) {
-        const snapshot: Snapshot = {
-          commit_sha: null,
-          index_time: null,
-          index_state: p.reason === 'not_indexed' ? 'not_indexed' : (p.indexState ?? 'failed'),
-        };
         return { request_id: requestId, plane_status: 'not_ready', snapshot, resolved_symbols: [], results: [], truncated: false };
       }
-      const snapshot: Snapshot = {
-        commit_sha: commitSha(env.org_id, env.project_id),
-        index_time: p.lastIndexedAt === null ? null : new Date(p.lastIndexedAt).toISOString(),
-        index_state: p.indexState ?? 'complete',
-      };
       return await runCodeQuery(p.cg as unknown as GraphApi, q, {
         requestId,
         snapshot,
         ambiguousPolicy: deps.ambiguousPolicy,
       });
+    } finally {
+      lease.release();
+    }
+  });
+
+  app.get('/internal/v1/code/status', async (req): Promise<CodeStatus> => {
+    const env = req.envelope as Envelope;
+    requireScope(env, 'query');
+    const lease = await registry.acquire(env.org_id, env.project_id);
+    try {
+      return buildStatus(lease.project, commitSha(env.org_id, env.project_id));
     } finally {
       lease.release();
     }

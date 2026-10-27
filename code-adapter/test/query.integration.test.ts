@@ -1,47 +1,21 @@
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import '../src/env.js';
-import type { Config } from '../src/config.js';
-import { signEnvelope } from '../src/envelope.js';
 import { buildServer } from '../src/server.js';
+import {
+  commitShaFor,
+  ORG_A_FILES,
+  ORG_B_FILES,
+  seedProject,
+  signedEnvelope as envelope,
+  testConfig,
+} from './helpers.js';
 
 // Real CodeGraph indexes behind the real HTTP routes. Two orgs both have a project called p1.
-const lib = createRequire(import.meta.url)('@colbymchenry/codegraph') as {
-  CodeGraph: { init(root: string, o: { index: boolean }): Promise<{ close(): void }> };
-};
-
-const KEY = 'test-key-0123456789abcdef';
 let dataDir: string;
 let app: FastifyInstance;
-
-const APP_TS = [
-  'export function render(page: string) { return page; }',
-  'export function handle(req: string) { return render(req); }',
-  'export function route(req: string) { return handle(req); }',
-  'export function main() { return route("x"); }',
-  'export class Widget { draw() { return render("w"); } }',
-  'export class Panel { draw() { return 1; } }',
-  '',
-].join('\n');
-
-async function seed(org: string, project: string, files: Record<string, string>) {
-  const dir = path.join(dataDir, org, project);
-  for (const [rel, text] of Object.entries(files)) {
-    const file = path.join(dir, rel);
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, text);
-  }
-  (await lib.CodeGraph.init(dir, { index: true })).close();
-}
-
-const now = () => Math.floor(Date.now() / 1000);
-function envelope(org: string, project: string, scopes: string[] = ['query']) {
-  return signEnvelope({ org_id: org, project_id: project, scopes, request_id: 'env-req', iat: now(), exp: now() + 60 }, KEY);
-}
 
 async function query(body: unknown, opts: { org?: string; project?: string; scopes?: string[]; headers?: Record<string, string> } = {}) {
   return app.inject({
@@ -57,21 +31,9 @@ async function query(body: unknown, opts: { org?: string; project?: string; scop
 
 beforeAll(async () => {
   dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-query-'));
-  await seed('orgA', 'p1', {
-    'web/app.ts': APP_TS,
-    'web/index.ts': "import { main } from './app';\nexport function start() { return main(); }\n",
-    'lib/token.ts': 'export function issueToken(user: string) { return user; }\nexport function expireToken(t: string) { return t; }\n',
-  });
-  await seed('orgB', 'p1', { 'billing/invoice.ts': 'export function total(n: number) { return n * 2; }\n' });
-  const config: Config = {
-    port: 0,
-    host: '127.0.0.1',
-    dataDir,
-    envelopeKey: KEY,
-    maxEnvelopeLifetimeSeconds: 300,
-    clockSkewSeconds: 30,
-  };
-  app = buildServer(config, { commitSha: (org, project) => (org === 'orgA' && project === 'p1' ? 'a1b2c3d' : null) });
+  await seedProject(dataDir, 'orgA', 'p1', ORG_A_FILES);
+  await seedProject(dataDir, 'orgB', 'p1', ORG_B_FILES);
+  app = buildServer(testConfig(dataDir), { commitSha: commitShaFor });
   await app.ready();
 }, 180_000);
 
@@ -125,8 +87,7 @@ describe('callers', () => {
   });
 
   it('answers for the best candidate when the policy is best', async () => {
-    const config: Config = { port: 0, host: '127.0.0.1', dataDir, envelopeKey: KEY, maxEnvelopeLifetimeSeconds: 300, clockSkewSeconds: 30 };
-    const lenient = buildServer(config, { ambiguousPolicy: 'best' });
+    const lenient = buildServer(testConfig(dataDir), { ambiguousPolicy: 'best' });
     const res = await lenient.inject({
       method: 'POST',
       url: '/internal/v1/code/query',

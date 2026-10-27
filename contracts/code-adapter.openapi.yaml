@@ -74,6 +74,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CodeStatus' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '503': { $ref: '#/components/responses/Unavailable' }
 
@@ -107,6 +108,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CodeJobAccepted' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/Invalid' }
         '429': { $ref: '#/components/responses/RateLimited' }
@@ -129,6 +131,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CodeJob' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   /internal/v1/health:

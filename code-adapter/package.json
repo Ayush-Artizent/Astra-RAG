@@ -1,0 +1,26 @@
+{
+  "name": "astra-code-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ASTRA RAGaaS code plane: HTTP adapter around CodeGraph",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "dependencies": {
+    "@colbymchenry/codegraph": "1.6.2",
+    "fastify": "5.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.7",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3",
+    "vitest": "2.1.9"
+  }
+}

@@ -12,5 +12,8 @@
   "type": "commonjs",
   "dependencies": {
     "@colbymchenry/codegraph": "1.6.2"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^10.1.0"
   }
 }

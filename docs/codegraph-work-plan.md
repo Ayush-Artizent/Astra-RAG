@@ -181,4 +181,5 @@ Open decisions and measurements. Questions in section 9 and the open items in
   - Gap: conceptual questions with no names or keywords retrieve poorly (F2, no code embeddings), and the contract has no way to browse or list symbols.
   - Decide: is keyword `lookup` plus drill-down enough, or do we add a discovery endpoint (file outline, top symbols under a path)?
   - Measure early: quality of keyword-only `lookup` on conceptual questions (not tested yet).
+    - Partial finding, 2026-10-27 (`code-adapter/spikes/s8_keywords.cjs`, tiny repo and Django): full-text keyword search matches the start of a word. `token` finds `validate_token` but not `issueToken`, so it is weaker on camelCase code. Mitigation built: names that merely contain a keyword are added after the ranked matches (library `getNodesByNameSubstring`). Multi-word queries behave as OR. Conceptual queries ("password reset") return loosely related names (many unrelated `reset` methods), as expected without code embeddings. Not measured: precision and recall on real stage prompts.
   - Related: Q3, H4 (eval on real stage prompts).

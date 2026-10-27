@@ -12,7 +12,8 @@ export type ErrorCode =
   | 'path_refused'
   | 'job_conflict'
   | 'rate_limited'
-  | 'dependency_unavailable';
+  | 'dependency_unavailable'
+  | 'not_implemented';
 
 /** An error that maps to an RFC 9457 problem+json response. */
 export class ProblemError extends Error {

@@ -54,9 +54,11 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CodeQueryResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/Invalid' }
         '429': { $ref: '#/components/responses/RateLimited' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
         '503': { $ref: '#/components/responses/Unavailable' }
 
   /internal/v1/code/status:
@@ -183,8 +185,11 @@ components:
           maxItems: 20
           items: { type: string, minLength: 1, maxLength: 300 }
           description: |
-            Symbol names. Qualified names may use `.` or `::` (the adapter normalises `.` to `::`, spike).
-            Prefer qualified names: about 9 to 11 percent of names are shared by more than one symbol (spike).
+            Symbol names. Qualified names may use `.`, `::` or `#` between segments (the adapter normalises
+            them to the library's `::`, spike). Dotted module paths work (`django.db.models.QuerySet.filter`).
+            To pin one symbol, prefix a file: `path/to/file.py::Class.method` (a path with `/` or a file
+            extension, then `::`). Prefer qualified names: about 9 to 11 percent of names are shared by more
+            than one symbol (spike). A bare name means the top-level symbol when one exists.
         keywords:
           type: array
           maxItems: 20
@@ -192,7 +197,10 @@ components:
         path_prefix:
           type: string
           maxLength: 300
-          description: Restrict results to files under this relative path. Traversal strings are refused.
+          description: |
+            Restrict results to files under this relative path. Traversal strings are refused (`path_refused`).
+            For `lookup` it also narrows which symbol a name refers to. For `callers` and `impact` it only
+            filters the results: the query symbol itself may be defined anywhere.
         depth:
           type: integer
           minimum: 1
@@ -259,8 +267,11 @@ components:
         index_time: { type: string, format: date-time, nullable: true }
         index_state:
           type: string
-          enum: [indexing, complete, partial, failed]
-          description: From the library's index state. A query during `indexing` reads the last committed snapshot.
+          enum: [not_indexed, indexing, complete, partial, failed]
+          description: |
+            From the library's index state, plus `not_indexed` when the project has no index. A full index
+            run in progress (`indexing`) or a failed one makes the project `not_ready`, because the data is
+            truncated. A sync does not set `indexing`, so queries keep working during syncs.
 
     ResolvedSymbol:
       type: object
@@ -279,6 +290,9 @@ components:
         node_id: { type: string, nullable: true }
         qualified_name: { type: string, nullable: true }
         alternatives:
+          description: |
+            Other matches. `exact` can still carry alternatives: a bare name with one top-level symbol and
+            several same-named methods resolves to the top-level symbol and lists the methods here.
           type: array
           maxItems: 5
           items:
@@ -303,7 +317,17 @@ components:
           description: Relative ordering only. Not normalised (library note). Orchestrator fuses by rank, never by this value.
         depth:
           type: integer
-          description: Distance from the query symbol for callers and impact.
+          description: Distance from the query symbol for callers and impact. 1 is a direct caller or dependent.
+        relation:
+          type: string
+          example: calls
+          description: |
+            Edge kind linking this result to the query symbol, for callers and impact: `calls`,
+            `instantiates`, `references`, `navigates` or `imports`. An `imports` caller is a file that imports
+            the symbol. When a caller is linked by several edges the strongest is reported.
+        call_line:
+          type: integer
+          description: Line of the call site inside the result, when the index recorded one.
         text:
           type: string
           nullable: true
@@ -432,12 +456,23 @@ components:
             - job_conflict
             - rate_limited
             - dependency_unavailable
+            - not_implemented
         field: { type: string, description: "Present for invalid_field. Names the offending field." }
         request_id: { type: string }
 
   responses:
     Unauthorized:
       description: Envelope missing, tampered, expired, or lifetime above 5 minutes.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: The envelope is valid but lacks the scope this operation needs (error_code `scope_missing`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotImplemented:
+      description: The operation is part of the contract but not built yet. Today this is `flow` mode.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

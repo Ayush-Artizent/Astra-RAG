@@ -2,8 +2,13 @@ import './env.js';
 import { createRequire } from 'node:module';
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyRequest } from 'fastify';
 import type { Config } from './config.js';
-import { type Envelope, verifyEnvelope } from './envelope.js';
+import { type Envelope, requireScope, verifyEnvelope } from './envelope.js';
 import { ProblemError } from './errors.js';
+import type { GraphApi } from './modes.js';
+import { ProjectRegistry } from './projects.js';
+import { type AmbiguousPolicy, runCodeQuery } from './query.js';
+import type { CodeQueryResponse, Snapshot } from './shape.js';
+import { validateCodeQuery } from './validate.js';
 import { walProbe } from './wal-probe.js';
 
 declare module 'fastify' {
@@ -28,9 +33,22 @@ function requestIdOf(req: FastifyRequest): string | undefined {
   return (Array.isArray(hdr) ? hdr[0] : hdr)?.slice(0, 64);
 }
 
-export function buildServer(config: Config): FastifyInstance {
+export interface ServerDeps {
+  registry?: ProjectRegistry;
+  ambiguousPolicy?: AmbiguousPolicy;
+  /**
+   * The commit a project's index reflects. TODO(phase 2): read `last_synced_sha` from the job ledger.
+   * Until sync jobs exist there is nothing to read, and the contract allows null.
+   */
+  commitSha?: (orgId: string, projectId: string) => string | null;
+}
+
+export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInstance {
   const app = Fastify({ logger: false, bodyLimit: 64 * 1024 });
   const probe = walProbe();
+  const registry = deps.registry ?? new ProjectRegistry({ dataDir: config.dataDir });
+  const commitSha = deps.commitSha ?? (() => null);
+  app.addHook('onClose', async () => registry.closeAll());
 
   app.addHook('onRequest', async (req, reply) => {
     const id = requestIdOf(req);
@@ -56,6 +74,42 @@ export function buildServer(config: Config): FastifyInstance {
     wal_probe: probe,
     active_jobs: 0,
   }));
+
+  app.post('/internal/v1/code/query', async (req): Promise<CodeQueryResponse> => {
+    const env = req.envelope as Envelope;
+    requireScope(env, 'query');
+    const q = validateCodeQuery(req.body);
+    if (q.mode === 'flow') {
+      // TODO(phase 2): flow mode (findPath over `calls` edges).
+      throw new ProblemError(501, 'not_implemented', 'Not implemented', 'flow mode is not available yet');
+    }
+
+    const requestId = requestIdOf(req) ?? env.request_id;
+    const lease = await registry.acquire(env.org_id, env.project_id);
+    try {
+      const p = lease.project;
+      if (!p.ready) {
+        const snapshot: Snapshot = {
+          commit_sha: null,
+          index_time: null,
+          index_state: p.reason === 'not_indexed' ? 'not_indexed' : (p.indexState ?? 'failed'),
+        };
+        return { request_id: requestId, plane_status: 'not_ready', snapshot, resolved_symbols: [], results: [], truncated: false };
+      }
+      const snapshot: Snapshot = {
+        commit_sha: commitSha(env.org_id, env.project_id),
+        index_time: p.lastIndexedAt === null ? null : new Date(p.lastIndexedAt).toISOString(),
+        index_state: p.indexState ?? 'complete',
+      };
+      return await runCodeQuery(p.cg as unknown as GraphApi, q, {
+        requestId,
+        snapshot,
+        ambiguousPolicy: deps.ambiguousPolicy,
+      });
+    } finally {
+      lease.release();
+    }
+  });
 
   app.setNotFoundHandler((req, reply) => {
     reply.code(404).type(PROBLEM_JSON).send({

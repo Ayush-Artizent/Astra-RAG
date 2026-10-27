@@ -158,9 +158,12 @@ upper end or later.
 ## 9. Open questions
 
 1. Q1: can a project have several repositories, and how are repos reached (GitHub App, GitLab, on-prem, archive)?
+   MVP decided 2026-10-27: one repo per project, cloned over HTTPS with a token (section 12). Several repos per
+   project, GitHub App installs and archives are still open.
 2. What is the largest repo size in the pilot (files and size)?
 3. Q3: are symbol cross-links required at launch?
 4. Does the control plane owner provide the job table, or does the adapter keep its own for the MVP?
+   Decided 2026-10-27: the adapter keeps its own SQLite file (section 12).
 
 ## 10. Definition of done
 
@@ -169,6 +172,20 @@ upper end or later.
 - A new project goes from registration to queryable with no manual steps.
 - Eval and latency numbers are recorded against N3 and A7.
 - Runbook reviewed.
+
+## 12. Phase 2 decisions (2026-10-27)
+
+Made by the reviewer to unblock Phase 2 (jobs, sync, flow). Each is the option recommended in the discussion.
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| 1 | How do jobs reach the adapter? | HTTP endpoint, `POST /internal/v1/code/jobs` (already in the contract). | No queue to run for the MVP. A queue consumer can be added behind the same job code later. |
+| 2 | Who owns the job and sync record? | The adapter, in its own SQLite file in the data directory. | It holds job state, `last_synced_sha` and the last sync time, and it fills `commit_sha` in citations. Moving it to the control plane later means replacing one module. |
+| 3 | How is the repo fetched? (Q1) | `git clone` over HTTPS with a token. The job carries `repo_url` and a `credentials_ref` that the adapter resolves from an environment variable or file. | One repo per project. GitHub App installs, several repos per project and uploaded archives are not covered and stay open. |
+| 4 | Index-lag target? (Q2) | Scaled by repo size: 2 minutes up to 1,000 files, 5 minutes up to 5,000 files, measured case by case beyond. | Sets the sync timeout, the coalescing window and the reconcile interval. The thresholds are my proposal from one Django measurement, not a tested result. |
+
+Testing approach (not a reviewer decision): local git repositories created inside the tests, so cloning and syncing
+are exercised with no network.
 
 ## 11. Checklist
 

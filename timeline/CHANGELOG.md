@@ -1,6 +1,11 @@
 # Changelog (newest first)
 
 ## 2026-10-27
+- **PAT + URL now remembered in `.env`** (git-ignored): `services/token_store.py` writes `ASTRA_REPO_<OWNER>__<NAME>_URL/_TOKEN` after a connect that cloned successfully; a blank token field reuses the saved one; the token is cleared from the page and never returned by any API. `cloner.py` now passes the token to git through `GIT_CONFIG_*` env vars instead of `-c` args (no longer visible in the process list; verified against a local HTTP server). `CLAUDE.md` security rule updated accordingly. Tests: 38 passing.
+- **W1 implemented**: after a successful clone, `project-data/` is ingested in the background (`services/ingestion/`): loader (md/txt/csv/docx, skipped files reported), heading-aware markdown chunker and row-aware CSV chunker (token-budgeted for bge's 512 limit), local fastembed embeddings (dense `BAAI/bge-base-en-v1.5` + sparse `Qdrant/bm25`), Qdrant collection per repo (`astra__<owner>__<name>`, hybrid RRF search, recreated on re-ingest). Chunk payloads carry repo, commit SHA, path, heading path / line or row range, file hash and a GitHub permalink.
+- New endpoints `GET /api/ingestion-status/{owner}/{name}` and `POST /api/search`; UI polls ingestion progress. `clone_repo` now returns `CloneResult(path, commit_sha, branch)`.
+- Added `docker-compose.yml` (Qdrant v1.20.0, named volume), deps `qdrant-client`, `fastembed`, `markitdown[docx]`, config for Qdrant/model/chunk sizes, `.cache/` ignored. Tests: 30 passing.
+- Planning: W1 design approved - Qdrant (Docker/Rancher Desktop), fastembed hybrid (bge-base-en-v1.5 dense + BM25 sparse), type-aware token-budgeted chunking, traceable payload metadata. W1 tasks rewritten in `TASKS.md`; no code yet.
 - Planning: W2 tool now also returns `nomenclature.md` (deterministic fetch, not RAG) and gains a nomenclature validator task; W1 noted as leaning Qdrant and scoped to `project-data/` only, pending further discussion.
 - Added `timeline/` progress folder, `CLAUDE.md` project rules and the task breakdown (`TASKS.md`).
 

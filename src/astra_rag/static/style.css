@@ -11,7 +11,7 @@ input { width: 100%; margin-top: .3rem; padding: .6rem; border: 1px solid #d1d5d
 button { width: 100%; margin-top: 1.5rem; padding: .7rem; border: 0; border-radius: 8px;
          background: #4f46e5; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
 button:disabled { opacity: .6; cursor: wait; }
-#result { margin-top: 1.25rem; padding: .8rem 1rem; border-radius: 8px; font-size: .9rem; }
-#result.ok { background: #ecfdf5; color: #065f46; }
-#result.error { background: #fef2f2; color: #991b1b; }
-#result ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+#result, #ingestion { margin-top: 1.25rem; padding: .8rem 1rem; border-radius: 8px; font-size: .9rem; }
+#result.ok, #ingestion.ok { background: #ecfdf5; color: #065f46; }
+#result.error, #ingestion.error { background: #fef2f2; color: #991b1b; }
+#result ul, #ingestion ul { margin: .4rem 0 0; padding-left: 1.2rem; }

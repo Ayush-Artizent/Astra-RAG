@@ -4,23 +4,35 @@ Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGEL
 
 ## Done
 - [x] **W0 Connector** - URL parse, GitHub root listing, golden-structure validation, clone to `temp_storage/`.
+- [x] **W1 Ingestion pipeline** - see W1 below.
 - [x] **W3 Timeline + rules** - `timeline/` folder and root `CLAUDE.md`.
 
 ## W1 - RAG ingestion pipeline (runs after clone succeeds)
-Goal: once the clone finishes, automatically chunk the repo content and store embeddings.
+Goal: once the clone finishes, automatically chunk `project-data/` and store hybrid embeddings in Qdrant,
+with metadata that traces every chunk back to repo / commit / file / location.
 Independent of W2 except both add deps to `pyproject.toml` and a config section.
 
-> **Under discussion (details to be revised):** vector DB leaning **Qdrant**; index only `project-data/`
-> (policies, nomenclature, templates go through the W2 tool, not the index); type-aware chunking
-> (markdown/docx by heading, CSV by row groups); rich source metadata (repo, commit_sha, path,
-> heading_path / row range, GitHub permalink) for traceability. Tasks below are provisional.
+**Decisions (design approved 2026-10-27)**
+- Vector DB: **Qdrant in Docker on Rancher Desktop** (server mode, named volume, `QDRANT_URL` in config). No embedded mode.
+- Embeddings, local via `fastembed`, auto-downloaded on first use: dense `BAAI/bge-base-en-v1.5` (768-d) + sparse `Qdrant/bm25`, hybrid query fused with RRF. Behind an `Embedder` interface.
+- Index only `project-data/` (md, csv, docx). Policies, nomenclature and templates go through the W2 tool, not the index.
+- Chunking is token-budgeted for bge's 512-token limit (target ~350-400, cap ~480): markdown/docx by heading with breadcrumb prefix; CSV by row groups with header repeated + one summary chunk per file.
+- One collection per repo (`astra__<owner>__<name>`); re-ingest = delete + recreate. Point id = UUIDv5(chunk_id).
+- Payload metadata: repo, commit_sha, path, folder_parts, file_type, file_hash, chunk ids, heading_path, line or row range, embedding_model, ingested_at, GitHub permalink `source_url`.
 
-- [ ] W1.1 Decide stack (embedding model + vector store, e.g. local sentence-transformers + Chroma/FAISS, or API embeddings). Record the decision in CHANGELOG. Add settings to `config.py`.
-- [ ] W1.2 `services/ingestion/loader.py` - walk the clone, load `.md`/text files from `project-data/` (+ `policies.md`, `nomenclature.md`, `templates/`), skip `.git`, binaries, oversized files. Attach metadata (relative path, folder, repo, commit).
-- [ ] W1.3 `services/ingestion/chunker.py` - markdown-aware chunking (split on headings, then size/overlap cap); deterministic chunk IDs.
-- [ ] W1.4 `services/ingestion/embedder.py` + `store.py` - embed chunks in batches and upsert into a per-repo collection; re-ingest replaces the old collection (mirrors clone replace behaviour).
-- [ ] W1.5 Trigger + status - start ingestion as a background task at the end of `validate_and_clone` (don't block the HTTP response); add `GET /api/ingestion-status` (queued/running/done/failed, chunk counts); show progress in the UI.
-- [ ] W1.6 Tests - loader/chunker unit tests with fixture files; store test with a temp directory; no network.
+- [x] W1.1 Smoke test on Python 3.14: `uv add qdrant-client fastembed`, embed + upsert + hybrid query against Dockerised Qdrant. Result: works on 3.14 (fastembed 0.9.1, onnxruntime 1.31, qdrant-client 1.20 vs server v1.20.0). If `onnxruntime` lacks a 3.14 wheel, decide: pin lower Python or switch embedder. Then add settings to `config.py`.
+- [x] W1.2 Infra - `docker-compose.yml` (pinned `qdrant/qdrant`, ports 6333/6334, named volume); `QDRANT_URL` / `QDRANT_API_KEY` / `FASTEMBED_CACHE_DIR` in `config.py`; git-ignore caches. Capture commit SHA in `cloner.py` (`git rev-parse HEAD`).
+- [x] W1.3 `services/ingestion/loader.py` - walk `project-data/**`, load md/txt/csv/docx (docx via markitdown or mammoth), skip `.git`, binaries, empty and oversized files; unsupported types reported in the ingestion report, not silently dropped.
+- [x] W1.4 `services/ingestion/chunker.py` - markdown/docx and CSV chunkers as above; never split code fences or tables; deterministic `chunk_id = sha1(path + index + sha1(content))`; full metadata per chunk.
+- [x] W1.5 `services/ingestion/embedder.py` + `store.py` - dense + sparse embeddings in batches; Qdrant collection with named vectors and keyword payload indexes (`path`, `folder_top`, `file_type`, `file_hash`, `commit_sha`); upsert; hybrid search; delete/recreate. Clear `AppError` if Qdrant is unreachable.
+- [x] W1.6 Trigger + status - `pipeline.py`; start ingestion as a background task at the end of `validate_and_clone` (don't block the response); `GET /api/ingestion-status` (queued/running/done/failed, chunk counts, skipped files); show progress in the UI.
+- [x] W1.7 Tests - fixtures in `tests/fixtures/project-data/` (nested md/csv/docx); chunk size caps, intact code fences/tables, CSV header repeated, deterministic ids, complete metadata; store test using `QdrantClient(":memory:")`; no network or model downloads in unit tests (fake embedder).
+
+**Status: implemented and verified 2026-10-27** (30 unit/route tests; real-model + real-Qdrant e2e: max chunk 327 real bge tokens, exact-ID and paraphrase queries hit the right source).
+
+**Open items:** whether `.pdf`/`.xlsx` will appear in `project-data/`; largest CSV size (row caps); bge-base vs bge-small if speed becomes an issue.
+
+**Follow-ups noticed:** token estimate is conservative (est. cap 480 -> ~330 real); could be tuned using the real tokenizer. No incremental re-ingest (full rebuild each time). `POST /api/search` was added to exercise retrieval; W2/generation will build on it.
 
 ## W2 - Function-calling tool: fetch policies + template from GitHub
 Goal: an LLM-callable tool; when invoked with a request type (BRD, SPEC, ...), it returns

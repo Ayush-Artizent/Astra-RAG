@@ -4,3 +4,10 @@ __pycache__/
 # cloned repos live here, never commit them
 temp_storage/*
 !temp_storage/.gitkeep
+
+# local caches (embedding models etc.)
+.cache/
+
+# secrets: saved GitHub tokens live here
+.env
+.env.*

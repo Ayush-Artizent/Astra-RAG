@@ -19,12 +19,15 @@
         <input id="url" type="url" placeholder="https://github.com/owner/repo" required>
       </label>
       <label>Personal access token (PAT)
-        <input id="token" type="password" placeholder="ghp_… or github_pat_…" required>
+        <input id="token" type="password" placeholder="ghp_… or github_pat_… (blank = use the saved token)"
+               autocomplete="new-password">
       </label>
+      <p class="hint">After a successful connect the token is saved locally in <code>.env</code> for this URL and never shown again.</p>
       <button id="submit" type="submit">Check &amp; clone</button>
     </form>
 
     <div id="result" role="status" hidden></div>
+    <div id="ingestion" role="status" hidden></div>
   </main>
   <script src="/static/app.js"></script>
 </body>

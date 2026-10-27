@@ -1,21 +1,52 @@
 const form = document.getElementById("form");
 const submit = document.getElementById("submit");
 const result = document.getElementById("result");
+const ingestion = document.getElementById("ingestion");
 
-function show(kind, text, items = []) {
-  result.hidden = false;
-  result.className = kind;
-  result.textContent = text;
+function render(el, kind, text, items = []) {
+  el.hidden = false;
+  el.className = kind;
+  el.textContent = text;
   if (items.length) {
     const ul = document.createElement("ul");
     items.forEach((i) => { const li = document.createElement("li"); li.textContent = i; ul.append(li); });
-    result.append(ul);
+    el.append(ul);
+  }
+}
+
+const show = (kind, text, items) => render(result, kind, text, items);
+
+function describeIngestion(s) {
+  const skipped = (s.files_skipped || []).map((f) => `skipped ${f.path}: ${f.reason}`);
+  const extras = [...skipped, ...(s.warnings || [])];
+  if (s.state === "failed") return ["error", `Ingestion failed: ${s.error}`, extras];
+  if (s.state === "done") {
+    return ["ok", `Ingestion done: ${s.files_loaded} files, ${s.chunks_stored} chunks stored.`, extras];
+  }
+  const detail = s.state === "running" ? `${s.chunks_stored}/${s.chunks_total} chunks` : "queued";
+  return ["", `Ingesting project-data… ${detail}`, extras];
+}
+
+async function pollIngestion({ owner, name }) {
+  for (;;) {
+    let s;
+    try {
+      s = await (await fetch(`/api/ingestion-status/${owner}/${name}`)).json();
+    } catch {
+      render(ingestion, "error", "Lost contact with the server while ingesting.");
+      return;
+    }
+    if (!s.ok) { render(ingestion, "error", s.error); return; }
+    render(ingestion, ...describeIngestion(s));
+    if (s.state === "done" || s.state === "failed") return;
+    await new Promise((r) => setTimeout(r, 1500));
   }
 }
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   submit.disabled = true;
+  ingestion.hidden = true;
   show("", "Checking repository…");
   try {
     const res = await fetch("/api/validate-and-clone", {
@@ -24,8 +55,12 @@ form.addEventListener("submit", async (e) => {
       body: JSON.stringify({ url: form.url.value, token: form.token.value }),
     });
     const data = await res.json();
-    if (data.ok) show("ok", `${data.message} → ${data.path}`);
-    else if (data.missing) show("error", "Missing required items:", data.missing);
+    if (data.ok) {
+      form.token.value = "";  // the PAT is not kept in the page once the server has it
+      const note = data.token_saved ? " Token saved for this repository." : data.token_reused ? " Used the saved token." : "";
+      show("ok", `${data.message} → ${data.path}.${note}`);
+      await pollIngestion(data.ingestion);
+    } else if (data.missing) show("error", "Missing required items:", data.missing);
     else show("error", data.error);
   } catch {
     show("error", "Could not reach the server.");

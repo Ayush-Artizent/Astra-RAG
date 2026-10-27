@@ -10,29 +10,44 @@ URL and a PAT in a single-page UI. The backend:
 2. Lists the repo root via the GitHub API (`github_client.list_root`).
 3. Validates the "golden repo" structure (`services/validator.find_missing`): files
    `policies.md`, `nomenclature.md`; folders `project-data/`, `templates/` (case-sensitive,
-   defined in `config.py`).
-4. If anything is missing -> HTTP 422 listing exactly what is missing.
-5. Otherwise shallow-clones (`--depth 1`) into `temp_storage/<owner>__<name>/`
-   (`services/cloner.py`), replacing any earlier clone. Token is passed as a one-off
-   `http.extraheader`, never stored on disk.
+   defined in `config.py`). Missing items -> HTTP 422 listing them.
+4. Shallow-clones (`--depth 1`) into `temp_storage/<owner>__<name>/` (`services/cloner.py`),
+   replacing any earlier clone; records commit SHA + branch. The token goes to git as a one-off
+   `http.extraheader` via `GIT_CONFIG_*` env vars (not in the URL, `.git/config` or process args).
+   After a successful clone the URL + PAT are saved to the git-ignored `.env` (`services/token_store.py`);
+   a blank token field in the UI reuses the saved one. Tokens are never returned by any API.
+5. Queues a **background ingestion** of `project-data/` (`services/ingestion/pipeline.py`):
+   load (md, txt, csv, docx; others reported as skipped) -> chunk (markdown by heading, CSV by
+   row groups + summary chunk, <=~480 est. tokens) -> embed locally with fastembed (dense
+   `BAAI/bge-base-en-v1.5`, sparse `Qdrant/bm25`) -> upsert to Qdrant collection
+   `astra__<owner>__<name>` (recreated each time). Each chunk's payload has repo, commit_sha,
+   path, folder_parts, heading_path / line range / row range, file_hash, chunk ids, embedding
+   model, ingested_at and a GitHub permalink `source_url`.
 
-Single endpoint: `POST /api/validate-and-clone`. Page at `/`, OpenAPI docs at `/docs`.
+Endpoints: `POST /api/validate-and-clone`, `GET /api/ingestion-status/{owner}/{name}`,
+`POST /api/search` (hybrid RRF search; optional `folder`, `file_type` filters). Page at `/`,
+OpenAPI at `/docs`. The UI polls ingestion status after a clone.
+
+Qdrant runs in Docker (`docker-compose.yml`, v1.20.0, named volume). Embedding models download on
+first use into `.cache/fastembed` (git-ignored).
 
 ## Not built yet
-- RAG ingestion (chunking, embeddings, vector store) - nothing happens after the clone.
-- Function-calling tool that fetches `policies.md` + a document template.
-- No LLM client, no embedding model, no vector DB dependency in `pyproject.toml`.
+- W2: function-calling tool returning policies + nomenclature + template from GitHub.
+- Incremental re-ingest (currently full rebuild), pdf/xlsx loaders, reranking.
 
 ## Layout
 ```
 src/astra_rag/  __init__ (app factory, main), config, routes
   services/     github_client, validator, cloner, errors
+    ingestion/  loader, md_chunker, csv_chunker, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
-tests/          test_validator_and_url.py (unit tests, unittest)
+tests/          unittest suites + fixtures/repo (sample project-data)
+docker-compose.yml   Qdrant
 temp_storage/   cloned repos (git-ignored)
 timeline/       this progress record
 ```
 
 ## Commands
+- Qdrant: `docker compose up -d qdrant` (dashboard http://localhost:6333/dashboard)
 - Run: `uv run python -m astra_rag` (http://127.0.0.1:5000)
 - Test: `uv run python -m unittest discover -s tests -t .`

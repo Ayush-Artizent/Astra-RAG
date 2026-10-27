@@ -46,6 +46,26 @@ Goal: an LLM-callable tool; when invoked with a request type (BRD, SPEC, ...), i
 - [ ] W2.5 Wiring - choose the surface: a `POST /api/tools/invoke` endpoint and/or an agent loop that passes the schema to the Claude API and feeds tool results back. Repo/token come from the session/request, never persisted.
 - [ ] W2.6 Tests - mock the GitHub client; cover each request type, unknown type, missing template, missing policies.md or nomenclature.md, and the nomenclature validator.
 
+## W4 - Keep the index in sync with the repo's main branch (planned, not started)
+Goal: when someone pushes to the tracked branch, re-embed only what changed so Qdrant always reflects the latest
+`project-data/`, and every chunk's `commit_sha` / `source_url` points at the latest commit. Changes to
+`policies.md`, `nomenclature.md` and `templates/` need nothing (W2 reads them live from GitHub).
+
+**Decisions:** trigger = GitHub `push` webhook (primary) + polling reconciliation (safety net, also the localhost
+default). Sync = hash-diff against stored `file_hash` (robust to force-pushes), upsert-then-delete so searches never
+see a file missing mid-sync, full rebuild as fallback. Sync state is persisted (SQLite behind a `SyncStateStore`).
+Design detail: `C:\Users\manojb\.claude\plans\i-am-thinking-we-distributed-cook.md` (author's machine).
+
+- [ ] W4.1 State + locks - `services/ingestion/state.py` (durable per-repo `last_commit_sha`, `last_synced_at`, state, error) and `locks.py` (per-repo exclusion, coalesce bursts of triggers into one re-run). Config: `SYNC_POLL_SECONDS`, `GITHUB_WEBHOOK_SECRET`, `CHUNKER_VERSION` (stored in payload to force a rebuild when chunking rules change).
+- [ ] W4.2 Store + git + GitHub helpers - `store.py`: `file_hashes()`, `ids_for_path()`, `delete_points()`, `delete_path()`, `bump_commit()`; `cloner.update_clone()` (`git fetch --depth 1` + hard reset, token via env vars); `github_client.get_branch_head()` with ETag (304 is free against rate limits).
+- [ ] W4.3 Sync engine - `services/ingestion/sync.py`: update clone, chunk locally, classify added / changed / deleted / unchanged, embed only added + changed, delete stale chunks, bump `commit_sha` + permalink on unchanged chunks, persist state; fall back to full rebuild if the collection is missing or model / dimension / chunker version changed. Refactor `pipeline.py` so full ingest and sync share the embed + upsert step.
+- [ ] W4.4 Triggers - `POST /api/webhooks/github` (HMAC-SHA256 `X-Hub-Signature-256` check, push events on the tracked branch only, 202 fast, dedupe by delivery id); background poller thread started in the app lifespan; `POST /api/sync/{owner}/{name}` ("Sync now").
+- [ ] W4.5 UI + status - show last synced commit / time and a Sync now button; sync info in `GET /api/ingestion-status`.
+- [ ] W4.6 Tests - unchanged file => zero embed calls but `commit_sha` bumped; edit / delete / rename cases; no missing file mid-sync; concurrent triggers coalesce; webhook signature valid / invalid / non-main push; poller 304 and new-SHA paths; fallback rebuild. Tests must use temp state DB and in-memory Qdrant (never the real `.env` or `.cache`).
+- [ ] W4.7 End-to-end on real Qdrant - push an edit and a deletion to a test repo, confirm search returns new text, deleted file is gone, point count matches, `source_url` uses the new SHA, and state survives a restart.
+
+**Later (not in W4):** GitHub App credentials instead of PATs (short-lived tokens, higher rate limits); shared DB for sync state if run on several instances.
+
 ## Sequencing
 W1 and W2 can proceed in parallel (separate packages under `services/`, different routes).
 Shared touch points to coordinate: `pyproject.toml`, `config.py`, `routes.py`, `timeline/*`.

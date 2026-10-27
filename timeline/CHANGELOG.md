@@ -1,6 +1,7 @@
 # Changelog (newest first)
 
 ## 2026-10-27
+- Planning: added W4 (keep the index in sync with the repo's main branch) to `TASKS.md`; design agreed, no code written.
 - **PAT + URL now remembered in `.env`** (git-ignored): `services/token_store.py` writes `ASTRA_REPO_<OWNER>__<NAME>_URL/_TOKEN` after a connect that cloned successfully; a blank token field reuses the saved one; the token is cleared from the page and never returned by any API. `cloner.py` now passes the token to git through `GIT_CONFIG_*` env vars instead of `-c` args (no longer visible in the process list; verified against a local HTTP server). `CLAUDE.md` security rule updated accordingly. Tests: 38 passing.
 - **W1 implemented**: after a successful clone, `project-data/` is ingested in the background (`services/ingestion/`): loader (md/txt/csv/docx, skipped files reported), heading-aware markdown chunker and row-aware CSV chunker (token-budgeted for bge's 512 limit), local fastembed embeddings (dense `BAAI/bge-base-en-v1.5` + sparse `Qdrant/bm25`), Qdrant collection per repo (`astra__<owner>__<name>`, hybrid RRF search, recreated on re-ingest). Chunk payloads carry repo, commit SHA, path, heading path / line or row range, file hash and a GitHub permalink.
 - New endpoints `GET /api/ingestion-status/{owner}/{name}` and `POST /api/search`; UI polls ingestion progress. `clone_repo` now returns `CloneResult(path, commit_sha, branch)`.

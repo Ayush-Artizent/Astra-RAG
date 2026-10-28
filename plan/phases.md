@@ -392,6 +392,7 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 
 **Scope**
 - A small set of real requests (20-50) per sample org, each with the rules, template and evidence it should return.
+  Starter list for retrieval only (22 ecommerce questions with expected sources and facts): [eval-questions.md](eval-questions.md).
 - A script that reports recall@k for evidence and for rules.
 - Tune the relevance threshold, budgets and rerank candidate count. Record the results in the CHANGELOG.
 - Use the set as a check before merging any change to chunking, models or selection.

@@ -1,5 +1,6 @@
 import hashlib
 import re
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -95,6 +96,56 @@ class LoaderTests(unittest.TestCase):
         self.assertEqual(docs[0].file_type, "docx")
         self.assertIn("Payment Spec", docs[0].text)
         self.assertIn("Refunds take five days.", docs[0].text)
+
+
+def symlink_or_skip(test: unittest.TestCase, link: Path, target: Path) -> None:
+    """Symlink if allowed; for folders on Windows fall back to a junction (needs no privileges)."""
+    try:
+        link.symlink_to(target, target_is_directory=target.is_dir())
+        return
+    except (OSError, NotImplementedError):
+        pass
+    if target.is_dir() and sys.platform == "win32":
+        import _winapi
+        _winapi.CreateJunction(str(target), str(link))
+        return
+    test.skipTest("symlinks cannot be created on this system")
+
+
+class LoaderSymlinkTests(unittest.TestCase):
+    """A hostile repo must not be able to pull files from outside the clone into the index."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        base = Path(tmp.name)
+        self.outside = base / "outside"
+        self.outside.mkdir()
+        (self.outside / "secret.md").write_text("# Secret\nASTRA_REPO_TOKEN=ghp_leak", encoding="utf-8")
+        self.repo = base / "repo"
+        self.data = self.repo / "project-data"
+        self.data.mkdir(parents=True)
+        (self.data / "real.md").write_text("# Real\nKept.", encoding="utf-8")
+
+    def test_file_link_is_skipped_and_reported(self):
+        symlink_or_skip(self, self.data / "leak.md", self.outside / "secret.md")
+        docs, skipped = load_documents(self.repo)
+        self.assertEqual([d.path for d in docs], ["project-data/real.md"])
+        self.assertIn("symbolic link", {s.path: s.reason for s in skipped}["project-data/leak.md"])
+
+    def test_folder_link_is_not_followed(self):
+        symlink_or_skip(self, self.data / "linked", self.outside)
+        docs, skipped = load_documents(self.repo)
+        self.assertEqual([d.path for d in docs], ["project-data/real.md"])
+        self.assertEqual([s.path for s in skipped], ["project-data/linked"])
+
+    def test_project_data_itself_linked_outside_loads_nothing(self):
+        repo = self.repo.parent / "repo2"
+        repo.mkdir()
+        symlink_or_skip(self, repo / "project-data", self.outside)
+        docs, skipped = load_documents(repo)
+        self.assertEqual(docs, [])
+        self.assertEqual([s.path for s in skipped], ["project-data"])
 
 
 class MarkdownChunkerTests(unittest.TestCase):

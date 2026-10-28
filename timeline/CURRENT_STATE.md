@@ -1,6 +1,6 @@
 # Current state
 
-_Last updated: 2026-10-27 (branch `golden-repo-init`)_
+_Last updated: 2026-10-28 (branch `goldan-repo`, phase P0 of `plan/phases.md`)_
 
 ## What the app does today
 A FastAPI web app (src layout, managed by `uv`, Python >=3.14). The user enters a GitHub repo
@@ -17,7 +17,8 @@ URL and a PAT in a single-page UI. The backend:
    After a successful clone the URL + PAT are saved to the git-ignored `.env` (`services/token_store.py`);
    a blank token field in the UI reuses the saved one. Tokens are never returned by any API.
 5. Queues a **background ingestion** of `project-data/` (`services/ingestion/pipeline.py`):
-   load (md, txt, csv, docx; others reported as skipped) -> chunk (markdown by heading, CSV by
+   load (md, txt, csv, docx; others reported as skipped; symlinks, junctions and anything resolving outside
+   the clone are never followed and are reported as skipped; the clone itself uses `core.symlinks=false`) -> chunk (markdown by heading, CSV by
    row groups + summary chunk, <=~480 est. tokens) -> embed locally with fastembed (dense
    `BAAI/bge-base-en-v1.5`, sparse `Qdrant/bm25`) -> upsert to Qdrant collection
    `astra__<owner>__<name>` (recreated each time). Each chunk's payload has repo, commit_sha,
@@ -38,7 +39,7 @@ first use into `.cache/fastembed` (git-ignored).
 ## Layout
 ```
 src/astra_rag/  __init__ (app factory, main), config, routes
-  services/     github_client, validator, cloner, errors
+  services/     github_client, validator, cloner, token_store, errors
     ingestion/  loader, md_chunker, csv_chunker, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
 tests/          unittest suites + fixtures/repo (sample project-data)

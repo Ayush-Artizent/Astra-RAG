@@ -1,6 +1,7 @@
 # Changelog (newest first)
 
 ## 2026-10-28
+- **P0 done (security):** the loader now walks `project-data/` with `Path.walk` and never follows symlinks, Windows junctions or any path resolving outside the clone; it reports them as skipped instead. A golden repo could otherwise have exposed the `.env` holding PATs through search. `cloner.py` also clones with `core.symlinks=false`. Docs fixed (branch name, `token_store` in layout, TASKS W2.5 token wording). Tests: 42 (1 skipped on Windows; the file-symlink case was verified on Linux in Docker).
 - Planning: added `plan/phases.md`, the delivery phases P0-P11 (safety fixes, host-aware identity, source adapters with ADO first, registry, sync, front-matter, catalog, rule selection, `get_context`, more hosts, eval). One phase per PR; nothing built yet.
 - Planning: added `plan/golden-repo-rag-plan.md`, the end-to-end Golden Repo RAG requirements and plan (contract, rules model, inference, ADO-first source adapters, branch/sync, ingestion, retrieval). Draft for team discussion; no code changes.
 

@@ -5,6 +5,20 @@ Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGEL
 > **Next work follows [plan/phases.md](../plan/phases.md) (P0-P11), one phase per PR.** The W2 and W4 lists below are
 > folded into those phases (W2 → P7-P9, W4 → P4-P5) and are kept for history.
 
+## Phases (from plan/phases.md)
+- [x] **P0 Safety fixes and doc cleanup** - loader never follows symlinks/junctions or paths outside the clone; clone uses `core.symlinks=false`; docs fixed. (2026-10-28)
+- [ ] P1 Host-aware repo identity
+- [ ] P2 Source adapter port + GitHub adapter
+- [ ] P3 Azure DevOps adapter
+- [ ] P4 Repo registry, bindings and tracked branch
+- [ ] P5 Sync: nightly + Sync now, alias swap
+- [ ] P6 Front-matter-aware ingestion
+- [ ] P7 Golden catalog
+- [ ] P8 Rule selection and request inference
+- [ ] P9 `get_context` API, sub-queries, rerank, tools
+- [ ] P10 GitLab and Bitbucket adapters
+- [ ] P11 Evaluation set and tuning
+
 ## Done
 - [x] **W0 Connector** - URL parse, GitHub root listing, golden-structure validation, clone to `temp_storage/`.
 - [x] **W1 Ingestion pipeline** - see W1 below.
@@ -46,7 +60,7 @@ Goal: an LLM-callable tool; when invoked with a request type (BRD, SPEC, ...), i
 - [ ] W2.3 `services/tools/document_context.py` - the tool function `get_document_context(request_type)` -> `{request_type, policies, nomenclature, template}`, all fetched whole from GitHub at call time (deterministic, **not** via RAG: these are small authoritative rulebooks that must always apply in full). Unknown type returns an error listing valid types (derive valid types by listing `templates/` from GitHub). If `nomenclature.md` proves very large (>~15k tokens), split by section and return only relevant sections.
 - [ ] W2.3b Nomenclature validator (`services/tools/nomenclature.py`) - once the format of `nomenclature.md` is known (prose vs pattern table), add a check that a generated document name/ID matches its rules (e.g. regex per doc type). The LLM applies the rule; code verifies it. **Open question:** format of `nomenclature.md`.
 - [ ] W2.4 Tool schema + dispatcher (`services/tools/registry.py`): JSON schema (name, description, `request_type` enum) in Claude tool-use format, and a `run_tool(name, args)` dispatcher.
-- [ ] W2.5 Wiring - choose the surface: a `POST /api/tools/invoke` endpoint and/or an agent loop that passes the schema to the Claude API and feeds tool results back. Repo/token come from the session/request, never persisted.
+- [ ] W2.5 Wiring - choose the surface: a `POST /api/tools/invoke` endpoint and/or an agent loop that passes the schema to the Claude API and feeds tool results back. Repo comes from the request; the token comes from `token_store.get_token(repo)` (saved in the git-ignored `.env`), never from the LLM and never returned.
 - [ ] W2.6 Tests - mock the GitHub client; cover each request type, unknown type, missing template, missing policies.md or nomenclature.md, and the nomenclature validator.
 
 ## W4 - Keep the index in sync with the repo's main branch (planned, not started)

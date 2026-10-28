@@ -27,12 +27,14 @@ def clone_repo(repo: RepoRef, token: str) -> CloneResult:
 
     # The token goes in a one-off header: never in the URL or .git/config, and passed through
     # environment variables (not `-c` arguments) so it is not visible in the process list.
+    # core.symlinks=false checks links out as plain files, so a repo cannot point outside the clone.
     basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
     cmd = ["git", "clone", "--depth", "1", repo.clone_url, str(target)]
     env = {
         **os.environ, "GIT_TERMINAL_PROMPT": "0",
-        "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "http.extraheader",
-        "GIT_CONFIG_VALUE_0": f"Authorization: Basic {basic}",
+        "GIT_CONFIG_COUNT": "2",
+        "GIT_CONFIG_KEY_0": "http.extraheader", "GIT_CONFIG_VALUE_0": f"Authorization: Basic {basic}",
+        "GIT_CONFIG_KEY_1": "core.symlinks", "GIT_CONFIG_VALUE_1": "false",
     }
     try:
         subprocess.run(cmd, check=True, capture_output=True, timeout=GIT_TIMEOUT_SECONDS, env=env)

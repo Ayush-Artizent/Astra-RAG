@@ -2,6 +2,7 @@ import unittest
 
 from astra_rag.config import SUPPORTED_HOST_KINDS
 from astra_rag.services.sources import PatCredential, adapter_for, parse_repo_url
+from astra_rag.services.sources.azure_devops import AzureDevOpsAdapter
 from astra_rag.services.sources.github import GitHubAdapter
 from astra_rag.services.sources.registry import ADAPTERS
 
@@ -16,6 +17,10 @@ class RegistryTests(unittest.TestCase):
             adapter = adapter_for(parse_repo_url(url), PatCredential("t"))
             self.assertIsInstance(adapter, GitHubAdapter)
             self.assertEqual(adapter.ref, parse_repo_url(url))
+
+    def test_azure_devops_uses_its_own_adapter(self):
+        ref = parse_repo_url("https://dev.azure.com/acme/proj/_git/golden")
+        self.assertIsInstance(adapter_for(ref, PatCredential("t")), AzureDevOpsAdapter)
 
 
 if __name__ == "__main__":

@@ -15,11 +15,11 @@
       at its root.</p>
 
     <form id="form" autocomplete="off">
-      <label>GitHub repository URL
-        <input id="url" type="url" placeholder="https://github.com/owner/repo" required>
+      <label>Repository URL (GitHub or Azure DevOps)
+        <input id="url" type="url" placeholder="https://github.com/owner/repo or https://dev.azure.com/org/project/_git/repo" required>
       </label>
       <label>Personal access token (PAT)
-        <input id="token" type="password" placeholder="ghp_… or github_pat_… (blank = use the saved token)"
+        <input id="token" type="password" placeholder="Your PAT, read access to the repo (blank = use the saved token)"
                autocomplete="new-password">
       </label>
       <p class="hint">After a successful connect the token is saved locally in <code>.env</code> for this URL and never shown again.</p>

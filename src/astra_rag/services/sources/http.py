@@ -1,11 +1,10 @@
 """Shared GET helpers for host REST APIs, so every adapter maps failures the same way."""
-import json
 import urllib.error
 import urllib.request
 
 from ...config import HTTP_TIMEOUT_SECONDS
-from ..errors import AppError
 from .errors import map_http_error, unreachable
+from .json_reply import parse_json
 
 
 def get_bytes(url: str, headers: dict[str, str], host_label: str, not_found: str | None = None) -> bytes:
@@ -20,8 +19,4 @@ def get_bytes(url: str, headers: dict[str, str], host_label: str, not_found: str
 
 
 def get_json(url: str, headers: dict[str, str], host_label: str, not_found: str | None = None):
-    body = get_bytes(url, headers, host_label, not_found)
-    try:
-        return json.loads(body)
-    except ValueError:
-        raise AppError(f"{host_label} returned a response that could not be read.", 502) from None
+    return parse_json(get_bytes(url, headers, host_label, not_found), host_label)

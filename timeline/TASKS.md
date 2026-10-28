@@ -9,7 +9,7 @@ Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGEL
 - [x] **P0 Safety fixes and doc cleanup** - loader never follows symlinks/junctions or paths outside the clone; clone uses `core.symlinks=false`; docs fixed. (2026-10-28)
 - [x] **P1 Host-aware repo identity** - `services/repo_ref.py` (`RepoRef` + host-aware `slug`); slug keys token store, clone folder, Qdrant collection and status; legacy `.env` keys migrated; non-GitHub hosts rejected as not supported yet; status/search routes take the slug. (2026-10-28)
 - [x] **P2 Source adapter port + GitHub adapter** - `services/sources/` (`SourceAdapter` port, `PatCredential`, registry, GitHub adapter, shared git/http/error helpers) with a reusable contract test suite; routes, validator, cloner and chunker go through the adapter; `github_client.py` removed. No behaviour change. (2026-10-28)
-- [ ] P3 Azure DevOps adapter
+- [x] **P3 Azure DevOps adapter** - `services/sources/azure_devops.py` (URL forms, REST 7.1, Basic auth, citation links, 203 sign-in page -> 401) passes the contract suite; registered in `registry.ADAPTERS` and `config.SUPPORTED_HOST_KINDS`. Open: real-repo check (line-highlight links, case behaviour). (2026-10-28)
 - [ ] P4 Repo registry, bindings and tracked branch
 - [ ] P5 Sync: nightly + Sync now, alias swap
 - [~] **P6 Structure- and metadata-aware ingestion** - done 2026-10-28: per-section markdown chunks, per-row CSV chunks (`row_key`), header metadata (`doc_type`, `doc_date`, `doc_meta`), open-item flags, no recency preference, horizontal rules (`---`) omitted. Todo: YAML front-matter (`fm.*`, stripped from text, bad-YAML warning).

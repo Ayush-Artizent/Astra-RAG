@@ -43,9 +43,7 @@ class UrlTests(unittest.TestCase):
         self.assertNotEqual(collection_name(public.slug), collection_name(enterprise.slug))
 
     def test_other_hosts_are_not_supported_yet(self):
-        for url, label in (("https://dev.azure.com/org/proj/_git/repo", "Azure DevOps"),
-                           ("https://org.visualstudio.com/proj/_git/repo", "Azure DevOps"),
-                           ("https://gitlab.com/group/sub/repo", "GitLab"),
+        for url, label in (("https://gitlab.com/group/sub/repo", "GitLab"),
                            ("https://bitbucket.org/team/repo", "Bitbucket")):
             with self.assertRaises(AppError) as ctx:
                 parse_repo_url(url)

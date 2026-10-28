@@ -1,6 +1,6 @@
 # Astra RAG – Repository Connector
 
-Simple web UI: enter a GitHub repo URL and a PAT. The app checks the repo root for
+Simple web UI: enter a GitHub or Azure DevOps repo URL and a PAT. The app checks the repo root for
 `policies.md`, `nomenclature.md`, `project-data/` and `templates/`. If **all** exist it
 clones the repo into `temp_storage/` and ingests `project-data/` into Qdrant (chunks + local embeddings, with
 source metadata); otherwise it lists exactly what is missing.
@@ -36,7 +36,7 @@ src/astra_rag/
   routes.py                  page + POST /api/validate-and-clone
   services/
     repo_ref.py              host-aware RepoRef + slug
-    sources/                 one adapter per Git host behind a SourceAdapter port (github.py), PatCredential, registry
+    sources/                 one adapter per Git host behind a SourceAdapter port (github.py, azure_devops.py), PatCredential, registry
     validator.py             required-structure check
     cloner.py                git clone into temp_storage/ (returns path, commit SHA, branch)
     ingestion/               loader, chunkers (md per section, csv per row), doc_meta (header metadata), embedder (fastembed), store (Qdrant), pipeline

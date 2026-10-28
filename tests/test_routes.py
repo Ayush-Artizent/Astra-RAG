@@ -67,19 +67,31 @@ class RouteTests(unittest.TestCase):
             res = self.client.post("/api/validate-and-clone", json={**self.body, "token": " "})
         self.assertEqual(res.status_code, 400)
 
-    def test_failed_clone_does_not_save_the_token(self):
+    def test_token_is_saved_once_the_host_accepts_it_even_if_the_clone_fails(self):
         with mock.patch("astra_rag.routes.adapter_for", return_value=fake_adapter(FULL_ROOT)), \
                 mock.patch("astra_rag.routes.cloner.clone_repo", side_effect=AppError("boom", 502)), \
                 mock.patch("astra_rag.routes.token_store.save") as save:
             res = self.client.post("/api/validate-and-clone", json=self.body)
         self.assertEqual(res.status_code, 502)
+        save.assert_called_once()
+
+    def test_rejected_token_is_not_saved(self):
+        adapter = fake_adapter(FULL_ROOT)
+        adapter.list_dir.side_effect = AppError("rejected the token", 401)
+        with mock.patch("astra_rag.routes.adapter_for", return_value=adapter), \
+                mock.patch("astra_rag.routes.token_store.save") as save:
+            res = self.client.post("/api/validate-and-clone", json=self.body)
+        self.assertEqual(res.status_code, 401)
         save.assert_not_called()
 
-    def test_missing_structure_does_not_start_ingestion(self):
+    def test_missing_structure_saves_the_token_but_does_not_start_ingestion(self):
         with mock.patch("astra_rag.routes.adapter_for", return_value=fake_adapter(FULL_ROOT[:2])), \
+                mock.patch("astra_rag.routes.token_store.save") as save, \
                 mock.patch("astra_rag.routes.pipeline.mark_queued") as queued:
             res = self.client.post("/api/validate-and-clone", json=self.body)
         self.assertEqual(res.status_code, 422)
+        self.assertTrue(res.json()["token_saved"])
+        save.assert_called_once()
         queued.assert_not_called()
 
     def test_status_404_when_unknown(self):

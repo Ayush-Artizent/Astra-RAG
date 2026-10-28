@@ -47,17 +47,18 @@ def validate_and_clone(body: RepoRequest, background: BackgroundTasks):
         raise AppError("A personal access token is required (none is saved for this repository).")
 
     adapter = adapter_for(repo, PatCredential(token))
-    missing = validator.find_missing(adapter.list_dir(""))
+    entries = adapter.list_dir("")
+    if typed:  # the host accepted the token, so remember it even if the repo turns out not to qualify
+        token_store.save(repo, body.url, typed)
+    missing = validator.find_missing(entries)
     if missing:
         return JSONResponse(
-            {"ok": False, "missing": missing,
+            {"ok": False, "missing": missing, "token_saved": bool(typed),
              "error": "Repository is missing required items: " + ", ".join(missing)},
             status_code=422,
         )
 
     clone = cloner.clone_repo(adapter)
-    if typed:  # only a token that just worked is remembered
-        token_store.save(repo, body.url, typed)
     context = RepoContext(repo, clone.branch, clone.commit_sha)
     pipeline.mark_queued(context)
     background.add_task(pipeline.run_ingestion, context, Path(clone.path))

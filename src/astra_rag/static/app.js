@@ -60,8 +60,10 @@ form.addEventListener("submit", async (e) => {
       const note = data.token_saved ? " Token saved for this repository." : data.token_reused ? " Used the saved token." : "";
       show("ok", `${data.message} → ${data.path}.${note}`);
       await pollIngestion(data.ingestion);
-    } else if (data.missing) show("error", "Missing required items:", data.missing);
-    else show("error", data.error);
+    } else if (data.missing) {
+      if (data.token_saved) form.token.value = "";  // the server has it now; leave the field blank to reuse it
+      show("error", "Missing required items:" + (data.token_saved ? " (token saved for this repository)" : ""), data.missing);
+    } else show("error", data.error);
   } catch {
     show("error", "Could not reach the server.");
   } finally {

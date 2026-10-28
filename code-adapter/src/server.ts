@@ -15,6 +15,7 @@ import { ProjectRegistry } from './projects.js';
 import { type AmbiguousPolicy, runCodeQuery } from './query.js';
 import { snapshotOf, type CodeQueryResponse } from './shape.js';
 import { buildStatus, type CodeStatus } from './status.js';
+import { querySchema, type SchemaResponse } from './schema.js';
 import { validateCodeQuery } from './validate.js';
 import { walProbe } from './wal-probe.js';
 
@@ -159,6 +160,33 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
         isSyncing(jobs, env),
         { binding: jobs.store.getProject(env.org_id, env.project_id) },
       );
+    } finally {
+      lease.release();
+    }
+  });
+
+  app.get('/internal/v1/code/schema', async (req): Promise<SchemaResponse> => {
+    const env = req.envelope as Envelope;
+    requireScope(env, 'query');
+    const lease = await registry.acquire(env.org_id, env.project_id);
+    try {
+      const p = lease.project;
+      if (!p.ready) {
+        throw new ProblemError(
+          409,
+          'project_unknown',
+          'Conflict',
+          'Project is not yet bootstrapped or is being rebuilt'
+        );
+      }
+      touch(env.org_id, env.project_id);
+      const query = req.query as Record<string, unknown>;
+      return querySchema(p.cg as unknown as GraphApi, {
+        offset: query.offset,
+        limit: query.limit,
+        kind: query.kind as string | undefined,
+        language: query.language as string | undefined,
+      });
     } finally {
       lease.release();
     }

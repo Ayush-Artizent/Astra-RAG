@@ -101,6 +101,13 @@ class AdapterContract:
             self.make_adapter().list_dir("")
         self.assertEqual(ctx.exception.status, 502)
 
+    def test_web_url_is_canonical_https_without_credentials(self):
+        url = self.make_adapter().web_url
+        self.assertTrue(url.startswith("https://"))
+        self.assertNotIn("@", url)
+        self.assertNotIn("?", url)
+        self.assertNotIn(TOKEN, url)
+
     def test_verify_webhook_is_reserved(self):
         with self.assertRaises(AppError) as ctx:
             self.make_adapter().verify_webhook({}, b"")
@@ -120,6 +127,9 @@ class AdapterContract:
                     self.assertEqual(result.branch, expected_branch)
                     self.assertEqual(result.commit_sha, _git(bare, "rev-parse", expected_branch))
                     self.assertTrue((dest / "policies.md").is_file())
+                    if branch:  # --single-branch: only the tracked branch is fetched
+                        self.assertEqual(_git(dest, "branch", "-r", "--format=%(refname:short)").split(),
+                                         [f"origin/{branch}"])
                     argv = " ".join(run.call_args_list[0].args[0])
                     self.assertNotIn(TOKEN, argv)
                     self.assertNotIn(TOKEN, (dest / ".git" / "config").read_text())

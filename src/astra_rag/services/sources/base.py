@@ -39,6 +39,11 @@ class SourceAdapter(ABC):
     def parse_url(cls, parts: ParseResult, kind: str) -> RepoRef:
         """Turn an already scheme- and host-checked URL into a RepoRef, or raise AppError."""
 
+    @property
+    @abstractmethod
+    def web_url(self) -> str:
+        """Canonical browser URL of the repo, built from the RepoRef (never what the user typed)."""
+
     @abstractmethod
     def list_dir(self, path: str = "", ref: str | None = None) -> list[DirEntry]:
         """Entries of a folder; "" is the repo root. `ref` is a branch or commit (None = default branch)."""

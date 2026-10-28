@@ -41,5 +41,5 @@ Pure refactors with no visible change still get a CHANGELOG line.
 - The policies/template tool reads from GitHub directly, not from the local clone.
 
 ## Git
-- Work on a feature branch (currently `goldan-repo`; delivery follows `plan/phases.md`, one phase per PR); `main` is the PR target.
+- Work on a feature branch (currently `goldan-repo-re-guru`; delivery follows `plan/phases.md`, one phase per PR); `main` is the PR target.
 - Small, focused commits. Only commit/push when the user asks.

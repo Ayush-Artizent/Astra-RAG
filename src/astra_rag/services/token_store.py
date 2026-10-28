@@ -103,6 +103,11 @@ def save(repo: RepoRef, url: str, token: str, path: Path | None = None) -> None:
         _write(path, values)
 
 
+def credential_ref(repo: RepoRef) -> str:
+    """Where this repo's token is kept (the registry stores this, never the token)."""
+    return f"env:{_key(repo)}_TOKEN"
+
+
 def get_token(repo: RepoRef, path: Path | None = None) -> str | None:
     """Return the saved token for this repo, or None."""
     with _lock:

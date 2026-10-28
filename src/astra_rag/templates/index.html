@@ -22,12 +22,24 @@
         <input id="token" type="password" placeholder="Your PAT, read access to the repo (blank = use the saved token)"
                autocomplete="new-password">
       </label>
+      <label>Branch to track
+        <input id="branch" type="text" placeholder="blank = current tracked branch, or the repo's default"
+               spellcheck="false">
+      </label>
       <p class="hint">After a successful connect the token is saved locally in <code>.env</code> for this URL and never shown again.</p>
       <button id="submit" type="submit">Check &amp; clone</button>
     </form>
 
     <div id="result" role="status" hidden></div>
     <div id="ingestion" role="status" hidden></div>
+
+    <section id="repos" hidden>
+      <h2>Connected repositories</h2>
+      <table>
+        <thead><tr><th>Repository</th><th>Branch</th><th>Indexed</th><th>State</th></tr></thead>
+        <tbody id="repo-rows"></tbody>
+      </table>
+    </section>
   </main>
   <script src="/static/app.js"></script>
 </body>

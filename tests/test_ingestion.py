@@ -18,7 +18,9 @@ from astra_rag.services.ingestion.md_chunker import chunk_markdown
 from astra_rag.services.ingestion.models import Document, RepoContext
 from astra_rag.services.ingestion.store import QdrantStore, collection_name, point_id
 from astra_rag.services.ingestion.tokens import count_tokens
+from astra_rag.services.registry import repos, runs
 from astra_rag.services.sources.registry import parse_repo_url
+from tests.helpers import use_temp_registry
 
 REPO = RepoContext(parse_repo_url("https://github.com/acme/golden"), "main", "abc123def456")
 SLUG = "github.com__acme__golden"
@@ -349,13 +351,16 @@ class HorizontalRuleTests(unittest.TestCase):
 
 class PipelineTests(unittest.TestCase):
     def setUp(self):
+        use_temp_registry(self)
         self.store = QdrantStore(QdrantClient(":memory:"))
         self.embedder = FakeEmbedder()
 
-    def run_pipeline(self, repo_dir=FIXTURE_REPO):
-        pipeline.mark_queued(REPO)
-        pipeline.run_ingestion(REPO, repo_dir, self.embedder, self.store)
-        return pipeline.get_status(SLUG)
+    def run_pipeline(self, repo_dir=FIXTURE_REPO, embedder=None, store=None):
+        run_id = runs.queue_run(REPO.ref, "https://github.com/acme/golden", REPO.branch, "env:X",
+                                collection_name(SLUG))
+        runs.update_run(run_id, commit_sha=REPO.commit_sha)
+        pipeline.run_ingestion(run_id, REPO, repo_dir, embedder or self.embedder, store or self.store)
+        return runs.latest_run(SLUG)
 
     def test_end_to_end_ingest_and_hybrid_search(self):
         status = self.run_pipeline()
@@ -396,11 +401,31 @@ class PipelineTests(unittest.TestCase):
             def ping(self):
                 raise AppError("Could not reach Qdrant.", 503)
 
-        pipeline.mark_queued(REPO)
-        pipeline.run_ingestion(REPO, FIXTURE_REPO, self.embedder, Down(QdrantClient(":memory:")))
-        status = pipeline.get_status(SLUG)
+        status = self.run_pipeline(store=Down(QdrantClient(":memory:")))
         self.assertEqual(status["state"], "failed")
         self.assertIn("Qdrant", status["error"])
+        self.assertEqual(repos.get_repo(SLUG)["index_state"], "none")
+
+    def test_failure_mid_rebuild_keeps_the_last_good_build_and_flags_the_index(self):
+        good = self.run_pipeline()
+
+        class Broken(FakeEmbedder):
+            def embed_passages(self, texts):
+                raise RuntimeError("model crashed")
+
+        status = self.run_pipeline(embedder=Broken())
+        self.assertEqual(status["state"], "failed")
+        self.assertEqual(status["error"], "Unexpected error during ingestion (RuntimeError).")
+        self.assertEqual(status["chunks_total"], good["chunks_total"])  # progress up to the failure is kept
+        repo = repos.get_repo(SLUG)
+        self.assertEqual(repo["indexed"]["run_id"], good["run_id"])
+        self.assertEqual((repo["index_state"], repo["needs_rebuild"]), ("incomplete", True))
+
+    def test_done_run_records_the_indexed_commit(self):
+        status = self.run_pipeline()
+        repo = repos.get_repo(SLUG)
+        self.assertEqual((repo["index_state"], repo["indexed"]["commit_sha"]), ("ready", REPO.commit_sha))
+        self.assertEqual(status["started_at"] <= status["finished_at"], True)
 
     def test_search_without_index_or_query_errors(self):
         with self.assertRaises(AppError):

@@ -1,14 +1,23 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import PACKAGE_DIR, STATIC_DIR
 from .routes import router
+from .services import registry
 from .services.errors import AppError
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    registry.startup()  # refuses to start on a database newer than this code
+    yield
+
+
 def create_app() -> FastAPI:
-    app = FastAPI(title="Astra RAG – Repository Connector")
+    app = FastAPI(title="Astra RAG – Repository Connector", lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.include_router(router)
 

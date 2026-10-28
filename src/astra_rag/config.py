@@ -18,6 +18,13 @@ SUPPORTED_HOST_KINDS = ("github", "ghe", "azure_devops")
 GIT_TIMEOUT_SECONDS = 300
 HTTP_TIMEOUT_SECONDS = 20
 
+# --- Registry (repos, project bindings, ingestion runs) ------------------
+DB_PATH = Path(os.environ.get("ASTRA_DB_PATH") or BASE_DIR / "data" / "astra.db")  # git-ignored
+DB_BUSY_TIMEOUT_SECONDS = 5
+# A strict subset of git's ref-name rules; it also stops a name from being read as a git option.
+BRANCH_NAME_PATTERN = r"(?![-/.])(?!.*(?:\.\.|//|/\.))(?!.*(?:/|\.|\.lock)$)[A-Za-z0-9._/-]{1,200}"
+PROJECT_ID_PATTERN = r"[A-Za-z0-9._-]{1,64}"
+
 # --- RAG ingestion -------------------------------------------------------
 PROJECT_DATA_DIR_NAME = "project-data"
 CACHE_DIR = BASE_DIR / ".cache"

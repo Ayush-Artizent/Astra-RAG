@@ -1,7 +1,7 @@
 [project]
 name = "astra-rag"
 version = "0.1.0"
-description = "Connect a GitHub repo, validate its structure, and clone it for RAG"
+description = "Connect a GitHub or Azure DevOps golden repo, validate its structure, and clone and index it for RAG"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

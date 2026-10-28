@@ -28,6 +28,10 @@ class GitHubAdapter(SourceAdapter):
         return RepoRef(host_kind=kind, host=parts.hostname.lower(), path_parts=(segments[0],), name=name)
 
     @property
+    def web_url(self) -> str:
+        return f"https://{self.ref.host}/{self.ref.full_name}"
+
+    @property
     def clone_url(self) -> str:
         return f"https://{self.ref.host}/{self.ref.full_name}.git"
 

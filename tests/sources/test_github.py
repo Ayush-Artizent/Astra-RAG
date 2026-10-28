@@ -49,6 +49,14 @@ class GitHubSpecificTests(unittest.TestCase):
         self.assertEqual(enterprise.api_base, "https://git.acme.com/api/v3")
         self.assertEqual(enterprise.clone_url, "https://git.acme.com/acme/golden.git")
 
+    def test_web_url_drops_credentials_query_fragment_and_dot_git(self):
+        for typed in ("https://someone:hunter2@github.com/acme/golden.git?tab=readme#top",
+                      "https://ghp_abc@github.com/acme/golden/tree/main"):
+            with self.subTest(url=typed):
+                self.assertEqual(adapter_for(parse_repo_url(typed)).web_url, "https://github.com/acme/golden")
+        self.assertEqual(adapter_for(parse_repo_url("https://u:p@ghe.corp.example/acme/golden")).web_url,
+                         "https://ghe.corp.example/acme/golden")
+
     def test_root_listing_matches_the_original_request(self):
         self.http.add("/contents/", "[]")
         self.adapter.list_dir("")

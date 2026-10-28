@@ -54,6 +54,13 @@ class UrlParsingTests(unittest.TestCase):
                                  ("azure_devops", "dev.azure.com", ("acme", "proj"), "golden"))
                 self.assertEqual(ref.slug, "dev.azure.com__acme__proj__golden")
 
+    def test_web_url_drops_credentials_query_and_fragment(self):
+        for typed in ("https://org@dev.azure.com/org/proj/_git/golden?path=/policies.md&version=GBmain#x",
+                      "https://user:hunter2@org.visualstudio.com/DefaultCollection/proj/_git/golden?a=b"):
+            with self.subTest(url=typed):
+                self.assertEqual(adapter_for(parse_repo_url(typed)).web_url,
+                                 "https://dev.azure.com/org/proj/_git/golden")
+
     def test_shorthand_uses_the_repo_name_as_the_project(self):
         for url in ("https://dev.azure.com/acme/_git/golden", "https://acme.visualstudio.com/_git/golden"):
             ref = parse_repo_url(url)

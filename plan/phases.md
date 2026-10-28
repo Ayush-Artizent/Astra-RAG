@@ -186,6 +186,17 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
 **Acceptance**
 - Restart the app and the repo list and last status are still there. Change the branch and the next ingest uses it.
 
+**Learned in P4 (feeds P5)**
+- `repos` keeps the configured branch (`tracked_branch` + `config_version`) apart from the last good build
+  (`indexed_run_id/branch/commit_sha/collection/config_version/at`). Only a `done` run newer than the indexed one writes
+  `indexed_*`; `needs_rebuild` is derived from `config_version`, not a stored flag. P5's `sync_repo` should use the same
+  rule (write `indexed_*` when the alias swaps) and treat `needs_rebuild` as "rebuild even if `head_sha` is unchanged".
+- P4 refuses a second connect for a repo with an active run (409, checked and queued in one `BEGIN IMMEDIATE`
+  transaction). P5's per-repo lock with a coalesced follow-up run replaces this guard.
+- Runs carry `index_replaced`, and `index_state` reports `incomplete` when a failed run had already dropped the
+  collection. The alias swap should make that state impossible; keep the field for runs from before P5.
+- The connect flow now lives in `services/connections.py`; Sync now should reuse its branch and token handling.
+
 ---
 
 ## P5: Sync: nightly and Sync now, with alias swap
@@ -418,7 +429,7 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 | Question | Needed by |
 |---|---|
 | Case-sensitivity of ADO paths for the required root items | P3 |
-| Where the SQLite file lives in deployment, and whether it should be Postgres instead | P4 |
+| Where the SQLite file lives in deployment, and whether it should be Postgres instead | P4: **settled for now**: SQLite at `data/astra.db`, `ASTRA_DB_PATH` override, single app instance; Postgres later (expect transaction, locking and migration work, not only config) |
 | Nightly sync time and time zone | P5 |
 | Real template doc types and filenames, and who owns `golden.yaml` | P7 |
 | ASTRA stage names (the `stages` vocabulary) | P8 |

@@ -47,13 +47,13 @@ class AzureDevOpsAdapter(SourceAdapter):
         return RepoRef(host_kind=kind, host=_CANONICAL_HOST, path_parts=tuple(scope), name=repo)
 
     @property
-    def _web_url(self) -> str:
+    def web_url(self) -> str:
         org, project = self.ref.path_parts
         return f"https://{self.ref.host}/{quote(org)}/{quote(project)}/_git/{quote(self.ref.name)}"
 
     @property
     def clone_url(self) -> str:
-        return self._web_url
+        return self.web_url
 
     def _repo_url(self, suffix: str = "") -> str:
         org, project = self.ref.path_parts
@@ -128,7 +128,7 @@ class AzureDevOpsAdapter(SourceAdapter):
 
     def citation_url(self, path: str, ref: str, lines: tuple[int, int] | None = None) -> str:
         version = ("GC" if _COMMIT_SHA.fullmatch(ref) else "GB") + ref
-        url = f"{self._web_url}?path=/{quote(path.strip('/'))}&version={quote(version)}"
+        url = f"{self.web_url}?path=/{quote(path.strip('/'))}&version={quote(version)}"
         if lines:  # ADO's end position is exclusive: column 1 of the line after the range
             url += f"&line={lines[0]}&lineEnd={lines[1] + 1}&lineStartColumn=1&lineEndColumn=1"
         return url

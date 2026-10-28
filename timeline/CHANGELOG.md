@@ -1,5 +1,8 @@
 # Changelog (newest first)
 
+## 2026-10-28
+- Planning: added `plan/golden-repo-rag-plan.md`, the end-to-end Golden Repo RAG requirements and plan (contract, rules model, inference, ADO-first source adapters, branch/sync, ingestion, retrieval). Draft for team discussion; no code changes.
+
 ## 2026-10-27
 - Planning: added W4 (keep the index in sync with the repo's main branch) to `TASKS.md`; design agreed, no code written.
 - **PAT + URL now remembered in `.env`** (git-ignored): `services/token_store.py` writes `ASTRA_REPO_<OWNER>__<NAME>_URL/_TOKEN` after a connect that cloned successfully; a blank token field reuses the saved one; the token is cleared from the page and never returned by any API. `cloner.py` now passes the token to git through `GIT_CONFIG_*` env vars instead of `-c` args (no longer visible in the process list; verified against a local HTTP server). `CLAUDE.md` security rule updated accordingly. Tests: 38 passing.

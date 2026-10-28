@@ -23,7 +23,7 @@ URL and a PAT in a single-page UI. The backend:
    before P1 (`ASTRA_REPO_<OWNER>__<NAME>_*`) are moved to the host-aware key the first time that repo is used.
 5. Queues a **background ingestion** of `project-data/` (`services/ingestion/pipeline.py`):
    load (md, txt, csv, docx; others reported as skipped; symlinks, junctions and anything resolving outside
-   the clone are never followed and are reported as skipped; the clone itself uses `core.symlinks=false`) -> chunk (markdown: **one chunk per heading section** with its own heading path, oversize sections split, tables/code fences kept whole;
+   the clone are never followed and are reported as skipped; the clone itself uses `core.symlinks=false`) -> chunk (markdown: **one chunk per heading section** with its own heading path, oversize sections split, tables/code fences kept whole, horizontal-rule lines `---` / `***` / `___` omitted from the text (decoration only, never a chunk boundary; table separator rows, code fences and setext underlines untouched);
    CSV: **one chunk per row** + a small summary chunk; <=~480 est. tokens) -> embed locally with fastembed (dense
    `BAAI/bge-base-en-v1.5`, sparse `Qdrant/bm25`) -> upsert to Qdrant collection
    `astra__<slug>` (recreated each time). Each chunk's payload has repo, repo_slug, host, commit_sha,

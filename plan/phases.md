@@ -232,31 +232,33 @@ header lines were plain body text, and CSV rows were grouped. Can start any time
 - **No recency or authority preference.** Date and doc type are information for the LLM only. Retrieval stays plain hybrid
   RRF and returns every match; when sources disagree (e.g. COD limit 10,000 vs 7,500) the LLM sees each source's date, type
   and `source_url` and decides. No date filter, sort or boost is added.
+- **Horizontal rules are omitted (decided 2026-10-28).** A line of only `---`, `***` or `___` is decoration (common in
+  AI-generated Markdown). It is dropped from the chunk text **and** the embedded text. It is **not** a chunk boundary: chunks
+  are still cut only by headings and size, so a rule between two paragraphs of one section just disappears and the section
+  stays one chunk. A section left with only a heading or rules makes no chunk. Line numbers still count the original file, so
+  permalinks stay right. Left untouched because they are not decoration:
+  - table separator rows (`|---|---|`);
+  - `---` inside code fences;
+  - a setext heading underline (`Title` directly over `---`).
 
-**Done (2026-10-28):** the four decisions above (`md_chunker`, `csv_chunker`, new `doc_meta.py`, `chunker` payload; tests).
+**Done (2026-10-28):** the five decisions above (`md_chunker`, `csv_chunker`, new `doc_meta.py`, `chunker` payload; tests).
 Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size threshold if a very large CSV shows up.
 
-**Still to do (YAML front-matter)**
-- Add `pyyaml` with `uv add pyyaml`.
-- `md_chunker` / `loader`:
-  - detect a leading `---` block;
-  - parse it safely (`yaml.safe_load`);
-  - strip it from the text and line-number calculations, keeping line numbers correct.
-- Copy scalar and list fields into the payload under `fm.<key>`, and index common keys (`fm.type`, `fm.status`, `fm.tags`).
-  Front-matter `date` / `type` should fill `doc_date` / `doc_type` when present (they beat the folder / header guess).
-- Bad YAML: index the file without front-matter and add a warning.
+
 
 **Out of scope:** front-matter filters in the search API (P9 or later); any ranking by date or doc type.
 
 **Tests**
 - Done: section paths, heading-only sections, oversize sections, per-row CSV, header metadata (email, meeting, italic owner
-  line, filename date), open items, plain prose with a colon is not metadata.
+  line, filename date), open items, plain prose with a colon is not metadata; rules omitted without splitting a chunk, line
+  numbers unchanged, rule-only section makes no chunk, table separators / code fences / setext underlines untouched.
 - Todo: front-matter is stripped; fields appear in the payload; line numbers still match the original file; bad YAML warns
   and ingestion continues.
 
 **Acceptance**
 - Done: ingest the example repos. `Not in scope` items no longer sit under `Scope`; emails and meeting notes show `doc_type`,
-  `doc_date` and `doc_meta`; `RSK-001` is its own chunk with `row_key`.
+  `doc_date` and `doc_meta`; `RSK-001` is its own chunk with `row_key`; no chunk or embedded text contains a bare
+  `---` / `***` / `___` line, while table separator rows are intact.
 - Todo: ingest a repo with front-matter files. Chunks show `fm.*` fields, and no chunk text starts with `---`.
 
 ---

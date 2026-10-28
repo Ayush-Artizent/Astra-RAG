@@ -98,6 +98,9 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
    - Strip front-matter from the chunk text. This is a current `md_chunker` gap: the `---` block is treated as body text.
    - Chunk **per heading section** (own heading path), **per CSV row** (`row_key`), parse header lines (email From/Date/Subject,
      meeting Date/Attendees, `_Owner · date_`) into `doc_type` / `doc_date` / `doc_meta`, and flag open items. Done in P6 (2026-10-28).
+   - Omit horizontal-rule lines (`---`, `***`, `___`) from chunk and embedded text. They are decoration, not content, and not a
+     chunk boundary (chunks still split only on headings and size). Table separator rows, code fences and setext underlines
+     are left alone. Done in P6 (2026-10-28).
    - **No recency or authority preference:** date and doc type are information for the LLM, never a ranking, filter or boost.
    - Keep md/txt/csv/docx. PDF, xlsx, pptx and OCR come later, on demand.
 2. Size: **under 100 files per repo.** The first-build sync is:

@@ -8,6 +8,11 @@ from .tokens import count_tokens
 
 _HEADING = re.compile(r"^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
 _FENCE = re.compile(r"^\s*(```|~~~)")
+_RULE = re.compile(r"^\s{0,3}([-*_])(?:\s*\1){2,}\s*$")  # horizontal rule: --- *** ___
+
+
+def _is_rule(line: str) -> bool:
+    return _RULE.match(line) is not None
 
 
 @dataclass
@@ -85,6 +90,9 @@ def _parse_blocks(text: str) -> list[_Block]:
             blocks.append(_Block("\n".join(lines[i:end + 1]), "code", i + 1, end + 1, path()))
             i = end + 1
             continue
+        if _is_rule(line):  # decoration, not content: omitted (line numbers still count it)
+            i += 1
+            continue
         m = _HEADING.match(line)
         if m:
             level = len(m.group(1))
@@ -96,7 +104,9 @@ def _parse_blocks(text: str) -> list[_Block]:
             continue
         is_table = line.lstrip().startswith("|")
         j = i
+        # a `---` straight under a text line is a setext underline and stays; `***` / `___` end the run
         while (j < n and lines[j].strip() and not _FENCE.match(lines[j]) and not _HEADING.match(lines[j])
+               and not (_is_rule(lines[j]) and lines[j].strip()[0] != "-")
                and lines[j].lstrip().startswith("|") == is_table):
             j += 1
         blocks.append(_Block("\n".join(lines[i:j]), "table" if is_table else "text", i + 1, j, path()))

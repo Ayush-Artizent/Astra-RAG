@@ -315,6 +315,38 @@ class DocMetadataTests(unittest.TestCase):
         self.assertEqual(p["doc_meta"], {})
 
 
+class HorizontalRuleTests(unittest.TestCase):
+    def test_rules_are_omitted_and_do_not_split_a_chunk(self):
+        text = "# T\n\n## One\n\nfirst para\n\n---\n\nsecond para\n\n***\n\n___\n\n## Two\n\nbeta\n\n---\n"
+        chunks = chunk_markdown(text)
+        self.assertEqual([c.heading_path for c in chunks], [("T", "One"), ("T", "Two")])
+        self.assertEqual(chunks[0].text, "## One\n\nfirst para\n\nsecond para")
+        self.assertEqual(chunks[1].text, "## Two\n\nbeta")
+
+    def test_line_numbers_still_count_the_omitted_rule(self):
+        chunks = chunk_markdown("# T\n\n## One\n\nalpha\n\n---\n\nbeta\n")
+        self.assertEqual((chunks[0].start, chunks[0].end), (3, 9))
+
+    def test_section_with_only_a_rule_makes_no_chunk(self):
+        chunks = chunk_markdown("# T\n\n## Empty\n\n---\n\n## Full\n\nx\n")
+        self.assertEqual([c.heading_path for c in chunks], [("T", "Full")])
+
+    def test_table_separator_code_fence_and_setext_underline_are_untouched(self):
+        self.assertIn("|---|---|", chunk_markdown("# T\n\n| a | b |\n|---|---|\n| 1 | 2 |\n")[0].text)
+        self.assertIn("```md\n---\n```", chunk_markdown("# T\n\n```md\n---\n```\n")[0].text)
+        self.assertIn("Title\n---", chunk_markdown("Title\n---\n\nbody\n")[0].text)
+
+    def test_rule_directly_after_a_table_is_omitted_and_the_table_stays_whole(self):
+        chunks = chunk_markdown("# T\n\n| a | b |\n|---|---|\n| 1 | 2 |\n---\nafter\n")
+        self.assertEqual(chunks[0].text, "# T\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nafter")
+
+    def test_rule_is_not_in_text_or_embedded_text(self):
+        doc = Document("project-data/x/n.md", "md", "h", "# T\n\n## One\n\na\n\n---\n\nb\n")
+        chunks, _ = chunk_document(doc, REPO)
+        self.assertNotIn("---", chunks[0].text)
+        self.assertNotIn("---", chunks[0].embed_text)
+
+
 class PipelineTests(unittest.TestCase):
     def setUp(self):
         self.store = QdrantStore(QdrantClient(":memory:"))

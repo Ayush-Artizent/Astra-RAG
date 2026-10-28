@@ -25,8 +25,8 @@ def chunk_document(doc: Document, repo: RepoContext) -> tuple[list[Chunk], list[
     parts = list(path.parent.parts)
     folders_below_root = [p for p in parts if p != PROJECT_DATA_DIR_NAME]
     base = {
-        "repo": f"{repo.owner}/{repo.name}", "owner": repo.owner, "branch": repo.branch,
-        "commit_sha": repo.commit_sha, "path": doc.path, "filename": path.name,
+        "repo": repo.ref.full_name, "repo_slug": repo.slug, "host": repo.host, "owner": repo.owner,
+        "branch": repo.branch, "commit_sha": repo.commit_sha, "path": doc.path, "filename": path.name,
         "folder_parts": parts, "folder_top": folders_below_root[0] if folders_below_root else "",
         "file_type": doc.file_type, "file_hash": doc.file_hash, "title": title,
         "chunk_count": len(raws),
@@ -60,5 +60,5 @@ def _embed_text(title: str, raw: RawChunk) -> str:
 
 def _source_url(repo: RepoContext, path: str, start: int | None, end: int | None) -> str:
     ref = repo.commit_sha or repo.branch
-    url = f"https://{repo.host}/{repo.owner}/{repo.name}/blob/{quote(ref)}/{quote(path)}"
+    url = f"https://{repo.host}/{repo.ref.full_name}/blob/{quote(ref)}/{quote(path)}"
     return f"{url}#L{start}-L{end}" if start is not None else url

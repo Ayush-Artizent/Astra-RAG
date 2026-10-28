@@ -12,6 +12,9 @@ STATIC_DIR = PACKAGE_DIR / "static"
 REQUIRED_FILES = ("policies.md", "nomenclature.md")
 REQUIRED_FOLDERS = ("project-data", "templates")
 
+# Host kinds a repo URL may point at today (see services/repo_ref.host_kind).
+SUPPORTED_HOST_KINDS = ("github", "ghe")
+
 GIT_TIMEOUT_SECONDS = 300
 HTTP_TIMEOUT_SECONDS = 20
 

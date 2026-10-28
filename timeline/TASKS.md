@@ -7,7 +7,7 @@ Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGEL
 
 ## Phases (from plan/phases.md)
 - [x] **P0 Safety fixes and doc cleanup** - loader never follows symlinks/junctions or paths outside the clone; clone uses `core.symlinks=false`; docs fixed. (2026-10-28)
-- [ ] P1 Host-aware repo identity
+- [x] **P1 Host-aware repo identity** - `services/repo_ref.py` (`RepoRef` + host-aware `slug`); slug keys token store, clone folder, Qdrant collection and status; legacy `.env` keys migrated; non-GitHub hosts rejected as not supported yet; status/search routes take the slug. (2026-10-28)
 - [ ] P2 Source adapter port + GitHub adapter
 - [ ] P3 Azure DevOps adapter
 - [ ] P4 Repo registry, bindings and tracked branch

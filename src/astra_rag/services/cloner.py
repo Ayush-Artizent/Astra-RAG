@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from ..config import GIT_TIMEOUT_SECONDS, TEMP_STORAGE_DIR
 from .errors import AppError
-from .github_client import RepoRef
+from .repo_ref import RepoRef
 
 
 @dataclass(frozen=True)
@@ -19,9 +19,9 @@ class CloneResult:
 
 
 def clone_repo(repo: RepoRef, token: str) -> CloneResult:
-    """Clone into temp_storage/<owner>__<name>, replacing any earlier clone."""
+    """Clone into temp_storage/<slug>, replacing any earlier clone."""
     TEMP_STORAGE_DIR.mkdir(exist_ok=True)
-    target = TEMP_STORAGE_DIR / f"{repo.owner}__{repo.name}"
+    target = TEMP_STORAGE_DIR / repo.slug
     if target.exists():
         shutil.rmtree(target, onexc=_make_writable)
 

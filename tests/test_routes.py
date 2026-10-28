@@ -29,7 +29,7 @@ class RouteTests(unittest.TestCase):
         data = res.json()
         self.assertTrue(data["ok"])
         self.assertEqual(data["commit_sha"], "abc123")
-        self.assertEqual(data["ingestion"], {"owner": "acme", "name": "golden", "state": "queued"})
+        self.assertEqual(data["ingestion"], {"slug": "github.com__acme__golden", "state": "queued"})
         run.assert_called_once()
         save.assert_called_once()
         self.assertEqual(save.call_args.args[2], "t")
@@ -38,7 +38,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual((context.owner, context.name, context.branch, context.commit_sha),
                          ("acme", "golden", "main", "abc123"))
 
-        status = self.client.get("/api/ingestion-status/acme/golden").json()
+        status = self.client.get("/api/ingestion-status/github.com__acme__golden").json()
         self.assertEqual(status["state"], "queued")
         self.assertEqual(status["commit_sha"], "abc123")
 
@@ -77,13 +77,13 @@ class RouteTests(unittest.TestCase):
         queued.assert_not_called()
 
     def test_status_404_when_unknown(self):
-        res = self.client.get("/api/ingestion-status/nobody/nothing")
+        res = self.client.get("/api/ingestion-status/github.com__nobody__nothing")
         self.assertEqual(res.status_code, 404)
         self.assertFalse(res.json()["ok"])
 
     def test_search_requires_query(self):
         with mock.patch.object(pipeline, "QdrantStore"):
-            res = self.client.post("/api/search", json={"owner": "a", "name": "b", "query": " "})
+            res = self.client.post("/api/search", json={"slug": "github.com__a__b", "query": " "})
         self.assertEqual(res.status_code, 400)
 
 

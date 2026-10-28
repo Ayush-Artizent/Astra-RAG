@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 from astra_rag.services import cloner
-from astra_rag.services.github_client import RepoRef
+from astra_rag.services.repo_ref import parse_repo_url
 
 
 class ClonerTests(unittest.TestCase):
@@ -18,8 +18,9 @@ class ClonerTests(unittest.TestCase):
                 mock.patch.object(cloner.shutil, "rmtree"), \
                 mock.patch.object(cloner, "TEMP_STORAGE_DIR") as storage:
             storage.__truediv__.return_value.exists.return_value = False
-            cloner.clone_repo(RepoRef("github.com", "acme", "golden"), "secret-token")
+            cloner.clone_repo(parse_repo_url("https://github.com/acme/golden"), "secret-token")
 
+        storage.__truediv__.assert_called_with("github.com__acme__golden")
         cmd, env = calls[0]
         self.assertEqual(cmd[:2], ["git", "clone"])
         self.assertNotIn("secret-token", " ".join(cmd))

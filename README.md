@@ -23,7 +23,8 @@ Tests: `uv run python -m unittest discover -s tests -t .`
 The first ingestion downloads the embedding models (~200 MB) into `.cache/fastembed`.
 Env overrides: `QDRANT_URL`, `QDRANT_API_KEY`, `FASTEMBED_CACHE_DIR`.
 
-API: `POST /api/validate-and-clone`, `GET /api/ingestion-status/{owner}/{name}`, `POST /api/search`.
+API: `POST /api/validate-and-clone`, `GET /api/ingestion-status/{slug}`, `POST /api/search` (body has `slug`).
+A repo's `slug` is host-aware, e.g. `github.com__acme__golden`; the clone response returns it.
 
 ## Structure
 
@@ -34,7 +35,8 @@ src/astra_rag/
   config.py                  required files/folders, paths, timeouts  <- edit rules here
   routes.py                  page + POST /api/validate-and-clone
   services/
-    github_client.py         URL parsing, GitHub API root listing
+    repo_ref.py              URL parsing, host-aware RepoRef + slug
+    github_client.py         GitHub API root listing
     validator.py             required-structure check
     cloner.py                git clone into temp_storage/ (returns path, commit SHA, branch)
     ingestion/               loader, chunkers (md/csv), embedder (fastembed), store (Qdrant), pipeline

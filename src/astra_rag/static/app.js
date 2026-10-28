@@ -27,11 +27,11 @@ function describeIngestion(s) {
   return ["", `Ingesting project-data… ${detail}`, extras];
 }
 
-async function pollIngestion({ owner, name }) {
+async function pollIngestion({ slug }) {
   for (;;) {
     let s;
     try {
-      s = await (await fetch(`/api/ingestion-status/${owner}/${name}`)).json();
+      s = await (await fetch(`/api/ingestion-status/${encodeURIComponent(slug)}`)).json();
     } catch {
       render(ingestion, "error", "Lost contact with the server while ingesting.");
       return;

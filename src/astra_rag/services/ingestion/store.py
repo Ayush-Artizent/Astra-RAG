@@ -14,8 +14,8 @@ _NAMESPACE = uuid.UUID("6f1c3a52-9b0e-4d5e-8a57-4c1d2f7a9e10")
 _INDEXED_FIELDS = ("path", "folder_top", "file_type", "file_hash", "commit_sha")
 
 
-def collection_name(owner: str, name: str) -> str:
-    return re.sub(r"[^\w.-]", "_", f"{QDRANT_COLLECTION_PREFIX}__{owner}__{name}")
+def collection_name(slug: str) -> str:
+    return re.sub(r"[^\w.-]", "_", f"{QDRANT_COLLECTION_PREFIX}__{slug}")
 
 
 def point_id(chunk_id: str) -> str:

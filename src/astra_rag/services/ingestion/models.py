@@ -1,19 +1,31 @@
 """Plain data types shared by the ingestion steps."""
 from dataclasses import dataclass, field
 
+from ..repo_ref import RepoRef
+
 
 @dataclass(frozen=True)
 class RepoContext:
     """Identifies exactly which version of which repo the chunks came from."""
-    host: str
-    owner: str
-    name: str
+    ref: RepoRef
     branch: str
     commit_sha: str
 
     @property
+    def host(self) -> str:
+        return self.ref.host
+
+    @property
+    def owner(self) -> str:
+        return self.ref.owner
+
+    @property
+    def name(self) -> str:
+        return self.ref.name
+
+    @property
     def slug(self) -> str:
-        return f"{self.owner}__{self.name}"
+        return self.ref.slug
 
 
 @dataclass

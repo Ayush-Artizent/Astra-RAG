@@ -108,6 +108,7 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
   - a `Credential` protocol (PAT only for now);
   - shared error mapping to `AppError`.
 - `services/sources/registry.py`: picks the adapter from the URL host.
+  - P1 note: `RepoRef`, `host_kind()` and `parse_repo_url` live in `services/repo_ref.py`. GitHub-only bits still on `RepoRef` (`clone_url`, `api_base`) move into the GitHub adapter here; `parse_repo_url` becomes the registry's dispatch.
 - `services/sources/github.py`: the existing `github_client` and `cloner` logic, moved here.
 - `routes.py`, `validator` and ingestion call the adapter, not `github_client` or `cloner` directly.
   - `chunker._source_url` uses `adapter.citation_url`.

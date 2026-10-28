@@ -18,8 +18,10 @@ from astra_rag.services.ingestion.md_chunker import chunk_markdown
 from astra_rag.services.ingestion.models import Document, RepoContext
 from astra_rag.services.ingestion.store import QdrantStore, collection_name, point_id
 from astra_rag.services.ingestion.tokens import count_tokens
+from astra_rag.services.repo_ref import parse_repo_url
 
-REPO = RepoContext("github.com", "acme", "golden", "main", "abc123def456")
+REPO = RepoContext(parse_repo_url("https://github.com/acme/golden"), "main", "abc123def456")
+SLUG = "github.com__acme__golden"
 
 FIXTURE_REPO = Path(__file__).parent / "fixtures" / "repo"
 
@@ -261,7 +263,7 @@ class PipelineTests(unittest.TestCase):
     def run_pipeline(self, repo_dir=FIXTURE_REPO):
         pipeline.mark_queued(REPO)
         pipeline.run_ingestion(REPO, repo_dir, self.embedder, self.store)
-        return pipeline.get_status("acme", "golden")
+        return pipeline.get_status(SLUG)
 
     def test_end_to_end_ingest_and_hybrid_search(self):
         status = self.run_pipeline()
@@ -269,24 +271,24 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(status["files_loaded"], 3)
         self.assertEqual(len(status["files_skipped"]), 2)
         self.assertEqual(status["chunks_stored"], status["chunks_total"])
-        name = collection_name("acme", "golden")
+        name = collection_name(SLUG)
         self.assertEqual(self.store.count(name), status["chunks_total"])
 
-        hits = pipeline.search("acme", "golden", "BRD-HR-014 onboarding", embedder=self.embedder, store=self.store)
+        hits = pipeline.search(SLUG, "BRD-HR-014 onboarding", embedder=self.embedder, store=self.store)
         self.assertEqual(hits[0]["path"], "project-data/hr/2024/onboarding.txt")
         self.assertEqual(hits[0]["embedding_model"], "fake-embedder")
 
-        csv_hits = pipeline.search("acme", "golden", "Marketing conferences", file_type="csv",
+        csv_hits = pipeline.search(SLUG, "Marketing conferences", file_type="csv",
                                    embedder=self.embedder, store=self.store)
         self.assertTrue(all(h["file_type"] == "csv" for h in csv_hits))
-        hr_hits = pipeline.search("acme", "golden", "annual leave", folder_top="hr",
+        hr_hits = pipeline.search(SLUG, "annual leave", folder_top="hr",
                                   embedder=self.embedder, store=self.store)
         self.assertTrue(all(h["folder_top"] == "hr" for h in hr_hits))
 
     def test_reingest_replaces_the_collection(self):
         first = self.run_pipeline()
         second = self.run_pipeline()
-        self.assertEqual(self.store.count(collection_name("acme", "golden")), second["chunks_total"])
+        self.assertEqual(self.store.count(collection_name(SLUG)), second["chunks_total"])
         self.assertEqual(first["chunks_total"], second["chunks_total"])
 
     def test_empty_project_data_is_done_with_warning(self):
@@ -304,13 +306,13 @@ class PipelineTests(unittest.TestCase):
 
         pipeline.mark_queued(REPO)
         pipeline.run_ingestion(REPO, FIXTURE_REPO, self.embedder, Down(QdrantClient(":memory:")))
-        status = pipeline.get_status("acme", "golden")
+        status = pipeline.get_status(SLUG)
         self.assertEqual(status["state"], "failed")
         self.assertIn("Qdrant", status["error"])
 
     def test_search_without_index_or_query_errors(self):
         with self.assertRaises(AppError):
-            pipeline.search("acme", "golden", "  ", embedder=self.embedder, store=self.store)
+            pipeline.search(SLUG, "  ", embedder=self.embedder, store=self.store)
         with self.assertRaises(Exception):
             pipeline.search("acme", "nope", "x", embedder=self.embedder, store=self.store)
 

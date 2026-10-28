@@ -39,12 +39,12 @@ def _now() -> str:
 def mark_queued(repo: RepoContext) -> None:
     with _lock:
         _statuses[repo.slug] = IngestionStatus(commit_sha=repo.commit_sha,
-                                               collection=collection_name(repo.owner, repo.name))
+                                               collection=collection_name(repo.slug))
 
 
-def get_status(owner: str, name: str) -> dict | None:
+def get_status(slug: str) -> dict | None:
     with _lock:
-        status = _statuses.get(f"{owner}__{name}")
+        status = _statuses.get(slug)
         return asdict(status) if status else None
 
 
@@ -84,7 +84,7 @@ def _ingest(repo: RepoContext, repo_dir: Path, status: IngestionStatus,
         status.warnings.append("No indexable content found in project-data/.")
 
     embedder = embedder or get_embedder()
-    collection = collection_name(repo.owner, repo.name)
+    collection = collection_name(repo.slug)
     store.recreate(collection, embedder.dense_dim)
 
     ingested_at = _now()
@@ -98,7 +98,7 @@ def _ingest(repo: RepoContext, repo_dir: Path, status: IngestionStatus,
         status.chunks_stored += len(batch)
 
 
-def search(owner: str, name: str, query: str, limit: int = 8, folder_top: str | None = None,
+def search(slug: str, query: str, limit: int = 8, folder_top: str | None = None,
            file_type: str | None = None, embedder: Embedder | None = None,
            store: QdrantStore | None = None) -> list[dict]:
     if not query.strip():
@@ -106,4 +106,4 @@ def search(owner: str, name: str, query: str, limit: int = 8, folder_top: str | 
     store = store or QdrantStore()
     store.ping()
     dense, sparse = (embedder or get_embedder()).embed_query(query)
-    return store.search(collection_name(owner, name), dense, sparse, limit, folder_top, file_type)
+    return store.search(collection_name(slug), dense, sparse, limit, folder_top, file_type)

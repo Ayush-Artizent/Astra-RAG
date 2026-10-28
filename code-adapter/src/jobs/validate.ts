@@ -44,8 +44,15 @@ export function isInternalHost(hostname: string): boolean {
   if (host.includes(':')) {
     if (host === '::1' || host === '::') return true;
     if (/^f[cd][0-9a-f]{2}:/.test(host) || /^fe[89ab][0-9a-f]:/.test(host)) return true;
-    const mapped = /^::ffff:(.+)$/.exec(host);
-    if (mapped) return isInternalHost(mapped[1] as string);
+    // An IPv4 address written as IPv6. The URL parser turns `::ffff:127.0.0.1` into `::ffff:7f00:1`.
+    const dotted = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(host);
+    if (dotted) return isInternalHost(dotted[1] as string);
+    const hex = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(host);
+    if (hex) {
+      const hi = parseInt(hex[1] as string, 16);
+      const lo = parseInt(hex[2] as string, 16);
+      return isInternalHost(`${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`);
+    }
   }
   return false;
 }

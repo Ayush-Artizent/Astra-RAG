@@ -119,14 +119,20 @@ export class JobStore {
     if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
     this.db = new DatabaseSync(file);
     this.now = now;
-    if (file !== ':memory:') this.db.exec('PRAGMA journal_mode = WAL');
-    this.db.exec('PRAGMA busy_timeout = 5000');
-    const version = (this.db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
-    if (version > SCHEMA_VERSION) {
-      throw new Error(`The job store was written by a newer adapter (schema ${version}, this one is ${SCHEMA_VERSION})`);
+    try {
+      if (file !== ':memory:') this.db.exec('PRAGMA journal_mode = WAL');
+      this.db.exec('PRAGMA busy_timeout = 5000');
+      const version = (this.db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
+      if (version > SCHEMA_VERSION) {
+        throw new Error(`The job store was written by a newer adapter (schema ${version}, this one is ${SCHEMA_VERSION})`);
+      }
+      this.db.exec(SCHEMA);
+      this.db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+    } catch (e) {
+      // Release the file before failing: an open handle makes the file undeletable on Windows.
+      this.db.close();
+      throw e;
     }
-    this.db.exec(SCHEMA);
-    this.db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }
 
   close(): void {

@@ -2,6 +2,9 @@
 
 Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGELOG line as you go.
 
+> **Next work follows [plan/phases.md](../plan/phases.md) (P0-P11), one phase per PR.** The W2 and W4 lists below are
+> folded into those phases (W2 → P7-P9, W4 → P4-P5) and are kept for history.
+
 ## Done
 - [x] **W0 Connector** - URL parse, GitHub root listing, golden-structure validation, clone to `temp_storage/`.
 - [x] **W1 Ingestion pipeline** - see W1 below.

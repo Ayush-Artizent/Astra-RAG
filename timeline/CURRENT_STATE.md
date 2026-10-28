@@ -45,7 +45,7 @@ tests/          unittest suites + fixtures/repo (sample project-data)
 docker-compose.yml   Qdrant
 temp_storage/   cloned repos (git-ignored)
 timeline/       this progress record
-plan/           design plans (golden-repo-rag-plan.md: end-to-end draft, under team discussion)
+plan/           design plans: golden-repo-rag-plan.md (requirements), phases.md (P0-P11 delivery order)
 ```
 
 ## Commands

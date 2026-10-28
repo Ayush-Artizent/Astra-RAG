@@ -1,6 +1,7 @@
 # Changelog (newest first)
 
 ## 2026-10-28
+- Planning: added `plan/phases.md`, the delivery phases P0-P11 (safety fixes, host-aware identity, source adapters with ADO first, registry, sync, front-matter, catalog, rule selection, `get_context`, more hosts, eval). One phase per PR; nothing built yet.
 - Planning: added `plan/golden-repo-rag-plan.md`, the end-to-end Golden Repo RAG requirements and plan (contract, rules model, inference, ADO-first source adapters, branch/sync, ingestion, retrieval). Draft for team discussion; no code changes.
 
 ## 2026-10-27

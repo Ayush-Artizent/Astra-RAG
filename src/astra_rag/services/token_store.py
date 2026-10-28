@@ -16,7 +16,8 @@ from pathlib import Path
 
 from ..config import ENV_FILE
 from .errors import AppError
-from .repo_ref import RepoRef, parse_repo_url
+from .repo_ref import RepoRef
+from .sources.registry import parse_repo_url
 
 _lock = threading.Lock()
 

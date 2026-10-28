@@ -15,13 +15,19 @@ FULL_ROOT = [
 CLONE = CloneResult("/tmp/x", "abc123", "main")
 
 
+def fake_adapter(entries):
+    adapter = mock.MagicMock()
+    adapter.list_dir.return_value = entries
+    return adapter
+
+
 class RouteTests(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(create_app())
         self.body = {"url": "https://github.com/acme/golden", "token": "t"}
 
     def test_clone_queues_ingestion_with_commit_and_status_is_readable(self):
-        with mock.patch("astra_rag.routes.github_client.list_root", return_value=FULL_ROOT), \
+        with mock.patch("astra_rag.routes.adapter_for", return_value=fake_adapter(FULL_ROOT)), \
                 mock.patch("astra_rag.routes.cloner.clone_repo", return_value=CLONE), \
                 mock.patch("astra_rag.routes.token_store.save") as save, \
                 mock.patch("astra_rag.routes.pipeline.run_ingestion") as run:
@@ -44,15 +50,15 @@ class RouteTests(unittest.TestCase):
 
     def test_blank_token_reuses_saved_one_and_does_not_rewrite_it(self):
         with mock.patch("astra_rag.routes.token_store.get_token", return_value="saved-secret"), \
-                mock.patch("astra_rag.routes.github_client.list_root", return_value=FULL_ROOT) as root, \
+                mock.patch("astra_rag.routes.adapter_for", return_value=fake_adapter(FULL_ROOT)) as adapter_for, \
                 mock.patch("astra_rag.routes.cloner.clone_repo", return_value=CLONE) as clone_repo, \
                 mock.patch("astra_rag.routes.token_store.save") as save, \
                 mock.patch("astra_rag.routes.pipeline.run_ingestion"):
             res = self.client.post("/api/validate-and-clone", json={**self.body, "token": ""})
         data = res.json()
         self.assertTrue(data["ok"] and data["token_reused"] and not data["token_saved"])
-        self.assertEqual(root.call_args.args[1], "saved-secret")
-        self.assertEqual(clone_repo.call_args.args[1], "saved-secret")
+        self.assertEqual(adapter_for.call_args.args[1].secret(), "saved-secret")
+        clone_repo.assert_called_once_with(adapter_for.return_value)
         save.assert_not_called()
         self.assertNotIn("saved-secret", res.text)
 
@@ -62,7 +68,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_failed_clone_does_not_save_the_token(self):
-        with mock.patch("astra_rag.routes.github_client.list_root", return_value=FULL_ROOT), \
+        with mock.patch("astra_rag.routes.adapter_for", return_value=fake_adapter(FULL_ROOT)), \
                 mock.patch("astra_rag.routes.cloner.clone_repo", side_effect=AppError("boom", 502)), \
                 mock.patch("astra_rag.routes.token_store.save") as save:
             res = self.client.post("/api/validate-and-clone", json=self.body)
@@ -70,7 +76,7 @@ class RouteTests(unittest.TestCase):
         save.assert_not_called()
 
     def test_missing_structure_does_not_start_ingestion(self):
-        with mock.patch("astra_rag.routes.github_client.list_root", return_value=FULL_ROOT[:2]), \
+        with mock.patch("astra_rag.routes.adapter_for", return_value=fake_adapter(FULL_ROOT[:2])), \
                 mock.patch("astra_rag.routes.pipeline.mark_queued") as queued:
             res = self.client.post("/api/validate-and-clone", json=self.body)
         self.assertEqual(res.status_code, 422)

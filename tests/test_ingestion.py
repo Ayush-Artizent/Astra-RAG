@@ -18,7 +18,7 @@ from astra_rag.services.ingestion.md_chunker import chunk_markdown
 from astra_rag.services.ingestion.models import Document, RepoContext
 from astra_rag.services.ingestion.store import QdrantStore, collection_name, point_id
 from astra_rag.services.ingestion.tokens import count_tokens
-from astra_rag.services.repo_ref import parse_repo_url
+from astra_rag.services.sources.registry import parse_repo_url
 
 REPO = RepoContext(parse_repo_url("https://github.com/acme/golden"), "main", "abc123def456")
 SLUG = "github.com__acme__golden"

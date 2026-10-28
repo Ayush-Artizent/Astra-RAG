@@ -112,13 +112,17 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
 - `services/sources/github.py`: the existing `github_client` and `cloner` logic, moved here.
 - `routes.py`, `validator` and ingestion call the adapter, not `github_client` or `cloner` directly.
   - `chunker._source_url` uses `adapter.citation_url`.
-- `tests/sources/contract.py`: a shared contract test suite every adapter must pass, using faked HTTP and a local bare git repo.
+- `tests/sources/contract.py`: a shared contract test mixin every adapter must pass, using faked HTTP (`fake_http.py`) and a local bare git repo.
+  A host's test class supplies `make_adapter` and `stub_*` hooks that script that host's REST replies (see `test_github.py`).
+  - P2 done: `PatCredential`, `base.py` (ABC, not Protocol, so `verify_webhook` has a default), `git.py` (shared clone; adapters supply only the auth header), `http.py`, `errors.py`.
+  - P2 done: `parse_repo_url` now lives in `sources/registry.py`; `repo_ref.py` keeps only `RepoRef` and `host_kind`.
+  - P3 hint: add the new kind to both `config.SUPPORTED_HOST_KINDS` and `registry.ADAPTERS` (a test checks they match).
 
 **Out of scope:** new hosts, ETag caching (P7).
 
 **Tests**
 - The GitHub adapter passes the contract suite.
-- The route tests still pass unchanged.
+- The route tests keep their assertions. Only their patch targets change (`routes.adapter_for` instead of `routes.github_client.list_root`).
 
 **Acceptance**
 - Same behaviour as before, and a diff review confirms no route or response changes.

@@ -1,23 +1,25 @@
 # Current state
 
-_Last updated: 2026-10-28 (branch `goldan-repo-re`, phases P0-P1 done and the chunking part of P6, see `plan/phases.md`)_
+_Last updated: 2026-10-28 (branch `goldan-repo-re`, phases P0-P2 done and the chunking part of P6, see `plan/phases.md`)_
 
 ## What the app does today
 A FastAPI web app (src layout, managed by `uv`, Python >=3.14). The user enters a GitHub repo
 URL and a PAT in a single-page UI. The backend:
 
-1. Parses the URL (`services/repo_ref.parse_repo_url`) into a host-aware `RepoRef`
+1. Parses the URL (`services/sources/registry.parse_repo_url`; the host's adapter owns the URL shape) into a host-aware `RepoRef`
    (`host_kind`, `host`, `path_parts`, `name`) with a `slug` such as `github.com__acme__golden`.
    Only GitHub and GitHub Enterprise hosts are accepted (`config.SUPPORTED_HOST_KINDS`); Azure DevOps,
    GitLab and Bitbucket URLs get a "not supported yet" error. The slug keys the `.env` token entry, the
    clone folder, the Qdrant collection and the ingestion status, so the same owner/name on two hosts never collide.
-2. Lists the repo root via the GitHub API (`github_client.list_root`).
+2. Picks the host's `SourceAdapter` (`adapter_for(ref, PatCredential(token))`) and lists the repo root with
+   `adapter.list_dir("")`. Only the GitHub adapter exists; routes, validator and ingestion never call a host directly.
 3. Validates the "golden repo" structure (`services/validator.find_missing`): files
    `policies.md`, `nomenclature.md`; folders `project-data/`, `templates/` (case-sensitive,
    defined in `config.py`). Missing items -> HTTP 422 listing them.
-4. Shallow-clones (`--depth 1`) into `temp_storage/<slug>/` (`services/cloner.py`),
-   replacing any earlier clone; records commit SHA + branch. The token goes to git as a one-off
-   `http.extraheader` via `GIT_CONFIG_*` env vars (not in the URL, `.git/config` or process args).
+4. Shallow-clones (`--depth 1`) into `temp_storage/<slug>/` (`services/cloner.py` picks the folder and replaces any
+   earlier clone; `adapter.clone` does it via `sources/git.py`); records commit SHA + branch. The adapter supplies a
+   one-off `http.extraheader` passed via `GIT_CONFIG_*` env vars (not in the URL, `.git/config` or process args).
+   The token reaches adapters only as a `PatCredential` (redacted `repr`, read via `.secret()`).
    After a successful clone the URL + PAT are saved to the git-ignored `.env` (`services/token_store.py`);
    a blank token field in the UI reuses the saved one. Tokens are never returned by any API. Entries saved
    before P1 (`ASTRA_REPO_<OWNER>__<NAME>_*`) are moved to the host-aware key the first time that repo is used.
@@ -30,7 +32,7 @@ URL and a PAT in a single-page UI. The backend:
    path, folder_parts, heading_path / line range / row range (+ `row_key` for CSV), `doc_type` (from the folder),
    `doc_date` and `doc_meta` (parsed from email / meeting / CR / owner header lines, or the filename date), `has_open_item` /
    `open_items` ("Open: ...", "to decide"), file_hash, chunk ids, embedding
-   model, ingested_at and a GitHub permalink `source_url`.
+   model, ingested_at and a permalink `source_url` built by `adapter.citation_url`.
 
 Endpoints: `POST /api/validate-and-clone` (returns the repo `slug`), `GET /api/ingestion-status/{slug}`,
 `POST /api/search` (`slug` + `query`; hybrid RRF search; optional `folder`, `file_type` filters). Page at `/`,
@@ -50,10 +52,11 @@ match and the LLM decides between conflicting sources.
 ## Layout
 ```
 src/astra_rag/  __init__ (app factory, main), config, routes
-  services/     repo_ref, github_client, validator, cloner, token_store, errors
+  services/     repo_ref, validator, cloner, token_store, errors
+    sources/    base (SourceAdapter port), credentials (PatCredential), registry, github, git, http, errors
     ingestion/  loader, md_chunker, csv_chunker, doc_meta, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
-tests/          unittest suites + fixtures/repo (sample project-data)
+tests/          unittest suites + fixtures/repo (sample project-data); tests/sources/ holds the adapter contract suite
 docker-compose.yml   Qdrant
 temp_storage/   cloned repos (git-ignored)
 timeline/       this progress record

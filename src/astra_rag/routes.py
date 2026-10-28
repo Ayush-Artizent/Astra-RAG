@@ -6,10 +6,11 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from .config import REQUIRED_FILES, REQUIRED_FOLDERS, TEMPLATES_DIR
-from .services import cloner, github_client, repo_ref, token_store, validator
+from .services import cloner, token_store, validator
 from .services.errors import AppError
 from .services.ingestion import pipeline
 from .services.ingestion.models import RepoContext
+from .services.sources import PatCredential, adapter_for, parse_repo_url
 
 router = APIRouter()
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
@@ -39,13 +40,14 @@ def index(request: Request):
 # Plain `def` so FastAPI runs these blocking network/git calls in a worker thread.
 @router.post("/api/validate-and-clone")
 def validate_and_clone(body: RepoRequest, background: BackgroundTasks):
-    repo = repo_ref.parse_repo_url(body.url)
+    repo = parse_repo_url(body.url)
     typed = body.token.strip()
     token = typed or token_store.get_token(repo)
     if not token:
         raise AppError("A personal access token is required (none is saved for this repository).")
 
-    missing = validator.find_missing(github_client.list_root(repo, token))
+    adapter = adapter_for(repo, PatCredential(token))
+    missing = validator.find_missing(adapter.list_dir(""))
     if missing:
         return JSONResponse(
             {"ok": False, "missing": missing,
@@ -53,7 +55,7 @@ def validate_and_clone(body: RepoRequest, background: BackgroundTasks):
             status_code=422,
         )
 
-    clone = cloner.clone_repo(repo, token)
+    clone = cloner.clone_repo(adapter)
     if typed:  # only a token that just worked is remembered
         token_store.save(repo, body.url, typed)
     context = RepoContext(repo, clone.branch, clone.commit_sha)

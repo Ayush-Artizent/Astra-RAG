@@ -35,11 +35,13 @@ src/astra_rag/
   config.py                  required files/folders, paths, timeouts  <- edit rules here
   routes.py                  page + POST /api/validate-and-clone
   services/
-    repo_ref.py              URL parsing, host-aware RepoRef + slug
-    github_client.py         GitHub API root listing
+    repo_ref.py              host-aware RepoRef + slug
+    sources/                 one adapter per Git host behind a SourceAdapter port (github.py), PatCredential, registry
     validator.py             required-structure check
     cloner.py                git clone into temp_storage/ (returns path, commit SHA, branch)
     ingestion/               loader, chunkers (md per section, csv per row), doc_meta (header metadata), embedder (fastembed), store (Qdrant), pipeline
+    cloner.py                picks temp_storage/<slug>, replaces an old clone, asks the adapter to clone
+    ingestion/               loader, chunkers (md/csv), embedder (fastembed), store (Qdrant), pipeline
     errors.py                user-safe AppError
   templates/index.html       the UI
   static/                    style.css, app.js

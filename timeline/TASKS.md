@@ -8,7 +8,7 @@ Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGEL
 ## Phases (from plan/phases.md)
 - [x] **P0 Safety fixes and doc cleanup** - loader never follows symlinks/junctions or paths outside the clone; clone uses `core.symlinks=false`; docs fixed. (2026-10-28)
 - [x] **P1 Host-aware repo identity** - `services/repo_ref.py` (`RepoRef` + host-aware `slug`); slug keys token store, clone folder, Qdrant collection and status; legacy `.env` keys migrated; non-GitHub hosts rejected as not supported yet; status/search routes take the slug. (2026-10-28)
-- [ ] P2 Source adapter port + GitHub adapter
+- [x] **P2 Source adapter port + GitHub adapter** - `services/sources/` (`SourceAdapter` port, `PatCredential`, registry, GitHub adapter, shared git/http/error helpers) with a reusable contract test suite; routes, validator, cloner and chunker go through the adapter; `github_client.py` removed. No behaviour change. (2026-10-28)
 - [ ] P3 Azure DevOps adapter
 - [ ] P4 Repo registry, bindings and tracked branch
 - [ ] P5 Sync: nightly + Sync now, alias swap
@@ -56,7 +56,7 @@ Goal: an LLM-callable tool; when invoked with a request type (BRD, SPEC, ...), i
 `policies.md` plus the matching template, read **directly from GitHub** (not the local clone).
 
 - [ ] W2.1 Define the template convention: map request type -> file in `templates/` (e.g. `BRD` -> `templates/brd.md`). Check `nomenclature.md` for naming rules first; put the mapping/aliases in `config.py`. **Open question for the user:** exact template filenames in the golden repo.
-- [ ] W2.2 Extend `services/github_client.py` with `get_file(repo, path, token)` (GitHub contents API, base64 decode, size guard, clear errors for 404/403).
+- [ ] W2.2 Read files with `SourceAdapter.read_file` (added in P2; was `github_client.get_file`) (GitHub contents API, base64 decode, size guard, clear errors for 404/403).
 - [ ] W2.3 `services/tools/document_context.py` - the tool function `get_document_context(request_type)` -> `{request_type, policies, nomenclature, template}`, all fetched whole from GitHub at call time (deterministic, **not** via RAG: these are small authoritative rulebooks that must always apply in full). Unknown type returns an error listing valid types (derive valid types by listing `templates/` from GitHub). If `nomenclature.md` proves very large (>~15k tokens), split by section and return only relevant sections.
 - [ ] W2.3b Nomenclature validator (`services/tools/nomenclature.py`) - once the format of `nomenclature.md` is known (prose vs pattern table), add a check that a generated document name/ID matches its rules (e.g. regex per doc type). The LLM applies the rule; code verifies it. **Open question:** format of `nomenclature.md`.
 - [ ] W2.4 Tool schema + dispatcher (`services/tools/registry.py`): JSON schema (name, description, `request_type` enum) in Claude tool-use format, and a `run_tool(name, args)` dispatcher.
@@ -74,7 +74,7 @@ see a file missing mid-sync, full rebuild as fallback. Sync state is persisted (
 Design detail: `C:\Users\manojb\.claude\plans\i-am-thinking-we-distributed-cook.md` (author's machine).
 
 - [ ] W4.1 State + locks - `services/ingestion/state.py` (durable per-repo `last_commit_sha`, `last_synced_at`, state, error) and `locks.py` (per-repo exclusion, coalesce bursts of triggers into one re-run). Config: `SYNC_POLL_SECONDS`, `GITHUB_WEBHOOK_SECRET`, `CHUNKER_VERSION` (stored in payload to force a rebuild when chunking rules change).
-- [ ] W4.2 Store + git + GitHub helpers - `store.py`: `file_hashes()`, `ids_for_path()`, `delete_points()`, `delete_path()`, `bump_commit()`; `cloner.update_clone()` (`git fetch --depth 1` + hard reset, token via env vars); `github_client.get_branch_head()` with ETag (304 is free against rate limits).
+- [ ] W4.2 Store + git + GitHub helpers - `store.py`: `file_hashes()`, `ids_for_path()`, `delete_points()`, `delete_path()`, `bump_commit()`; `cloner.update_clone()` (`git fetch --depth 1` + hard reset, token via env vars); `SourceAdapter.head_sha()` (exists since P2; add ETag) (304 is free against rate limits).
 - [ ] W4.3 Sync engine - `services/ingestion/sync.py`: update clone, chunk locally, classify added / changed / deleted / unchanged, embed only added + changed, delete stale chunks, bump `commit_sha` + permalink on unchanged chunks, persist state; fall back to full rebuild if the collection is missing or model / dimension / chunker version changed. Refactor `pipeline.py` so full ingest and sync share the embed + upsert step.
 - [ ] W4.4 Triggers - `POST /api/webhooks/github` (HMAC-SHA256 `X-Hub-Signature-256` check, push events on the tracked branch only, 202 fast, dedupe by delivery id); background poller thread started in the app lifespan; `POST /api/sync/{owner}/{name}` ("Sync now").
 - [ ] W4.5 UI + status - show last synced commit / time and a Sync now button; sync info in `GET /api/ingestion-status`.

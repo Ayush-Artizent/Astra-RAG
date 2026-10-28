@@ -1,4 +1,4 @@
-import type { Hit, GraphApi, GraphNode } from './modes.js';
+import type { Hit, GraphApi, GraphNode, FlowHopInternal } from './modes.js';
 import type { NotReadyProject, ReadyProject } from './projects.js';
 import { toDisplayName, type Alternative, type ResolveStatus, type Resolution } from './resolve.js';
 
@@ -69,12 +69,25 @@ export interface CodeResult {
   citation: string;
 }
 
+export interface FlowHop {
+  from: string;
+  to: string;
+  via: string;
+  edge_provenance: 'static' | 'heuristic';
+  synthesized_by: string | null;
+  registered_at: string | null;
+  line: number | null;
+  from_citation: string;
+  to_citation: string;
+}
+
 export interface CodeQueryResponse {
   request_id: string;
   plane_status: PlaneStatus;
   snapshot: Snapshot;
   resolved_symbols: ResolvedSymbolOut[];
   results: CodeResult[];
+  flow?: FlowHop[];
   truncated: boolean;
 }
 
@@ -138,5 +151,41 @@ export async function shapeHits(g: GraphApi, hits: Hit[], o: ShapeOptions): Prom
     if (h.relation !== undefined) out.relation = h.relation;
     if (h.callLine !== undefined && h.callLine !== null) out.call_line = h.callLine;
     return out;
+  });
+}
+
+export function shapeFlow(hops: FlowHopInternal[], commitSha: string | null): FlowHop[] {
+  return hops.map((h) => {
+    const fromName = toDisplayName(h.fromNode.qualifiedName);
+    const toName = toDisplayName(h.toNode.qualifiedName);
+    const edge = h.edge;
+
+    // Map edge.provenance to edge_provenance: null/undefined -> "static", else keep as-is
+    const edgeProvenance: 'static' | 'heuristic' = edge?.provenance === 'heuristic' ? 'heuristic' : 'static';
+
+    // Try to parse synthesized_by and registered_at from edge metadata if present
+    let synthesizedBy: string | null = null;
+    let registeredAt: string | null = null;
+    if (edge && edge.metadata) {
+      try {
+        const meta = typeof edge.metadata === 'string' ? JSON.parse(edge.metadata) : edge.metadata;
+        if (meta.synthesizedBy) synthesizedBy = meta.synthesizedBy;
+        if (meta.registeredAt) registeredAt = meta.registeredAt;
+      } catch {
+        // Ignore malformed metadata
+      }
+    }
+
+    return {
+      from: fromName,
+      to: toName,
+      via: edge?.kind ?? 'calls',
+      edge_provenance: edgeProvenance,
+      synthesized_by: synthesizedBy,
+      registered_at: registeredAt,
+      line: edge?.line ?? null,
+      from_citation: `${h.fromNode.filePath}:${h.fromNode.startLine}-${h.fromNode.endLine} (${fromName}${commitSha ? ` @${commitSha.slice(0, 7)}` : ''})`,
+      to_citation: `${h.toNode.filePath}:${h.toNode.startLine}-${h.toNode.endLine} (${toName}${commitSha ? ` @${commitSha.slice(0, 7)}` : ''})`,
+    };
   });
 }

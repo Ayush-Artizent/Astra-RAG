@@ -118,10 +118,6 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
     const env = req.envelope as Envelope;
     requireScope(env, 'query');
     const q = validateCodeQuery(req.body);
-    if (q.mode === 'flow') {
-      // TODO(phase 2): flow mode (findPath over `calls` edges).
-      throw new ProblemError(501, 'not_implemented', 'Not implemented', 'flow mode is not available yet');
-    }
 
     const requestId = requestIdOf(req) ?? env.request_id;
     const lease = await registry.acquire(env.org_id, env.project_id);

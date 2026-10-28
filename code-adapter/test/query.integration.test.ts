@@ -192,10 +192,22 @@ describe('request handling', () => {
     });
   });
 
-  it('answers 501 for flow mode until it is built', async () => {
+  it('finds a path between two symbols in flow mode', async () => {
     const res = await query({ mode: 'flow', symbols: ['handle', 'render'] });
-    expect(res.statusCode).toBe(501);
-    expect(res.json().error_code).toBe('not_implemented');
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.plane_status).toBe('ok');
+    expect(body.resolved_symbols).toHaveLength(2);
+    expect(body.resolved_symbols[0]).toMatchObject({ input: 'handle', status: 'exact', qualified_name: 'handle' });
+    expect(body.resolved_symbols[1]).toMatchObject({ input: 'render', status: 'exact', qualified_name: 'render' });
+    expect(body.results).toEqual([]); // flow mode does not return results
+    expect(body.flow).toBeDefined();
+    expect(Array.isArray(body.flow)).toBe(true);
+    // There should be at least one hop from handle to render
+    if (body.flow && body.flow.length > 0) {
+      expect(body.flow[0].from).toBe('handle');
+      expect(body.flow[body.flow.length - 1].to).toBe('render');
+    }
   });
 
   it('validates the body and names the field', async () => {

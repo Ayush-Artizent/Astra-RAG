@@ -1,7 +1,8 @@
-import { collectCallers, collectImpact, collectLookup, type Collected, type GraphApi, type Hit } from './modes.js';
+import { collectCallers, collectFlow, collectImpact, collectLookup, type Collected, type GraphApi, type Hit } from './modes.js';
 import { resolveSymbol, type Resolution } from './resolve.js';
 import {
   resolvedSymbolOut,
+  shapeFlow,
   shapeHits,
   type CodeQueryResponse,
   type PlaneStatus,
@@ -26,7 +27,7 @@ export interface QueryOptions {
 const inPrefix = (filePath: string, prefix: string) => filePath === prefix || filePath.startsWith(`${prefix}/`);
 
 /**
- * Runs a validated lookup, callers or impact query against an open project. Flow is not handled here.
+ * Runs a validated lookup, callers, impact, or flow query against an open project.
  */
 export async function runCodeQuery(g: GraphApi, q: CodeQuery, o: QueryOptions): Promise<CodeQueryResponse> {
   const policy = o.ambiguousPolicy ?? 'refuse';
@@ -36,6 +37,31 @@ export async function runCodeQuery(g: GraphApi, q: CodeQuery, o: QueryOptions): 
   const symbolPrefix = q.mode === 'lookup' ? q.pathPrefix : null;
   const resolutions: Resolution[] = q.symbols.map((s) => resolveSymbol(g, s, { pathPrefix: symbolPrefix }));
 
+  // Flow mode: find paths between symbols
+  if (q.mode === 'flow') {
+    // Check if all symbols are resolved
+    const allResolved = resolutions.every((r) => r.best !== null && (r.status !== 'ambiguous' || policy === 'best'));
+
+    let flowHops = allResolved
+      ? collectFlow(g, resolutions.map((r) => ((r.best as any).id as string)))
+      : [];
+
+    const flow = shapeFlow(flowHops, o.snapshot.commit_sha);
+    const uncertain = resolutions.some((r) => r.status !== 'exact') || q.fallbackOrigin === 'analyzer' || o.snapshot.sync_in_progress;
+    const planeStatus: PlaneStatus = uncertain ? 'degraded' : 'ok';
+
+    return {
+      request_id: o.requestId,
+      plane_status: planeStatus,
+      snapshot: o.snapshot,
+      resolved_symbols: resolutions.map(resolvedSymbolOut),
+      results: [],
+      flow: flow.length > 0 ? flow : undefined,
+      truncated: false,
+    };
+  }
+
+  // Other modes: callers, impact, lookup
   let found: Collected = { hits: [], capped: false };
   if (q.mode === 'lookup') {
     found = collectLookup(g, { resolutions, keywords: q.keywords, limit: q.limit });

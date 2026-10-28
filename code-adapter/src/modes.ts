@@ -12,6 +12,14 @@ export interface EdgeLike {
   line?: number;
 }
 
+/** Path hop from findPath. */
+export interface PathHop {
+  /** The node at this hop. */
+  node: GraphNode;
+  /** The edge that links this node to its predecessor, or null if it's the start node. */
+  edge?: EdgeLike | null;
+}
+
 /** The slice of CodeGraph the modes need, so tests can drive them with a small fake graph. */
 export interface GraphApi extends SymbolIndex {
   getNodesByIds(ids: readonly string[]): Map<string, GraphNode>;
@@ -21,6 +29,8 @@ export interface GraphApi extends SymbolIndex {
   /** Names containing the text, case-insensitive, shortest first: the camelCase infix search FTS cannot do. */
   getNodesByNameSubstring(substring: string, options?: { kinds?: string[]; limit?: number }): GraphNode[];
   getCode(id: string): Promise<string | null>;
+  /** Find a path from fromId to toId following only edges of the given kinds, or null if unreachable. */
+  findPath(fromId: string, toId: string, kinds?: string[]): PathHop[] | null;
 }
 
 /** One result before shaping into the response. */
@@ -191,3 +201,53 @@ export function collectLookup(g: GraphApi, input: LookupInput): Collected {
 const MIN_SUBSTRING_LENGTH = 3;
 const SUBSTRING_LIMIT = 20;
 const SUBSTRING_KINDS = ['function', 'method', 'class', 'interface', 'struct', 'trait', 'enum', 'type_alias'];
+
+/**
+ * Intermediate representation of a flow hop before shaping into the response.
+ */
+export interface FlowHopInternal {
+  fromNode: GraphNode;
+  toNode: GraphNode;
+  edge: EdgeLike | null;
+}
+
+/**
+ * Flow mode: find paths between consecutive symbol pairs using `calls` edges.
+ * Chains multiple paths together for 3+ symbols. Returns empty if no path exists.
+ */
+export function collectFlow(g: GraphApi, symbolIds: string[]): FlowHopInternal[] {
+  const result: FlowHopInternal[] = [];
+
+  if (symbolIds.length < 2) return result;
+
+  // For each consecutive pair, find a path
+  for (let i = 0; i < symbolIds.length - 1; i++) {
+    const fromId = symbolIds[i];
+    const toId = symbolIds[i + 1];
+    if (fromId === toId) continue;
+
+    const path = g.findPath(fromId, toId, ['calls']);
+    if (!path || path.length === 0) {
+      // No path found; return empty (graceful degradation)
+      return [];
+    }
+
+    // Convert PathHop sequence to FlowHopInternal
+    for (let j = 0; j < path.length; j++) {
+      const hop = path[j];
+      if (!hop.node) continue;
+
+      // For the first hop, use the starting node; for subsequent hops, use the previous node
+      const fromNode = j === 0 ? hop.node : (path[j - 1]?.node ?? hop.node);
+      const toNode = hop.node;
+
+      result.push({
+        fromNode,
+        toNode,
+        edge: hop.edge || null,
+      });
+    }
+  }
+
+  return result;
+}

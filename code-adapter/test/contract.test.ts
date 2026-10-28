@@ -97,7 +97,6 @@ describe('real responses match the contract', () => {
     ['422 mode rule', () => post({ mode: 'callers', symbols: ['a', 'b'] }), 422, '/internal/v1/code/query', 'post'],
     ['422 path refused', () => post({ mode: 'lookup', keywords: ['a'], path_prefix: '../x' }), 422, '/internal/v1/code/query', 'post'],
     ['422 malformed JSON', () => app.inject({ method: 'POST', url: '/internal/v1/code/query', headers: { 'x-astra-envelope': signedEnvelope('orgA', 'p1'), 'content-type': 'application/json' }, payload: '{nope' }), 422, '/internal/v1/code/query', 'post'],
-    ['501 flow', () => post({ mode: 'flow', symbols: ['handle', 'render'] }), 501, '/internal/v1/code/query', 'post'],
     ['401 status without envelope', () => app.inject({ method: 'GET', url: '/internal/v1/code/status' }), 401, '/internal/v1/code/status', 'get'],
     ['403 status wrong scope', () => get('/internal/v1/code/status', 'orgA', 'p1', ['code:sync']), 403, '/internal/v1/code/status', 'get'],
   ] as const)('error responses are problem+json: %s', async (_name, call, status, pathName, method) => {

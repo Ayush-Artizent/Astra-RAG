@@ -157,7 +157,7 @@ class MarkdownChunkerTests(unittest.TestCase):
         self.assertGreater(len(chunks), 1)
         self.assertTrue(all(c.start and c.end and c.start <= c.end for c in chunks))
         self.assertIn(("Title", "A"), [c.heading_path for c in chunks])
-        self.assertIn("## B", "\n".join(c.text for c in chunks))  # tiny sections merge, text is kept
+        self.assertIn(("Title", "B"), [c.heading_path for c in chunks])
 
     def test_all_chunks_under_cap_even_for_huge_paragraphs(self):
         text = "# T\n\n" + ("lorem ipsum dolor sit amet " * 3000) + "\n"
@@ -178,10 +178,28 @@ class MarkdownChunkerTests(unittest.TestCase):
             self.assertTrue(c.text.startswith("| h1 | h2 |\n|----|----|"))
             self.assertLessEqual(count_tokens(c.text), CHUNK_MAX_TOKENS)
 
-    def test_heading_is_never_orphaned_at_end_of_chunk(self):
-        text = "# T\n\n" + "para " * 330 + "\n\n## Next\n\nshort body\n"
+    def test_each_section_is_its_own_chunk_with_its_own_path(self):
+        text = "# Epic\n\nintro\n\n## Scope\n\n- in\n\n## Not in scope\n\n- out\n"
         chunks = chunk_markdown(text)
-        for c in chunks[:-1]:
+        self.assertEqual([c.heading_path for c in chunks],
+                         [("Epic",), ("Epic", "Scope"), ("Epic", "Not in scope")])
+        self.assertNotIn("out", chunks[1].text)
+        self.assertNotIn("- in", chunks[2].text)
+
+    def test_heading_without_body_makes_no_chunk_and_text_before_first_heading_is_kept(self):
+        chunks = chunk_markdown("From: a\nSubject: s\n\nbody\n\n# T\n\n## Child\n\nx\n")
+        self.assertEqual([c.heading_path for c in chunks], [(), ("T", "Child")])
+        self.assertIn("Subject: s", chunks[0].text)
+
+    def test_oversize_section_splits_but_every_piece_keeps_the_section_path(self):
+        text = "# T\n\n## Big\n\n" + "\n\n".join("para " * 120 for _ in range(6)) + "\n\n## Small\n\nx\n"
+        chunks = chunk_markdown(text)
+        self.assertGreater(len([c for c in chunks if c.heading_path == ("T", "Big")]), 1)
+        self.assertEqual([c for c in chunks if c.heading_path == ("T", "Small")][0].text, "## Small\n\nx")
+
+    def test_heading_is_never_cut_off_from_its_body(self):
+        chunks = chunk_markdown("# T\n\n" + "para " * 330 + "\n\n## Next\n\n" + "word " * 500 + "\n")
+        for c in chunks:
             self.assertFalse(c.text.rstrip().splitlines()[-1].startswith("#"))
 
     def test_hash_inside_code_fence_is_not_a_heading(self):
@@ -190,25 +208,25 @@ class MarkdownChunkerTests(unittest.TestCase):
 
 
 class CsvChunkerTests(unittest.TestCase):
-    def test_summary_plus_row_chunks_with_header_repeated(self):
-        data = "id,name\n" + "\n".join(f"{i},{'x' * 60}" for i in range(1, 200))
-        chunks, warnings = chunk_csv(data, "t.csv")
+    def test_summary_plus_one_chunk_per_row_keyed_by_id_column(self):
+        chunks, warnings = chunk_csv("name,id\nA,X-1\nB,X-2\n", "t.csv")
         self.assertEqual(warnings, [])
-        self.assertEqual(chunks[0].kind, "csv_summary")
-        rows = chunks[1:]
-        self.assertGreater(len(rows), 1)
-        self.assertTrue(all(c.text.startswith("Columns: id, name") for c in rows))
-        self.assertEqual(rows[0].extra["row_start"], 1)
-        self.assertEqual(rows[-1].extra["row_end"], 199)
-        for a, b in zip(rows, rows[1:]):
-            self.assertEqual(a.extra["row_end"] + 1, b.extra["row_start"])
+        self.assertEqual([c.kind for c in chunks], ["csv_summary", "csv_row", "csv_row"])
+        self.assertIn("Rows: 2", chunks[0].text)
+        self.assertEqual([c.extra["row_key"] for c in chunks[1:]], ["X-1", "X-2"])
+        self.assertEqual([(c.extra["row_start"], c.extra["row_end"]) for c in chunks[1:]], [(1, 1), (2, 2)])
+        self.assertIn("name: B", chunks[2].text)
+        self.assertNotIn("name: A", chunks[2].text)
+
+    def test_key_defaults_to_first_column(self):
+        chunks, _ = chunk_csv("title,x\nfoo,1\n", "t.csv")
+        self.assertEqual(chunks[1].extra["row_key"], "foo")
 
     def test_semicolon_delimiter_and_blank_cells(self):
         chunks, _ = chunk_csv("a;b\n1;\n2;two\n", "t.csv")
-        text = chunks[1].text
-        self.assertIn("a: 1", text)
-        self.assertNotIn("b: \n", text)
-        self.assertIn("b: two", text)
+        self.assertIn("a: 1", chunks[1].text)
+        self.assertNotIn("b:", chunks[1].text)
+        self.assertIn("b: two", chunks[2].text)
 
     def test_pathological_row_still_fits(self):
         chunks, _ = chunk_csv("a\n" + "word " * 5000 + "\n", "t.csv")
@@ -236,8 +254,9 @@ class ChunkerMetadataTests(unittest.TestCase):
 
     def test_csv_metadata_has_rows_not_lines(self):
         chunks, _ = chunk_document(self.docs["project-data/finance/budget.csv"], REPO)
-        rows = [c for c in chunks if c.payload["chunk_kind"] == "csv_rows"][0].payload
-        self.assertEqual((rows["row_start"], rows["row_end"]), (1, 3))
+        rows = [c for c in chunks if c.payload["chunk_kind"] == "csv_row"][0].payload
+        self.assertEqual((rows["row_start"], rows["row_end"]), (1, 1))
+        self.assertEqual(rows["row_key"], "B-001")
         self.assertIsNone(rows["line_start"])
         self.assertTrue(rows["source_url"].endswith("budget.csv"))
 
@@ -253,6 +272,79 @@ class ChunkerMetadataTests(unittest.TestCase):
         doc = Document("project-data/readme.md", "md", "h", "# R\n\nhello\n")
         chunks, _ = chunk_document(doc, REPO)
         self.assertEqual(chunks[0].payload["folder_top"], "")
+
+
+class DocMetadataTests(unittest.TestCase):
+    EMAIL = "From: Payments Lead\nTo: Squad\nDate: 2026-10-02\nSubject: Failover\n\nPrimary: Razorpay.\n"
+    MEETING = "# Sync\n**Date:** 2026-09-05 \u00b7 **Attendees:** PO, QA\n- Open: limit? **Finance to decide.**\n- Done: x\n"
+
+    def _chunks(self, path, text):
+        chunks, _ = chunk_document(Document(path, "md", "h", text), REPO)
+        return chunks
+
+    def test_email_header_becomes_fields_and_body_line_is_not_a_field(self):
+        p = self._chunks("project-data/emails/2026-10-02-x.md", self.EMAIL)[0].payload
+        self.assertEqual(p["doc_type"], "email")
+        self.assertEqual(p["doc_date"], "2026-10-02")
+        self.assertEqual(p["doc_meta"], {"from": "Payments Lead", "to": "Squad", "date": "2026-10-02",
+                                         "subject": "Failover"})
+        self.assertEqual(p["title"], "Failover")
+
+    def test_meeting_header_and_open_items(self):
+        chunk = self._chunks("project-data/meeting-notes/n.md", self.MEETING)[0]
+        p = chunk.payload
+        self.assertEqual((p["doc_type"], p["doc_date"]), ("meeting-note", "2026-09-05"))
+        self.assertEqual(p["doc_meta"]["attendees"], "PO, QA")
+        self.assertTrue(p["has_open_item"])
+        self.assertEqual(len(p["open_items"]), 1)
+        self.assertIn("meeting-note | 2026-09-05", chunk.embed_text)
+
+    def test_italic_owner_line_gives_owner_and_date(self):
+        text = "# E\n_Owner: PO \u00b7 2026-08-28_\n\n## Why\n\nbecause\n"
+        p = self._chunks("project-data/requirements/e.md", text)[0].payload
+        self.assertEqual((p["doc_type"], p["doc_date"], p["doc_meta"]), ("requirement", "2026-08-28", {"owner": "PO"}))
+
+    def test_date_falls_back_to_filename_and_unknown_folder_keeps_its_name(self):
+        p = self._chunks("project-data/misc/2026-01-02-note.md", "# N\n\nhi\n")[0].payload
+        self.assertEqual((p["doc_type"], p["doc_date"]), ("misc", "2026-01-02"))
+        p = self._chunks("project-data/readme.md", "# R\n\nhi\n")[0].payload
+        self.assertEqual((p["doc_type"], p["doc_date"], p["has_open_item"]), ("document", None, False))
+
+    def test_plain_prose_with_colon_is_not_metadata(self):
+        p = self._chunks("project-data/hr/x.md", "Note: this is fine\n\nbody\n")[0].payload
+        self.assertEqual(p["doc_meta"], {})
+
+
+class HorizontalRuleTests(unittest.TestCase):
+    def test_rules_are_omitted_and_do_not_split_a_chunk(self):
+        text = "# T\n\n## One\n\nfirst para\n\n---\n\nsecond para\n\n***\n\n___\n\n## Two\n\nbeta\n\n---\n"
+        chunks = chunk_markdown(text)
+        self.assertEqual([c.heading_path for c in chunks], [("T", "One"), ("T", "Two")])
+        self.assertEqual(chunks[0].text, "## One\n\nfirst para\n\nsecond para")
+        self.assertEqual(chunks[1].text, "## Two\n\nbeta")
+
+    def test_line_numbers_still_count_the_omitted_rule(self):
+        chunks = chunk_markdown("# T\n\n## One\n\nalpha\n\n---\n\nbeta\n")
+        self.assertEqual((chunks[0].start, chunks[0].end), (3, 9))
+
+    def test_section_with_only_a_rule_makes_no_chunk(self):
+        chunks = chunk_markdown("# T\n\n## Empty\n\n---\n\n## Full\n\nx\n")
+        self.assertEqual([c.heading_path for c in chunks], [("T", "Full")])
+
+    def test_table_separator_code_fence_and_setext_underline_are_untouched(self):
+        self.assertIn("|---|---|", chunk_markdown("# T\n\n| a | b |\n|---|---|\n| 1 | 2 |\n")[0].text)
+        self.assertIn("```md\n---\n```", chunk_markdown("# T\n\n```md\n---\n```\n")[0].text)
+        self.assertIn("Title\n---", chunk_markdown("Title\n---\n\nbody\n")[0].text)
+
+    def test_rule_directly_after_a_table_is_omitted_and_the_table_stays_whole(self):
+        chunks = chunk_markdown("# T\n\n| a | b |\n|---|---|\n| 1 | 2 |\n---\nafter\n")
+        self.assertEqual(chunks[0].text, "# T\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nafter")
+
+    def test_rule_is_not_in_text_or_embedded_text(self):
+        doc = Document("project-data/x/n.md", "md", "h", "# T\n\n## One\n\na\n\n---\n\nb\n")
+        chunks, _ = chunk_document(doc, REPO)
+        self.assertNotIn("---", chunks[0].text)
+        self.assertNotIn("---", chunks[0].embed_text)
 
 
 class PipelineTests(unittest.TestCase):

@@ -1,6 +1,6 @@
 # Current state
 
-_Last updated: 2026-10-28 (branch `goldan-repo-re`, phase P1 of `plan/phases.md`)_
+_Last updated: 2026-10-28 (branch `goldan-repo-re`, phases P0-P1 done and the chunking part of P6, see `plan/phases.md`)_
 
 ## What the app does today
 A FastAPI web app (src layout, managed by `uv`, Python >=3.14). The user enters a GitHub repo
@@ -23,11 +23,13 @@ URL and a PAT in a single-page UI. The backend:
    before P1 (`ASTRA_REPO_<OWNER>__<NAME>_*`) are moved to the host-aware key the first time that repo is used.
 5. Queues a **background ingestion** of `project-data/` (`services/ingestion/pipeline.py`):
    load (md, txt, csv, docx; others reported as skipped; symlinks, junctions and anything resolving outside
-   the clone are never followed and are reported as skipped; the clone itself uses `core.symlinks=false`) -> chunk (markdown by heading, CSV by
-   row groups + summary chunk, <=~480 est. tokens) -> embed locally with fastembed (dense
+   the clone are never followed and are reported as skipped; the clone itself uses `core.symlinks=false`) -> chunk (markdown: **one chunk per heading section** with its own heading path, oversize sections split, tables/code fences kept whole, horizontal-rule lines `---` / `***` / `___` omitted from the text (decoration only, never a chunk boundary; table separator rows, code fences and setext underlines untouched);
+   CSV: **one chunk per row** + a small summary chunk; <=~480 est. tokens) -> embed locally with fastembed (dense
    `BAAI/bge-base-en-v1.5`, sparse `Qdrant/bm25`) -> upsert to Qdrant collection
    `astra__<slug>` (recreated each time). Each chunk's payload has repo, repo_slug, host, commit_sha,
-   path, folder_parts, heading_path / line range / row range, file_hash, chunk ids, embedding
+   path, folder_parts, heading_path / line range / row range (+ `row_key` for CSV), `doc_type` (from the folder),
+   `doc_date` and `doc_meta` (parsed from email / meeting / CR / owner header lines, or the filename date), `has_open_item` /
+   `open_items` ("Open: ...", "to decide"), file_hash, chunk ids, embedding
    model, ingested_at and a GitHub permalink `source_url`.
 
 Endpoints: `POST /api/validate-and-clone` (returns the repo `slug`), `GET /api/ingestion-status/{slug}`,
@@ -37,7 +39,11 @@ OpenAPI at `/docs`. The UI polls ingestion status after a clone.
 Qdrant runs in Docker (`docker-compose.yml`, v1.20.0, named volume). Embedding models download on
 first use into `.cache/fastembed` (git-ignored).
 
+Retrieval has **no recency or authority preference**: date and doc type are information only, search returns every hybrid
+match and the LLM decides between conflicting sources.
+
 ## Not built yet
+- P6 remainder: YAML front-matter parsing (`fm.*` payload fields).
 - W2: function-calling tool returning policies + nomenclature + template from GitHub.
 - Incremental re-ingest (currently full rebuild), pdf/xlsx loaders, reranking.
 
@@ -45,7 +51,7 @@ first use into `.cache/fastembed` (git-ignored).
 ```
 src/astra_rag/  __init__ (app factory, main), config, routes
   services/     repo_ref, github_client, validator, cloner, token_store, errors
-    ingestion/  loader, md_chunker, csv_chunker, chunker, embedder, store, pipeline, models, tokens
+    ingestion/  loader, md_chunker, csv_chunker, doc_meta, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
 tests/          unittest suites + fixtures/repo (sample project-data)
 docker-compose.yml   Qdrant

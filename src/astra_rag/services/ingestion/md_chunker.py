@@ -1,4 +1,5 @@
-"""Heading-aware markdown chunking. Code fences and tables are kept whole where they fit."""
+"""Section-aware markdown chunking: one chunk per heading section, each with its own heading path.
+Code fences and tables are kept whole where they fit; an oversize section is split on block/line boundaries."""
 import re
 from dataclasses import dataclass, field
 
@@ -7,6 +8,11 @@ from .tokens import count_tokens
 
 _HEADING = re.compile(r"^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
 _FENCE = re.compile(r"^\s*(```|~~~)")
+_RULE = re.compile(r"^\s{0,3}([-*_])(?:\s*\1){2,}\s*$")  # horizontal rule: --- *** ___
+
+
+def _is_rule(line: str) -> bool:
+    return _RULE.match(line) is not None
 
 
 @dataclass
@@ -15,7 +21,7 @@ class RawChunk:
     start: int | None      # 1-based line range in the source text
     end: int | None
     heading_path: tuple[str, ...]
-    kind: str              # text | table | code | csv_rows | csv_summary
+    kind: str              # text | table | code | csv_row | csv_summary
     extra: dict = field(default_factory=dict)
 
 
@@ -29,13 +35,27 @@ class _Block:
 
 
 def chunk_markdown(text: str) -> list[RawChunk]:
-    blocks: list[_Block] = []
-    for block in _parse_blocks(text):
-        if count_tokens(block.text) > CHUNK_MAX_TOKENS:
-            blocks.extend(_split_block(block))
-        else:
-            blocks.append(block)
-    return _pack(blocks)
+    chunks: list[RawChunk] = []
+    for section in _sections(_parse_blocks(text)):
+        if len(section) == 1 and section[0].kind == "heading":
+            continue  # heading with no body of its own: its children carry it in their heading path
+        blocks: list[_Block] = []
+        for block in section:
+            blocks.extend(_split_block(block) if count_tokens(block.text) > CHUNK_MAX_TOKENS else [block])
+        chunks.extend(_pack(blocks))
+    if not chunks and text.strip():  # e.g. a file that is only headings
+        chunks.append(RawChunk(text.strip(), 1, len(text.splitlines()), (), "text"))
+    return chunks
+
+
+def _sections(blocks: list[_Block]) -> list[list[_Block]]:
+    """Group blocks into sections: a section starts at every heading (text before the first heading is its own)."""
+    sections: list[list[_Block]] = []
+    for block in blocks:
+        if block.kind == "heading" or not sections:
+            sections.append([])
+        sections[-1].append(block)
+    return sections
 
 
 def document_title(text: str, fallback: str) -> str:
@@ -70,6 +90,9 @@ def _parse_blocks(text: str) -> list[_Block]:
             blocks.append(_Block("\n".join(lines[i:end + 1]), "code", i + 1, end + 1, path()))
             i = end + 1
             continue
+        if _is_rule(line):  # decoration, not content: omitted (line numbers still count it)
+            i += 1
+            continue
         m = _HEADING.match(line)
         if m:
             level = len(m.group(1))
@@ -81,7 +104,9 @@ def _parse_blocks(text: str) -> list[_Block]:
             continue
         is_table = line.lstrip().startswith("|")
         j = i
+        # a `---` straight under a text line is a setext underline and stays; `***` / `___` end the run
         while (j < n and lines[j].strip() and not _FENCE.match(lines[j]) and not _HEADING.match(lines[j])
+               and not (_is_rule(lines[j]) and lines[j].strip()[0] != "-")
                and lines[j].lstrip().startswith("|") == is_table):
             j += 1
         blocks.append(_Block("\n".join(lines[i:j]), "table" if is_table else "text", i + 1, j, path()))
@@ -141,33 +166,21 @@ def _split_long_line(line: str) -> list[str]:
 
 
 def _pack(blocks: list[_Block]) -> list[RawChunk]:
+    """Pack one section's blocks into chunks of ~target size (a lone heading is never cut off from its body)."""
     chunks: list[RawChunk] = []
     cur: list[_Block] = []
     tokens = 0
-
-    def flush() -> None:
-        """Emit the current chunk; a trailing heading is carried over so it never ends a chunk."""
-        nonlocal cur, tokens
-        carry: list[_Block] = []
-        if len(cur) > 1 and cur[-1].kind == "heading":
-            carry = [cur.pop()]
-        if cur:
-            chunks.append(_make(cur))
-        cur = carry
-        tokens = sum(count_tokens(b.text) for b in carry)
-
     for block in blocks:
         t = count_tokens(block.text)
-        if cur and tokens + t > CHUNK_TARGET_TOKENS:
-            flush()
-        elif cur and block.kind == "heading" and tokens >= CHUNK_MIN_TOKENS:
-            flush()
+        if cur and tokens + t > CHUNK_TARGET_TOKENS and not (len(cur) == 1 and cur[0].kind == "heading"):
+            chunks.append(_make(cur))
+            cur, tokens = [], 0
         cur.append(block)
         tokens += t
     if cur:
         chunks.append(_make(cur))
 
-    # fold a tiny last chunk into its predecessor when it fits
+    # fold a tiny last piece into its predecessor when it fits
     if len(chunks) > 1 and count_tokens(chunks[-1].text) < CHUNK_MIN_TOKENS:
         a, b = chunks[-2], chunks[-1]
         if count_tokens(a.text) + count_tokens(b.text) <= CHUNK_MAX_TOKENS:

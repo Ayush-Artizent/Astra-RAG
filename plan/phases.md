@@ -25,7 +25,7 @@
 | P3 | Azure DevOps adapter | M | P2 | Connect, validate, clone and ingest an ADO golden repo |
 | P4 | Repo registry, bindings and tracked branch | M | P3 | Persistent repos, project→repo binding, branch config, persistent status |
 | P5 | Sync: nightly + Sync now, alias swap | M | P4 | Index follows the tracked branch with no empty-index window |
-| P6 | Front-matter-aware ingestion | S | P0 | Front-matter in payload, stripped from chunk text |
+| P6 | Structure- and metadata-aware ingestion | S | P0 | Per-section and per-row chunks, header metadata, open items (done); front-matter in payload (todo) |
 | P7 | Golden catalog (`golden.yaml`, rule sections, templates) | L | P4 | Live catalog of rules and templates, plus warnings |
 | P8 | Rule selection and request inference | M | P7 | always / scope / relevance selection, doc type, stage and tag inference |
 | P9 | `get_context` API, sub-queries, rerank, tools | L | P5, P6, P8 | The combined context response and Claude tool schemas |
@@ -215,28 +215,51 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
 
 ---
 
-## P6: Front-matter-aware ingestion
-**Goal:** make use of the YAML front-matter in project-data Markdown files (§E1). Can start any time after P0.
+## P6: Structure- and metadata-aware ingestion
+**Goal:** make the chunks match how project-data is really written (§E1). A review of the two example repos
+(`ecommerce`, `patient appointment`) showed that sections were merged under the wrong heading, email / meeting / CR
+header lines were plain body text, and CSV rows were grouped. Can start any time after P0.
 
-**Scope**
-- Add `pyyaml` with `uv add pyyaml`.
-- `md_chunker` / `loader`:
-  - detect a leading `---` block;
-  - parse it safely (`yaml.safe_load`);
-  - strip it from the text and line-number calculations, keeping line numbers correct.
-- Copy scalar and list fields into the payload under `fm.<key>`, and index common keys (`fm.type`, `fm.status`, `fm.tags`).
-- Bad YAML: index the file without front-matter and add a warning.
+**Decisions (2026-10-28, agreed with the user)**
+- **One chunk per heading section**, each with its own correct heading path. A section over the size cap is split, and every
+  piece keeps the section's path. A heading with no body makes no chunk (its children carry it in their path). Text before
+  the first heading (e.g. an email) is its own chunk.
+- **Header metadata is parsed into the payload**: `doc_type` (from the folder, mapping in `config.DOC_TYPE_BY_FOLDER`),
+  `doc_date`, `doc_meta` (from / to / subject, attendees, owner, status ...). The same facts are prefixed to the embedded text.
+- **One chunk per CSV row**, with `row_key` (the id-like column) and `row_start` = `row_end` = row number. One small summary
+  chunk (file name, columns, row count) stays.
+- **Open items** ("Open: ...", "to decide", TBD) are flagged per chunk: `has_open_item`, `open_items`.
+- **No recency or authority preference.** Date and doc type are information for the LLM only. Retrieval stays plain hybrid
+  RRF and returns every match; when sources disagree (e.g. COD limit 10,000 vs 7,500) the LLM sees each source's date, type
+  and `source_url` and decides. No date filter, sort or boost is added.
+- **Horizontal rules are omitted (decided 2026-10-28).** A line of only `---`, `***` or `___` is decoration (common in
+  AI-generated Markdown). It is dropped from the chunk text **and** the embedded text. It is **not** a chunk boundary: chunks
+  are still cut only by headings and size, so a rule between two paragraphs of one section just disappears and the section
+  stays one chunk. A section left with only a heading or rules makes no chunk. Line numbers still count the original file, so
+  permalinks stay right. Left untouched because they are not decoration:
+  - table separator rows (`|---|---|`);
+  - `---` inside code fences;
+  - a setext heading underline (`Title` directly over `---`).
 
-**Out of scope:** front-matter filters in the search API (P9 or later).
+**Done (2026-10-28):** the five decisions above (`md_chunker`, `csv_chunker`, new `doc_meta.py`, `chunker` payload; tests).
+Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size threshold if a very large CSV shows up.
+
+
+
+**Out of scope:** front-matter filters in the search API (P9 or later); any ranking by date or doc type.
 
 **Tests**
-- Front-matter is stripped.
-- Fields appear in the payload.
-- Line numbers still match the original file.
-- Bad YAML produces a warning and ingestion continues.
+- Done: section paths, heading-only sections, oversize sections, per-row CSV, header metadata (email, meeting, italic owner
+  line, filename date), open items, plain prose with a colon is not metadata; rules omitted without splitting a chunk, line
+  numbers unchanged, rule-only section makes no chunk, table separators / code fences / setext underlines untouched.
+- Todo: front-matter is stripped; fields appear in the payload; line numbers still match the original file; bad YAML warns
+  and ingestion continues.
 
 **Acceptance**
-- Ingest a repo with front-matter files. Chunks show `fm.*` fields, and no chunk text starts with `---`.
+- Done: ingest the example repos. `Not in scope` items no longer sit under `Scope`; emails and meeting notes show `doc_type`,
+  `doc_date` and `doc_meta`; `RSK-001` is its own chunk with `row_key`; no chunk or embedded text contains a bare
+  `---` / `***` / `___` line, while table separator rows are intact.
+- Todo: ingest a repo with front-matter files. Chunks show `fm.*` fields, and no chunk text starts with `---`.
 
 ---
 
@@ -369,6 +392,7 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
 
 **Scope**
 - A small set of real requests (20-50) per sample org, each with the rules, template and evidence it should return.
+  Starter list for retrieval only (22 ecommerce questions with expected sources and facts): [eval-questions.md](eval-questions.md).
 - A script that reports recall@k for evidence and for rules.
 - Tune the relevance threshold, budgets and rerank candidate count. Record the results in the CHANGELOG.
 - Use the set as a check before merging any change to chunking, models or selection.

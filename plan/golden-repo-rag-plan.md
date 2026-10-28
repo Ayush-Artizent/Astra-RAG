@@ -96,6 +96,12 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
 1. project-data is **mostly Markdown, structured with headings, often with YAML front-matter.**
    - Parse front-matter and copy its fields into the chunk payload as filterable keys.
    - Strip front-matter from the chunk text. This is a current `md_chunker` gap: the `---` block is treated as body text.
+   - Chunk **per heading section** (own heading path), **per CSV row** (`row_key`), parse header lines (email From/Date/Subject,
+     meeting Date/Attendees, `_Owner · date_`) into `doc_type` / `doc_date` / `doc_meta`, and flag open items. Done in P6 (2026-10-28).
+   - Omit horizontal-rule lines (`---`, `***`, `___`) from chunk and embedded text. They are decoration, not content, and not a
+     chunk boundary (chunks still split only on headings and size). Table separator rows, code fences and setext underlines
+     are left alone. Done in P6 (2026-10-28).
+   - **No recency or authority preference:** date and doc type are information for the LLM, never a ranking, filter or boost.
    - Keep md/txt/csv/docx. PDF, xlsx, pptx and OCR come later, on demand.
 2. Size: **under 100 files per repo.** The first-build sync is:
    - skip if the head SHA is unchanged;
@@ -119,6 +125,7 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
    - **template-section sub-queries** (each template heading plus the request text becomes one query, results grouped per section);
    - a **reranker** (bge-reranker-base) on the top ~30, with a time budget (skipping it is reported);
    - dedupe across sections;
+   - **return every relevant match with its `doc_date`, `doc_type` and `source_url`; do not prefer newer sources, the LLM resolves conflicts**;
    - token budgets filled in this order: always rules, template, scope rules, relevance rules, knowledge. Anything truncated is flagged.
 3. Later: parent-section expansion, front-matter filters in the API, an eval set (review R13).
 
@@ -154,7 +161,7 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
 | `03-request-and-inference.md` | §C: inputs, inference steps, confidence/candidates, explicit overrides |
 | `04-sources-and-adapters.md` | §D: `SourceAdapter` + credential ports (signatures), ADO-first notes, host matrix, contract tests, `RepoRef` redesign |
 | `05-branch-and-sync.md` | §D6-8 + §E2: tracked branch config, nightly/manual triggers, locking, state store, alias swap, failure handling, later webhooks |
-| `06-ingestion.md` | §E: loader, front-matter, chunking, payload fields, versioning, safety fix, later formats/redaction |
+| `06-ingestion.md` | §E: loader, front-matter, section/row chunking, header metadata, payload fields, versioning, safety fix, later formats/redaction |
 | `07-retrieval.md` | §F: response contract, sub-queries, rerank, budgets, degraded modes, citations |
 | `08-api-and-tools.md` | Endpoints (context, catalog, sync, bindings, repo settings) and Claude tool schemas as wrappers |
 | `09-security-and-ops.md` | PATs, symlinks, untrusted content as data, observability, runbook |

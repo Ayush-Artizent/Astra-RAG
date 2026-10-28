@@ -83,13 +83,26 @@ paths:
       operationId: codeJobCreate
       summary: Queue a bootstrap or sync job
       description: |
-        `bootstrap` clones and indexes from scratch. `sync` moves the working tree to `commit_sha` and
-        runs an incremental sync (D4). Idempotent when `Idempotency-Key` is supplied.
-        Syncs for one project are serialized. A burst of sync jobs for one project is coalesced: only
-        the newest `commit_sha` is run, older queued ones finish as `superseded` (spike: a sync costs
-        about a minute on a 3,000-file repo whatever the number of changed files).
-        Only one bootstrap runs at a time per adapter (spike: Django bootstrap took about 7 minutes
-        and about 2 GB of memory).
+        Job types:
+        - `bootstrap` clones the repo (shallow) and builds the first index. Needs scope `project:admin`.
+          Refused with 409 `job_conflict` when the project is already bootstrapped or a bootstrap is queued
+          or running. Rebuilding an existing project is not done through this call.
+        - `sync` moves the working tree to `commit_sha` and runs an incremental sync (D4). Needs scope
+          `code:sync`. Refused with 409 `job_conflict` when the project has not been bootstrapped.
+        - `reconcile` is reserved for the adapter's own freshness check and answers 501 until it is built.
+
+        Idempotent when `Idempotency-Key` is supplied: the same key with the same request returns the
+        same job, the same key with a different request is 409 `job_conflict`.
+
+        Syncs for one project run one at a time and are coalesced: when a newer sync is accepted, older
+        syncs still `queued` finish as `superseded` with `coalesced_into` set to the newer job. A sync that
+        is already `running` is never interrupted (spike: a sync costs about a minute on a 3,000-file repo
+        whatever the number of changed files). Only one bootstrap runs at a time per adapter (spike:
+        Django bootstrap took about 7 minutes and about 2 GB of memory).
+
+        `repo_url` must be `https`, without embedded credentials, and not point at loopback or private
+        addresses. The deployment may also restrict it to an allow list of hosts. Violations are 422
+        `invalid_field` naming `repo_url`.
       parameters:
         - $ref: '#/components/parameters/RequestId'
         - name: Idempotency-Key
@@ -110,14 +123,19 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/Invalid' }
         '429': { $ref: '#/components/responses/RateLimited' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
         '503': { $ref: '#/components/responses/Unavailable' }
 
   /internal/v1/code/jobs/{job_id}:
     get:
       operationId: codeJobGet
       summary: State of a job
+      description: |
+        Needs any of the scopes `query`, `code:sync` or `project:admin`. A job id from another org or
+        project is 404, never 403.
       parameters:
         - name: job_id
           in: path
@@ -396,20 +414,43 @@ components:
       type: object
       additionalProperties: false
       required: [type]
+      description: |
+        Which fields are allowed depends on `type`. bootstrap: `repo_url` (required), `credentials_ref`,
+        `branch`. sync: `commit_sha` (required) only. reconcile: nothing else. Any other field is 422
+        `invalid_field`.
       properties:
         type: { type: string, enum: [bootstrap, sync, reconcile] }
-        repo_url: { type: string, description: "Required for bootstrap. Credentials are a reference resolved by the adapter, never inline." }
-        credentials_ref: { type: string }
-        branch: { type: string }
-        commit_sha: { type: string, description: "Required for sync. 7 to 40 hex characters." }
+        repo_url:
+          type: string
+          maxLength: 2000
+          description: https URL of the repo. Credentials are never inline; see `credentials_ref`.
+        credentials_ref:
+          type: string
+          pattern: '^[A-Za-z0-9_.-]{1,64}$'
+          description: |
+            Name of a secret the adapter resolves itself (MVP: the environment variable
+            `ASTRA_REPO_TOKEN_<NAME>`, upper-cased, holding either a token or `user:token`). It is stored with
+            the project and reused for every sync. Omit it for a public repo.
+        branch:
+          type: string
+          maxLength: 200
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._/-]*$'
+          description: Branch to track. Defaults to the remote's default branch.
+        commit_sha:
+          type: string
+          pattern: '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$'
+          description: Full commit id, required for sync. Short ids are refused because the adapter fetches by id.
 
     CodeJobAccepted:
       type: object
-      required: [job_id, status_url]
+      required: [job_id, status_url, state]
       properties:
         job_id: { type: string }
         status_url: { type: string }
-        coalesced_into: { type: string, nullable: true, description: Set when this sync was merged into a newer queued sync. }
+        state:
+          type: string
+          enum: [queued, running, done, failed, superseded]
+          description: State at the time of the response. After an idempotent replay it can already be past `queued`.
 
     CodeJob:
       type: object
@@ -419,6 +460,11 @@ components:
         type: { type: string, enum: [bootstrap, sync, reconcile] }
         state: { type: string, enum: [queued, running, done, failed, superseded] }
         commit_sha: { type: string, nullable: true }
+        coalesced_into:
+          type: string
+          nullable: true
+          description: For a `superseded` sync, the newer job that took its place.
+        created_at: { type: string, format: date-time }
         phase:
           type: string
           nullable: true
@@ -474,8 +520,16 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: |
+        The request is valid but not allowed in the current state (error_code `job_conflict`): bootstrapping a
+        project that already exists or is being bootstrapped, syncing one that was never bootstrapped, or reusing
+        an idempotency key for a different request.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
     NotImplemented:
-      description: The operation is part of the contract but not built yet. Today this is `flow` mode.
+      description: The operation is part of the contract but not built yet. Today this is `flow` mode and `reconcile` jobs.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

@@ -180,17 +180,83 @@ Made by the reviewer to unblock Phase 2 (jobs, sync, flow). Each is the option r
 | # | Question | Decision | Consequence |
 |---|---|---|---|
 | 1 | How do jobs reach the adapter? | HTTP endpoint, `POST /internal/v1/code/jobs` (already in the contract). | No queue to run for the MVP. A queue consumer can be added behind the same job code later. |
-| 2 | Who owns the job and sync record? | The adapter, in its own SQLite file in the data directory. | It holds job state, `last_synced_sha` and the last sync time, and it fills `commit_sha` in citations. Moving it to the control plane later means replacing one module. |
+| 2 | Who owns the job record? | The adapter, in its own SQLite file in the data directory. | It holds job state, errors, idempotency keys and each project's repo binding (URL, branch, credentials reference). It does **not** hold the commit an index reflects: that is read from the index itself (row 6). Moving it to the control plane later means replacing one module. |
 | 3 | How is the repo fetched? (Q1) | `git clone` over HTTPS with a token. The job carries `repo_url` and a `credentials_ref` that the adapter resolves from an environment variable or file. | One repo per project. GitHub App installs, several repos per project and uploaded archives are not covered and stay open. |
 | 4 | Index-lag target? (Q2) | Scaled by repo size: 2 minutes up to 1,000 files, 5 minutes up to 5,000 files, measured case by case beyond. | Sets the sync timeout, the coalescing window and the reconcile interval. The thresholds are my proposal from one Django measurement, not a tested result. |
+| 5 | Where does customer source live? | **A local working tree is kept next to the index** (`data/<org>/<project>/`), cloned shallow (depth 1). Ephemeral-tree and remote-only variants are deferred. | See 12.1. Customer source is at rest on our disks, so the hardening in 12.1 is a requirement of the clone step, not an option. |
+| 6 | Where does `commit_sha` come from? | CodeGraph's own stamp, `indexed_at_commit` in the index's `project_metadata` table, not a record we write. **Adopted when Phase 2 started, for the reviewer to confirm.** | The stamp is written together with the index data, so it cannot name a commit the index does not reflect. Reading an internal table couples us to CodeGraph 1.6.2, so the version stays pinned and a test fails if the key disappears. See 12.2. |
 
 Testing approach (not a reviewer decision): local git repositories created inside the tests, so cloning and syncing
 are exercised with no network.
+
+### 12.1 Source at rest: decision and consequences
+
+**Decision (2026-10-27):** for the MVP the adapter keeps a shallow local clone of each project next to its index.
+It is the only arrangement that works with CodeGraph unmodified (decision D6).
+
+**Why the copy cannot be deleted after indexing** (spikes `s10`, `s9b`):
+- `getCode` reads the source file from disk on every call. Without the tree, every result loses its text.
+- A sync with the tree missing **deletes the project's symbols** from the index (the files look removed).
+  `git checkout` followed by a sync repairs it.
+- Syncing needs the tree. CodeGraph has no remote mode and never contacts a git host (no clone, fetch or pull).
+
+**Disk (Django, 3,024 indexed files):** source tree 45 MB (CodeGraph reads 19 MB of it, 43%), `.git` 13 MB (depth 1),
+index 179 MB. The copy of the source is about 58 MB, the index is the larger part. Plan about 5 times the working
+tree per project, plus transient write-ahead log during a bootstrap (it reached 156 MB).
+
+**Alternatives considered, not built:**
+
+| Option | What it is | Why deferred |
+|---|---|---|
+| Ephemeral tree | Clone, sync, delete the tree. Serve snippets by reading git objects or the host API. | We would write our own snippet reader, every sync pays a fresh clone, and a kept `.git` is still source at rest. |
+| Remote only | Nothing source-like on disk. Fetch each snippet from the git host per request. | Added latency, host API rate limits, one code path per host. The index still holds symbol names, paths and call structure, so "nothing at rest" is not achieved anyway. |
+
+Either could be offered later for security-sensitive customers. Neither has been built or measured.
+
+**Hardening required in the clone and sync steps** (design requirements; only the symlink mitigation has been tested):
+1. **Symlinks.** Reading CodeGraph's source, the indexing read path follows in-repo symlinks out of the project
+   (`allowSymlinkEscape`), while `getCode` refuses them. A malicious repo could put another tenant's symbol names and
+   structure into its own index. This was **not reproduced** (no symlink rights on the Windows test account); a Linux
+   test is needed. Mitigation tested on Windows: clone with `core.symlinks=false`, which writes a symlink entry as a
+   plain text file, and the foreign symbol was not indexed. Persist the setting in the repo config, and scan the tree
+   for real symlinks after checkout and refuse the project if any exist.
+2. **Token.** Never put it in the URL or in `.git/config`. Pass it to git through environment variables for that one
+   command, scoped to the repo host, and scrub it from stored errors.
+3. **Repo-controlled behaviour.** No submodules, `GIT_ALLOW_PROTOCOL` limited to https, `GIT_TERMINAL_PROMPT=0`,
+   user and system git config ignored. Never run `git clean` (it would delete `.codegraph`).
+4. **Repo URL.** https only, no embedded credentials, no `file://`, loopback or private addresses (cloning an
+   arbitrary URL is a server-side request), optional host allow list. `file://` is allowed only by a test-only setting.
+5. **Cleanup.** Delete a failed or half-finished bootstrap and any stale lock. Delete the folder when a project is
+   offboarded, after closing its handle (Windows cannot delete an open database). Run `git gc` periodically.
+6. **Idle pruning.** Delete projects unused for a set time and rebuild on demand (Django bootstrap: about 7 minutes).
+
+**Not covered here:** encryption at rest and folder permissions are an infrastructure decision. The repo-supplied
+`codegraph.json` that CodeGraph reads has not been audited. Hardcoded credentials inside source files are returned in
+snippets (CodeGraph returns only the key for config files, which I read but did not test); the design document has no
+redaction requirement.
+
+### 12.2 Commit tracking
+
+CodeGraph writes the commit an index reflects as `indexed_at_commit`, after a full index and after every successful
+sync. Tested in a throwaway git repo with our planned flow (shallow clone, `fetch <sha>`, `reset --hard <sha>`, sync)
+(spike `s9b`, all checks passed): the stamp follows bootstrap, forward sync, rollback with deleted files, and a jump to
+a commit that is not a descendant (rewritten history), and a no-op sync leaves it alone. This also means CodeGraph
+already copes with force-pushes, so the reconcile job (L5) only compares the stamp with the remote branch head.
+**Not tested:** what the stamp does if the process is killed mid-sync; CLI versus library; repos beyond Django's size.
+The stamp is the HEAD of the git work tree that contains the project folder, so each project must be its own clone
+root, and the clone step checks that.
 
 ## 11. Checklist
 
 Open decisions and measurements. Questions in section 9 and the open items in
 [codegraph-spike-report.md](codegraph-spike-report.md) are tracked in their own documents.
+
+- [ ] **Idle-project retention.** How long may an unused project stay on disk before it is deleted and rebuilt on demand? (12.1)
+- [ ] **Secrets in snippets.** Does the platform need hardcoded credentials redacted before code is returned? The design document has no such requirement. (12.1)
+- [ ] **Encryption at rest and folder permissions.** Who owns them, the platform team or this service? (12.1)
+- [ ] **Symlink isolation on Linux.** Reproduce the cross-tenant symlink case with real symlinks (no symlink rights on the Windows test account). (12.1)
+- [ ] **Confirm decision 6.** Read `commit_sha` from CodeGraph's own stamp. (12.2)
+- [ ] **Stamp after a killed sync.** Not tested. (12.2)
 
 - [ ] **Symbol discovery (to discuss).** How does the calling agent learn which symbols to send?
   - D3 says ASTRA stages must supply structured fields, but it doesn't say how a stage gets symbol names.

@@ -1,26 +1,24 @@
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import type { Config } from '../src/config.js';
 import { signEnvelope } from '../src/envelope.js';
 import { buildServer } from '../src/server.js';
+import { testConfig } from './helpers.js';
 
-const config: Config = {
-  port: 0,
-  host: '127.0.0.1',
-  dataDir: path.resolve('test-data-unused'),
-  envelopeKey: 'test-key-0123456789abcdef',
-  maxEnvelopeLifetimeSeconds: 300,
-  clockSkewSeconds: 30,
-};
-
+let dataDir: string;
+let config: ReturnType<typeof testConfig>;
 let app: FastifyInstance;
 beforeAll(async () => {
+  dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-server-'));
+  config = testConfig(dataDir);
   app = buildServer(config);
   await app.ready();
 });
 afterAll(async () => {
   await app.close();
+  fs.rmSync(dataDir, { recursive: true, force: true });
 });
 
 const now = () => Math.floor(Date.now() / 1000);

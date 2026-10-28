@@ -147,3 +147,19 @@ search, and report `exact`, `fuzzy`, `ambiguous` or `not_found` with up to 5 alt
 
 Proceed to Phase 1 with the decisions above. Run open items 1 and 2 in parallel with the adapter skeleton,
 because they affect only limits and timeouts, not the contract.
+
+Update 2026-10-27: Q1 and Q2 are decided for the MVP (work plan section 12). Open items 1 and 2 are still open.
+
+## 8. Follow-up findings, 2026-10-27 (added after Phase 1)
+
+Scripts are in `code-adapter/spikes/`. The decisions they led to are in work plan sections 12.1 and 12.2.
+
+| Script | Question | Result |
+|---|---|---|
+| `s8_keywords.cjs` | How does keyword search behave? | Full-text search matches the start of a word: `token` finds `validate_token`, not `issueToken`. Multi-word queries are OR. Fixed in the adapter with the library's substring search. |
+| `s9_commit_stamp.cjs` | Does CodeGraph record the commit an index reflects? | Yes: `indexed_at_commit` in `project_metadata` (Django: equals HEAD). |
+| `s9b_git_flow.cjs` | Does the stamp follow our planned git flow? | Yes, 9 of 9 checks: shallow clone, `fetch <sha>`, `reset --hard <sha>`, sync; forward, rollback, rewritten history, no-op. Not tested: killed mid-sync. |
+| `s10_cleanup.cjs` | Can the clone be deleted after indexing? | No. `getCode` returns null without the files, and a sync with no files **removes the symbols**. Disk on Django: tree 45 MB, `.git` 13 MB, index 179 MB. |
+| `s11_footprint.cjs` | How much of the tree does CodeGraph use? | 19.4 MB of 45.1 MB (43%): translations, docs and images are not indexed. |
+| `s12_symlink.cjs` | Can a symlink pull another tenant's file into an index? | **Could not run**: no symlink rights on the Windows account. Source reading says the indexing path follows symlinks out of the project and `getCode` refuses them. Needs a Linux test. |
+| `s12b_symlink_mitigation.cjs` | Does `core.symlinks=false` stop it? | Yes on Windows: the entry becomes a plain file and the foreign symbol is not indexed. This tests the mitigation, not the original leak. |

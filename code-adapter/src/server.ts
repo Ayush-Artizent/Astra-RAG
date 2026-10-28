@@ -4,6 +4,9 @@ import Fastify, { type FastifyError, type FastifyInstance, type FastifyRequest }
 import type { Config } from './config.js';
 import { type Envelope, requireScope, verifyEnvelope } from './envelope.js';
 import { ProblemError } from './errors.js';
+import { createJobSystem, type JobSystem } from './jobs/index.js';
+import { registerJobRoutes } from './jobs/routes.js';
+import type { Executor, JobType } from './jobs/types.js';
 import type { GraphApi } from './modes.js';
 import { ProjectRegistry } from './projects.js';
 import { type AmbiguousPolicy, runCodeQuery } from './query.js';
@@ -36,6 +39,10 @@ function requestIdOf(req: FastifyRequest): string | undefined {
 
 export interface ServerDeps {
   registry?: ProjectRegistry;
+  /** Replaces the whole job system. For tests that need to control it. */
+  jobs?: JobSystem;
+  /** What runs each job type. Without it jobs fail with "No executor". TODO(phase 2): real bootstrap and sync. */
+  executors?: Partial<Record<JobType, Executor>>;
   ambiguousPolicy?: AmbiguousPolicy;
   /**
    * The commit a project's index reflects. TODO(phase 2): read `last_synced_sha` from the job ledger.
@@ -49,7 +56,12 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
   const probe = walProbe();
   const registry = deps.registry ?? new ProjectRegistry({ dataDir: config.dataDir });
   const commitSha = deps.commitSha ?? (() => null);
-  app.addHook('onClose', async () => registry.closeAll());
+  const jobs = deps.jobs ?? createJobSystem(config, { executors: deps.executors ?? {} });
+  app.addHook('onReady', async () => jobs.queue.start());
+  app.addHook('onClose', async () => {
+    await jobs.close();
+    registry.closeAll();
+  });
 
   app.addHook('onRequest', async (req, reply) => {
     const id = requestIdOf(req);
@@ -102,6 +114,8 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
       lease.release();
     }
   });
+
+  registerJobRoutes(app, jobs.service);
 
   app.get('/internal/v1/code/status', async (req): Promise<CodeStatus> => {
     const env = req.envelope as Envelope;

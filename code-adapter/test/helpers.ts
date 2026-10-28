@@ -21,6 +21,11 @@ export function testConfig(dataDir: string): Config {
     envelopeKey: TEST_KEY,
     maxEnvelopeLifetimeSeconds: 300,
     clockSkewSeconds: 30,
+    maxConcurrentJobs: 2,
+    allowedRepoHosts: [],
+    allowFileRepos: false,
+    bootstrapTimeoutMs: 60_000,
+    syncTimeoutMs: 60_000,
   };
 }
 

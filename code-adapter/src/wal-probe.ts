@@ -1,13 +1,7 @@
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
-import type { DatabaseSync as DatabaseSyncType } from 'node:sqlite';
-
-// Loaded through require so bundlers used by the test runner do not try to resolve `node:sqlite`.
-const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as {
-  DatabaseSync: typeof DatabaseSyncType;
-};
+import { DatabaseSync } from './sqlite.js';
 
 /**
  * Opens a file-backed scratch database and checks that SQLite switches it to WAL (A4).

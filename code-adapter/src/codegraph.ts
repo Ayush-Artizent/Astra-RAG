@@ -6,6 +6,7 @@ export type CodeGraph = CodeGraphClass;
 
 interface Library {
   CodeGraph: typeof CodeGraphClass;
+  getDatabasePath(projectRoot: string): string;
 }
 
 // The package entry is a CommonJS shim that re-exports a bundled build, so named ESM imports are not
@@ -19,6 +20,11 @@ function load(): Library {
 /** Opens an existing project index read-only. Throws if the project is not initialised. */
 export function openReadOnly(projectRoot: string): Promise<CodeGraph> {
   return load().CodeGraph.open(projectRoot, { readOnly: true });
+}
+
+/** Where CodeGraph keeps a project's database. */
+export function databasePath(projectRoot: string): string {
+  return load().getDatabasePath(projectRoot);
 }
 
 /** Whether `projectRoot` holds an initialised CodeGraph index (a `.codegraph/codegraph.db` file). */

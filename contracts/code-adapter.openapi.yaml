@@ -92,7 +92,12 @@ paths:
         - `reconcile` is reserved for the adapter's own freshness check and answers 501 until it is built.
 
         Idempotent when `Idempotency-Key` is supplied: the same key with the same request returns the
-        same job, the same key with a different request is 409 `job_conflict`.
+        same job, the same key with a different request is 409 `job_conflict`. A job that failed is returned
+        as it is, so a retry needs a new key.
+
+        A failed bootstrap leaves no folder and no repo record behind, so it can be retried. A failed sync
+        leaves the project on the last commit it indexed. If the adapter restarts while a job runs, that job
+        is marked failed and cleaned up the same way before anything queued starts.
 
         Syncs for one project run one at a time and are coalesced: when a newer sync is accepted, older
         syncs still `queued` finish as `superseded` with `coalesced_into` set to the newer job. A sync that
@@ -282,8 +287,14 @@ components:
 
     Snapshot:
       type: object
-      required: [commit_sha, index_time, index_state]
+      required: [commit_sha, index_time, index_state, sync_in_progress]
       properties:
+        sync_in_progress:
+          type: boolean
+          description: |
+            True while a sync or bootstrap is running for the project. A sync moves the files to the new commit
+            before the index catches up (about a minute on a 3,000-file repo), so for that window source text and
+            line numbers may not agree with `commit_sha`. A query then reports `plane_status` `degraded`.
         commit_sha: { type: string, nullable: true, example: a1b2c3d }
         index_time: { type: string, format: date-time, nullable: true }
         index_state:
@@ -408,7 +419,10 @@ components:
         symbols: { type: integer }
         edges: { type: integer }
         error: { type: string, nullable: true }
-        active_job: { type: string, nullable: true }
+        active_job:
+          type: string
+          nullable: true
+          description: The job running for the project, or else the next one queued. While a bootstrap runs and there is no index yet, `state` is `indexing`.
 
     CodeJobRequest:
       type: object
@@ -468,7 +482,13 @@ components:
         phase:
           type: string
           nullable: true
-          enum: [clone, scanning, parsing, resolving, linking, finalizing]
+          description: |
+            Where the job is. `clone` means getting the code (a clone for bootstrap, a fetch and reset for sync);
+            `scanning`, `parsing`, `resolving` and `linking` are the indexer's own steps, and `resolving` is where
+            most of the time goes on a large repo; `finalizing` is the check that the index is complete and stamped
+            with the right commit. `progress` is coarse: it moves by phase, not by work done.
+          # OpenAPI 3.0: a nullable enum must list null itself, or strict validators reject a job with no phase.
+          enum: [clone, scanning, parsing, resolving, linking, finalizing, null]
         progress: { type: number, minimum: 0, maximum: 1, nullable: true }
         started_at: { type: string, format: date-time, nullable: true }
         finished_at: { type: string, format: date-time, nullable: true }

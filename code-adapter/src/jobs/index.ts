@@ -5,7 +5,7 @@ import { projectDir } from '../paths.js';
 import { JobQueue } from './queue.js';
 import { JobService } from './service.js';
 import { JobStore } from './store.js';
-import type { Executor, JobType } from './types.js';
+import type { Executor, JobRow, JobType, ProjectBinding } from './types.js';
 
 export interface JobSystem {
   store: JobStore;
@@ -16,6 +16,8 @@ export interface JobSystem {
 
 export interface JobSystemOptions {
   executors: Partial<Record<JobType, Executor>>;
+  /** Cleans up after a job a restart cut off. See `createRecovery`. Receives the job and its project's repo binding. */
+  recover?: (job: JobRow, project: ProjectBinding | undefined) => Promise<void>;
   /** Where the job file lives. Defaults to `<dataDir>/.adapter/jobs.db`. `.adapter` cannot clash with an org id. */
   storeFile?: string;
 }
@@ -26,6 +28,7 @@ export function createJobSystem(config: Config, opts: JobSystemOptions): JobSyst
   const queue = new JobQueue({
     store,
     executors: opts.executors,
+    recover: opts.recover ? (job) => opts.recover!(job, store.getProject(job.orgId, job.projectId)) : undefined,
     maxConcurrent: config.maxConcurrentJobs,
     onSettled: (job, outcome) => {
       if (job.type !== 'bootstrap') return;

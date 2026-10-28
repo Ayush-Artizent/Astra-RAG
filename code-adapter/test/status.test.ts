@@ -34,11 +34,38 @@ describe('buildStatus for a project that is not ready', () => {
     expect(s.state).toBe(state);
     expect(s.error).toBe(error);
     // A project that is not ready never claims a commit, a sync time or counts.
-    expect(s.snapshot).toEqual({ commit_sha: null, index_time: null, index_state: snapshotState });
+    expect(s.snapshot).toEqual({ commit_sha: null, index_time: null, index_state: snapshotState, sync_in_progress: false });
     expect(s.last_synced_sha).toBeNull();
     expect(s.last_sync).toBeNull();
     expect(s).not.toHaveProperty('files');
     expect(s).not.toHaveProperty('symbols');
+  });
+});
+
+describe('buildStatus while jobs run', () => {
+  it('calls a project with no index yet `indexing` while its bootstrap is running or queued', () => {
+    const s = buildStatus(notReady('not_indexed', null), null, { id: 'job_1', running: true }, true);
+    expect(s).toMatchObject({ state: 'indexing', active_job: 'job_1', snapshot: { index_state: 'not_indexed', sync_in_progress: true } });
+    expect(buildStatus(notReady('not_indexed', null), null, { id: 'job_2', running: false }).state).toBe('indexing');
+    expect(buildStatus(notReady('not_indexed', null), null, null).state).toBe('not_indexed');
+  });
+
+  it('does not hide a failed index behind an active job', () => {
+    expect(buildStatus(notReady('failed', 'failed'), null, { id: 'job_3', running: true }).state).toBe('error');
+  });
+
+  it('shows the job and the sync flag on a ready project, without changing its state', () => {
+    const ready: ReadyProject = {
+      ready: true,
+      dir: '/x',
+      indexState: 'complete',
+      lastIndexedAt: 1,
+      cg: { getStats: () => ({ nodeCount: 1, edgeCount: 1, fileCount: 1, nodesByKind: { function: 1 } }) } as unknown as ReadyProject['cg'],
+    };
+    const during = buildStatus(ready, 'abc', { id: 'job_4', running: true }, true);
+    expect(during).toMatchObject({ state: 'ready', active_job: 'job_4', snapshot: { sync_in_progress: true } });
+    const idle = buildStatus(ready, 'abc');
+    expect(idle).toMatchObject({ state: 'ready', active_job: null, snapshot: { sync_in_progress: false } });
   });
 });
 

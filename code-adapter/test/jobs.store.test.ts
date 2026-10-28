@@ -108,12 +108,26 @@ describe('jobs', () => {
     expect(store.get(newest.id)?.state).toBe('queued');
   });
 
+  it('points every replaced sync at the newest job, not at a chain of replaced ones', () => {
+    const { store } = memoryStore();
+    const first = store.create(sync('orgA', 'p1', '1'.repeat(40)));
+    const second = store.create(sync('orgA', 'p1', '2'.repeat(40)));
+    store.supersedeQueuedSyncs('orgA', 'p1', second.id); // first -> second
+    const third = store.create(sync('orgA', 'p1', '3'.repeat(40)));
+    store.supersedeQueuedSyncs('orgA', 'p1', third.id); // second -> third, and first must follow
+    expect(store.get(first.id)).toMatchObject({ state: 'superseded', coalescedInto: third.id });
+    expect(store.get(second.id)).toMatchObject({ state: 'superseded', coalescedInto: third.id });
+    expect(store.get(third.id)?.coalescedInto).toBeNull();
+  });
+
   it('marks jobs left running by a dead process as failed', () => {
     const { store } = memoryStore();
     const a = store.create(sync());
     const b = store.create(sync('orgA', 'p2'));
     store.update(a.id, { state: 'running' });
-    expect(store.failInterruptedJobs('restarted')).toBe(1);
+    const interrupted = store.failInterruptedJobs('restarted');
+    expect(interrupted.map((j) => j.id)).toEqual([a.id]);
+    expect(interrupted[0]).toMatchObject({ state: 'failed', error: 'restarted' });
     expect(store.get(a.id)).toMatchObject({ state: 'failed', error: 'restarted' });
     expect(store.get(b.id)?.state).toBe('queued');
     expect(store.running()).toEqual([]);

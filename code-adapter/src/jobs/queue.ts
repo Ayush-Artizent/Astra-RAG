@@ -9,8 +9,13 @@ export interface QueueOptions {
   maxConcurrent: number;
   /** Bootstraps running at once. A Django-sized bootstrap needs about 2 GB, so the default is 1. */
   maxBootstraps?: number;
-  /** Called after a job has been marked done or failed. */
+  /** Called after a job has been marked done or failed, including jobs found interrupted at startup. */
   onSettled?: (job: JobRow, outcome: 'done' | 'failed') => void;
+  /**
+   * Undoes what a job that was cut off by a restart left behind (a half-made clone, a checkout ahead of its
+   * index). Runs before any queued job starts.
+   */
+  recover?: (job: JobRow) => Promise<void>;
   now?: () => number;
 }
 
@@ -35,9 +40,25 @@ export class JobQueue {
     this.now = opts.now ?? Date.now;
   }
 
-  /** Marks jobs a previous process left running as failed, then starts whatever is queued. */
-  start(): void {
-    this.opts.store.failInterruptedJobs('The adapter restarted while this job was running');
+  /**
+   * Marks jobs a previous process left running as failed, cleans up after them, then starts whatever is queued.
+   * Cleanup finishes first, so a queued job never meets a half-made folder.
+   */
+  async start(): Promise<void> {
+    const interrupted = this.opts.store.failInterruptedJobs('The adapter restarted while this job was running');
+    for (const job of interrupted) {
+      try {
+        await this.opts.recover?.(job);
+      } catch (e) {
+        const why = e instanceof Error ? e.message : String(e);
+        this.opts.store.update(job.id, { error: scrubText(`The adapter restarted while this job was running (cleanup failed: ${why})`) });
+      }
+      try {
+        this.opts.onSettled?.(this.opts.store.get(job.id) as JobRow, 'failed');
+      } catch {
+        // a failing hook must not stop startup
+      }
+    }
     this.kick();
   }
 
@@ -56,11 +77,40 @@ export class JobQueue {
     return this.running.has(jobId);
   }
 
-  /** Stops accepting work, aborts running jobs and waits for them to finish. Queued jobs stay queued. */
-  async stop(): Promise<void> {
+  /**
+   * Stops accepting work, aborts running jobs and waits for them to finish. Queued jobs stay queued.
+   * A job that ignores the abort signal is given `timeoutMs`, then recorded as failed so shutdown cannot hang.
+   */
+  async stop(timeoutMs = 10_000): Promise<void> {
     this.stopped = true;
     for (const r of this.running.values()) r.controller.abort();
-    await Promise.allSettled([...this.running.values()].map((r) => r.done));
+    const finished = Promise.allSettled([...this.running.values()].map((r) => r.done)).then(() => 'finished' as const);
+    let timer: NodeJS.Timeout | undefined;
+    const expired = new Promise<'expired'>((resolve) => {
+      timer = setTimeout(() => resolve('expired'), timeoutMs);
+    });
+    const outcome = await Promise.race([finished, expired]);
+    clearTimeout(timer);
+    if (outcome === 'expired') {
+      for (const r of this.running.values()) {
+        this.write(() =>
+          this.opts.store.update(r.job.id, {
+            state: 'failed',
+            finishedAt: this.now(),
+            error: 'Cancelled: the adapter is shutting down, and the job did not stop in time',
+          }),
+        );
+      }
+    }
+  }
+
+  /** Store writes after shutdown began can fail because the store is closed. That is expected, not an error. */
+  private write(fn: () => void): void {
+    try {
+      fn();
+    } catch (e) {
+      if (!this.stopped) throw e;
+    }
   }
 
   /** Resolves when nothing is running and nothing runnable is queued. For tests and shutdown. */
@@ -93,10 +143,14 @@ export class JobQueue {
     const entry: Running = { job, controller, done: Promise.resolve() };
     // Registered before the executor starts, so a synchronous executor cannot be scheduled twice.
     this.running.set(job.id, entry);
-    entry.done = this.run(job, controller).finally(() => {
-      this.running.delete(job.id);
-      this.kick();
-    });
+    entry.done = this.run(job, controller)
+      // run() records its own failures. Anything that still escapes (the database itself failing) must not
+      // become an unhandled rejection that takes the process down.
+      .catch(() => undefined)
+      .finally(() => {
+        this.running.delete(job.id);
+        this.kick();
+      });
   }
 
   private async run(job: JobRow, controller: AbortController): Promise<void> {
@@ -112,23 +166,25 @@ export class JobQueue {
         job,
         project,
         signal: controller.signal,
-        update: (patch) => store.update(job.id, { phase: patch.phase, progress: patch.progress }),
+        update: (patch) => this.write(() => store.update(job.id, { phase: patch.phase, progress: patch.progress })),
       });
-      store.update(job.id, {
-        state: 'done',
-        finishedAt: this.now(),
-        progress: 1,
-        files: result?.files ?? null,
-        symbols: result?.symbols ?? null,
-        edges: result?.edges ?? null,
-      });
+      this.write(() =>
+        store.update(job.id, {
+          state: 'done',
+          finishedAt: this.now(),
+          progress: 1,
+          files: result?.files ?? null,
+          symbols: result?.symbols ?? null,
+          edges: result?.edges ?? null,
+        }),
+      );
     } catch (e) {
       outcome = 'failed';
       const message = controller.signal.aborted ? 'Cancelled: the adapter is shutting down' : e instanceof Error ? e.message : String(e);
-      store.update(job.id, { state: 'failed', finishedAt: this.now(), error: scrubText(message) });
+      this.write(() => store.update(job.id, { state: 'failed', finishedAt: this.now(), error: scrubText(message) }));
     }
     try {
-      this.opts.onSettled?.(store.get(job.id) as JobRow, outcome);
+      this.write(() => this.opts.onSettled?.(store.get(job.id) as JobRow, outcome));
     } catch {
       // A failing hook must not leave the job looking unfinished.
     }

@@ -9,24 +9,31 @@ export interface Snapshot {
   commit_sha: string | null;
   index_time: string | null;
   index_state: IndexStateOut;
+  /**
+   * True while a sync or bootstrap is running for the project. A sync moves the files to the new commit before the
+   * index catches up, so for that window source text and line numbers may not agree with `commit_sha`.
+   */
+  sync_in_progress: boolean;
 }
 
 /**
  * What an answer reflects: the commit, when the index was last built, and the index state.
  * A project that is not ready reports no commit and no time.
  */
-export function snapshotOf(p: ReadyProject | NotReadyProject, commitSha: string | null): Snapshot {
+export function snapshotOf(p: ReadyProject | NotReadyProject, commitSha: string | null, syncing = false): Snapshot {
   if (!p.ready) {
     return {
       commit_sha: null,
       index_time: null,
       index_state: p.reason === 'not_indexed' ? 'not_indexed' : (p.indexState ?? 'failed'),
+      sync_in_progress: syncing,
     };
   }
   return {
     commit_sha: commitSha,
     index_time: p.lastIndexedAt === null ? null : new Date(p.lastIndexedAt).toISOString(),
     index_state: p.indexState ?? 'complete',
+    sync_in_progress: syncing,
   };
 }
 
@@ -77,11 +84,14 @@ export interface ShapeOptions {
   maxCodeChars: number;
 }
 
-/** `src/auth/token.ts:42-67 (TokenService.issue @a1b2c3d)`. The `@sha` part is left out when unknown. */
+/**
+ * `src/auth/token.ts:42-67 (TokenService.issue @a1b2c3d)`. The commit is shortened to 7 characters here; the full
+ * commit is in `provenance.commit_sha`. The `@sha` part is left out when the commit is unknown.
+ */
 export function citationOf(node: GraphNode, commitSha: string | null): string {
   const where = `${node.filePath}:${node.startLine}-${node.endLine}`;
   const name = toDisplayName(node.qualifiedName);
-  return `${where} (${name}${commitSha ? ` @${commitSha}` : ''})`;
+  return `${where} (${name}${commitSha ? ` @${commitSha.slice(0, 7)}` : ''})`;
 }
 
 export function resolvedSymbolOut(r: Resolution): ResolvedSymbolOut {

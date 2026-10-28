@@ -4,10 +4,13 @@ import Fastify, { type FastifyError, type FastifyInstance, type FastifyRequest }
 import type { Config } from './config.js';
 import { type Envelope, requireScope, verifyEnvelope } from './envelope.js';
 import { ProblemError } from './errors.js';
+import { createExecutors, createRecoveryFor } from './jobs/executors.js';
 import { createJobSystem, type JobSystem } from './jobs/index.js';
 import { registerJobRoutes } from './jobs/routes.js';
+import { readIndexedCommit } from './jobs/stamp.js';
 import type { Executor, JobType } from './jobs/types.js';
 import type { GraphApi } from './modes.js';
+import { projectDir } from './paths.js';
 import { ProjectRegistry } from './projects.js';
 import { type AmbiguousPolicy, runCodeQuery } from './query.js';
 import { snapshotOf, type CodeQueryResponse } from './shape.js';
@@ -32,6 +35,13 @@ function codegraphVersion(): string {
   }
 }
 
+/** A sync or bootstrap is running for the project, so its files and index may briefly disagree. */
+function isSyncing(jobs: JobSystem, env: Envelope): boolean {
+  return jobs.store
+    .activeForProject(env.org_id, env.project_id)
+    .some((j) => j.state === 'running' && (j.type === 'sync' || j.type === 'bootstrap'));
+}
+
 function requestIdOf(req: FastifyRequest): string | undefined {
   const hdr = req.headers['x-request-id'];
   return (Array.isArray(hdr) ? hdr[0] : hdr)?.slice(0, 64);
@@ -41,13 +51,10 @@ export interface ServerDeps {
   registry?: ProjectRegistry;
   /** Replaces the whole job system. For tests that need to control it. */
   jobs?: JobSystem;
-  /** What runs each job type. Without it jobs fail with "No executor". TODO(phase 2): real bootstrap and sync. */
+  /** What runs each job type. Defaults to the real executors (git clone and the CodeGraph CLI). */
   executors?: Partial<Record<JobType, Executor>>;
   ambiguousPolicy?: AmbiguousPolicy;
-  /**
-   * The commit a project's index reflects. TODO(phase 2): read `last_synced_sha` from the job ledger.
-   * Until sync jobs exist there is nothing to read, and the contract allows null.
-   */
+  /** The commit a project's index reflects. Defaults to reading CodeGraph's own stamp from the index. */
   commitSha?: (orgId: string, projectId: string) => string | null;
 }
 
@@ -55,8 +62,14 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
   const app = Fastify({ logger: false, bodyLimit: 64 * 1024 });
   const probe = walProbe();
   const registry = deps.registry ?? new ProjectRegistry({ dataDir: config.dataDir });
-  const commitSha = deps.commitSha ?? (() => null);
-  const jobs = deps.jobs ?? createJobSystem(config, { executors: deps.executors ?? {} });
+  // The commit an index reflects is read from the index itself (work plan, decision 6).
+  const commitSha = deps.commitSha ?? ((org, project) => readIndexedCommit(projectDir(config.dataDir, org, project)));
+  const jobs =
+    deps.jobs ??
+    createJobSystem(config, {
+      executors: deps.executors ?? createExecutors(config, registry),
+      recover: createRecoveryFor(config, registry),
+    });
   app.addHook('onReady', async () => jobs.queue.start());
   app.addHook('onClose', async () => {
     await jobs.close();
@@ -101,7 +114,7 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
     const lease = await registry.acquire(env.org_id, env.project_id);
     try {
       const p = lease.project;
-      const snapshot = snapshotOf(p, commitSha(env.org_id, env.project_id));
+      const snapshot = snapshotOf(p, commitSha(env.org_id, env.project_id), isSyncing(jobs, env));
       if (!p.ready) {
         return { request_id: requestId, plane_status: 'not_ready', snapshot, resolved_symbols: [], results: [], truncated: false };
       }
@@ -122,7 +135,15 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
     requireScope(env, 'query');
     const lease = await registry.acquire(env.org_id, env.project_id);
     try {
-      return buildStatus(lease.project, commitSha(env.org_id, env.project_id));
+      const active = jobs.store.activeForProject(env.org_id, env.project_id);
+      const running = active.find((j) => j.state === 'running');
+      const shown = running ?? active[0];
+      return buildStatus(
+        lease.project,
+        commitSha(env.org_id, env.project_id),
+        shown ? { id: shown.id, running: running !== undefined } : null,
+        isSyncing(jobs, env),
+      );
     } finally {
       lease.release();
     }

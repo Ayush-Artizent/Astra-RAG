@@ -214,6 +214,11 @@ describe('citationOf', () => {
     expect(citationOf(n, 'a1b2c3d')).toBe('src/auth/token.ts:42-67 (TokenService.issue @a1b2c3d)');
   });
 
+  it('shortens a full commit id to 7 characters', () => {
+    const n = { ...mk('x'), qualifiedName: 'f', filePath: 'a.py', startLine: 1, endLine: 3 };
+    expect(citationOf(n, 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678')).toBe('a.py:1-3 (f @a1b2c3d)');
+  });
+
   it('leaves out the commit when it is unknown', () => {
     const n = { ...mk('x'), qualifiedName: 'f', filePath: 'a.py', startLine: 1, endLine: 3 };
     expect(citationOf(n, null)).toBe('a.py:1-3 (f)');

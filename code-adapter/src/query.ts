@@ -63,8 +63,10 @@ export async function runCodeQuery(g: GraphApi, q: CodeQuery, o: QueryOptions): 
     maxCodeChars: q.maxCodeChars,
   });
 
-  // Anything short of an exact symbol match, or input that came from the fallback analyzer, is low confidence.
-  const uncertain = resolutions.some((r) => r.status !== 'exact') || q.fallbackOrigin === 'analyzer';
+  // Anything short of an exact symbol match, input that came from the fallback analyzer, or a sync in progress
+  // (files and index briefly disagree) is low confidence.
+  const uncertain =
+    resolutions.some((r) => r.status !== 'exact') || q.fallbackOrigin === 'analyzer' || o.snapshot.sync_in_progress;
   const planeStatus: PlaneStatus = uncertain ? 'degraded' : 'ok';
 
   return {

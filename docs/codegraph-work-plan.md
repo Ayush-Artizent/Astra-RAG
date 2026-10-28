@@ -246,6 +246,49 @@ already copes with force-pushes, so the reconcile job (L5) only compares the sta
 The stamp is the HEAD of the git work tree that contains the project folder, so each project must be its own clone
 root, and the clone step checks that.
 
+## 13. Phase 2 status (2026-10-28)
+
+Built and tested: L1 (job intake), L2 (bootstrap), L3 (sync) and most of L4 (failure handling). Not built: L5
+(reconcile, `git gc`, idle pruning, disk report) and L6 (flow mode). 478 tests pass; typecheck is clean.
+
+| Task | State | What exists |
+|---|---|---|
+| L1 job intake | Done | `POST /internal/v1/code/jobs`, `GET .../jobs/{id}`. A SQLite file holds jobs and each project's repo binding. One job per project, one bootstrap at a time, at most 2 jobs overall. Idempotency keys, scopes (`project:admin` for bootstrap, `code:sync` for sync), 409 on conflicts, queued syncs coalesced into the newest. |
+| L2 bootstrap | Done | Shallow clone (`core.symlinks=false`, no submodules, only https, token through the environment), own-git-root and symlink checks, `codegraph init` as a child process, index check (complete, stamped with the checked-out commit). A failure deletes the folder and the repo record. |
+| L3 sync | Done | Fetch the commit (by id, else the branch tip), `reset --hard`, `codegraph sync` as a child process, index check. A commit the index already reflects is skipped. If indexing fails the files are moved back to the indexed commit. `commit_sha` in every result now comes from the index. |
+| L4 failure handling | Mostly done | Timeouts that kill the whole process tree, cancellation on shutdown (with a time limit), cleanup of half-made folders, rollback of a failed sync, and startup recovery for a job cut off by a crash. Not done: stale CodeGraph lock files (`codegraph unlock`) have never been seen in these tests. |
+| L5 reconcile | Not started | Contract returns 501 for `reconcile`. |
+| L6 flow | Not started | Query returns 501 for `flow`. |
+
+**Behaviour added beyond the plan** (each is in the contract):
+- `snapshot.sync_in_progress`, and `plane_status` `degraded` while it is true. A sync moves the files before the
+  index catches up (about a minute on Django), so for that window snippets and line numbers may not match the
+  commit. This is a consistency gap that exists by design of how CodeGraph reads files, not something we can remove.
+- Status shows the active job and `indexing` while a bootstrap has no index yet.
+- Citations show the commit shortened to 7 characters; the full commit is in `provenance.commit_sha`.
+- Sync needs a full 40 or 64 character commit id.
+- A job that failed is returned as is for a repeated Idempotency-Key, so a retry needs a new key.
+- Repo URLs must be https, without credentials, not loopback or private addresses, and may be limited to a host
+  allow list. `file://` is allowed only with a test-only setting (`ASTRA_ALLOW_FILE_REPOS=1`).
+- Credentials: `credentials_ref` names an environment variable `ASTRA_REPO_TOKEN_<NAME>` holding a token or `user:token`.
+
+**Found while building, and fixed:**
+- Own-root check compared the long path git reports with Windows' short (8.3) temp path and rejected every
+  bootstrap on this machine. It now compares real paths.
+- The job store leaked an open file when it refused a newer schema. A cut-off bootstrap left a project stuck in
+  "already being bootstrapped" forever; startup recovery now cleans it up.
+- The OpenAPI file declared `phase` nullable but did not list `null` in its enum, so a strict validator rejected
+  queued and failed jobs.
+
+**Limits of the evidence:**
+- Run on one Windows machine, with local `file://` repos, a tiny repo each. Nothing here touched a real git host,
+  so token handling over https, redirects, and a host that refuses to fetch a commit by id are untested.
+- On this machine git cannot create symlinks and falls back to plain files, so the symlink tests would pass even
+  without our setting. They are regression guards for Linux, where the real leak is still unreproduced (checklist).
+- Timings were never taken at scale: a Django-sized bootstrap and sync through these executors has not been run.
+- Repo-URL checks do not resolve DNS, so a public name that points at a private address is not caught.
+- The rate of `git` object growth over many syncs, and `git gc`, are unmeasured.
+
 ## 11. Checklist
 
 Open decisions and measurements. Questions in section 9 and the open items in

@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import type { FastifyInstance } from 'fastify';
@@ -7,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ProblemError } from '../src/errors.js';
 import { buildServer } from '../src/server.js';
 import { validateCodeQuery } from '../src/validate.js';
+import { conforms, declaredStatuses, type Doc, loadContract, responseSchema as responseSchemaOf, type Schema } from './contract-helpers.js';
 import {
   commitShaFor,
   ORG_A_FILES,
@@ -17,37 +17,14 @@ import {
 
 // Conformance: real responses are checked against the schemas in contracts/code-adapter.openapi.yaml, and the
 // contract and the code are compared in both directions so neither can drift without a test failing.
-
-const require = createRequire(import.meta.url);
-const SwaggerParser = require('@apidevtools/swagger-parser');
-const Ajv = require('ajv').default ?? require('ajv');
-const addFormats = require('ajv-formats').default ?? require('ajv-formats');
-
-interface Schema {
-  type?: string;
-  properties?: Record<string, Schema>;
-  items?: Schema;
-  enum?: unknown[];
-  minimum?: number;
-  maximum?: number;
-  default?: unknown;
-  [key: string]: unknown;
-}
-interface Doc {
-  paths: Record<string, Record<string, any>>;
-  components: { schemas: Record<string, Schema> };
-}
-
-const CONTRACT = path.resolve(import.meta.dirname, '../../contracts/code-adapter.openapi.yaml');
-const ajv = new Ajv({ strict: false, allErrors: true });
-addFormats(ajv);
+// The job endpoints are covered in contract.jobs.test.ts.
 
 let doc: Doc;
 let app: FastifyInstance;
 let dataDir: string;
 
 beforeAll(async () => {
-  doc = (await SwaggerParser.dereference(CONTRACT)) as Doc;
+  doc = await loadContract();
   dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-contract-'));
   await seedProject(dataDir, 'orgA', 'p1', ORG_A_FILES);
   app = buildServer(testConfig(dataDir), { commitSha: commitShaFor });
@@ -59,32 +36,8 @@ afterAll(async () => {
   fs.rmSync(dataDir, { recursive: true, force: true });
 });
 
-function responseSchema(pathName: string, method: string, status: number, contentType = 'application/json'): Schema {
-  const response = doc.paths[pathName]?.[method]?.responses?.[String(status)];
-  const schema = response?.content?.[contentType]?.schema as Schema | undefined;
-  if (!schema) throw new Error(`The contract has no ${contentType} schema for ${method} ${pathName} ${status}`);
-  return schema;
-}
-
-/** Keys present in `value` that the schema does not list. Ajv allows extra keys, so this catches undocumented fields. */
-function undocumented(schema: Schema, value: unknown, at = '$'): string[] {
-  if (Array.isArray(value)) return value.flatMap((v, i) => (schema.items ? undocumented(schema.items, v, `${at}[${i}]`) : []));
-  if (value === null || typeof value !== 'object' || !schema.properties) return [];
-  const out: string[] = [];
-  for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
-    const sub = schema.properties[key];
-    if (!sub) out.push(`${at}.${key}`);
-    else out.push(...undocumented(sub, v, `${at}.${key}`));
-  }
-  return out;
-}
-
-function conforms(schema: Schema, value: unknown): void {
-  const validate = ajv.compile(schema);
-  const ok = validate(value);
-  expect(ok ? [] : validate.errors, JSON.stringify(value).slice(0, 400)).toEqual([]);
-  expect(undocumented(schema, value), 'fields the contract does not document').toEqual([]);
-}
+const responseSchema = (pathName: string, method: string, status: number, contentType?: string): Schema =>
+  responseSchemaOf(doc, pathName, method, status, contentType);
 
 const get = (url: string, org = 'orgA', project = 'p1', scopes?: string[]) =>
   app.inject({ method: 'GET', url, headers: { 'x-astra-envelope': signedEnvelope(org, project, scopes) } });
@@ -152,7 +105,7 @@ describe('real responses match the contract', () => {
     expect(res.statusCode).toBe(status);
     expect(res.headers['content-type']).toContain('application/problem+json');
     // The contract must declare this status for this operation, and the body must match the Problem schema.
-    expect(Object.keys(doc.paths[pathName]![method]!.responses), `${method} ${pathName} declares ${status}`).toContain(String(status));
+    expect(declaredStatuses(doc, pathName, method), `${method} ${pathName} declares ${status}`).toContain(String(status));
     conforms(doc.components.schemas.Problem as Schema, res.json());
   });
 });

@@ -244,15 +244,19 @@ export class JobStore {
     ).map((r) => r.id as string);
     for (const id of ids) {
       this.update(id, { state: 'superseded', coalescedInto: keepId, finishedAt: this.now() });
+      // Jobs that were folded into this one earlier now point at the newest job, so a caller always sees
+      // the job that will actually run, not a chain of replaced ones.
+      this.db.prepare('UPDATE jobs SET coalesced_into = ? WHERE coalesced_into = ?').run(keepId, id);
     }
     return ids;
   }
 
-  /** After a restart no job can still be running. Returns how many were left behind. */
-  failInterruptedJobs(message: string): number {
-    const r = this.db
-      .prepare(`UPDATE jobs SET state = 'failed', error = ?, finished_at = ? WHERE state = 'running'`)
-      .run(message, this.now());
-    return Number(r.changes);
+  /** After a restart no job can still be running. Marks them failed and returns them, so they can be cleaned up. */
+  failInterruptedJobs(message: string): JobRow[] {
+    const interrupted = this.running();
+    for (const job of interrupted) {
+      this.update(job.id, { state: 'failed', error: message, finishedAt: this.now() });
+    }
+    return interrupted.map((j) => this.get(j.id) as JobRow);
   }
 }

@@ -39,7 +39,7 @@ src/astra_rag/
     github_client.py         GitHub API root listing
     validator.py             required-structure check
     cloner.py                git clone into temp_storage/ (returns path, commit SHA, branch)
-    ingestion/               loader, chunkers (md/csv), embedder (fastembed), store (Qdrant), pipeline
+    ingestion/               loader, chunkers (md per section, csv per row), doc_meta (header metadata), embedder (fastembed), store (Qdrant), pipeline
     errors.py                user-safe AppError
   templates/index.html       the UI
   static/                    style.css, app.js

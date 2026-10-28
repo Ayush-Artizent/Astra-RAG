@@ -12,7 +12,7 @@ Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGEL
 - [ ] P3 Azure DevOps adapter
 - [ ] P4 Repo registry, bindings and tracked branch
 - [ ] P5 Sync: nightly + Sync now, alias swap
-- [ ] P6 Front-matter-aware ingestion
+- [~] **P6 Structure- and metadata-aware ingestion** - done 2026-10-28: per-section markdown chunks, per-row CSV chunks (`row_key`), header metadata (`doc_type`, `doc_date`, `doc_meta`), open-item flags, no recency preference. Todo: YAML front-matter (`fm.*`, stripped from text, bad-YAML warning).
 - [ ] P7 Golden catalog
 - [ ] P8 Rule selection and request inference
 - [ ] P9 `get_context` API, sub-queries, rerank, tools

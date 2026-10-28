@@ -1,8 +1,8 @@
-"""Row-aware CSV chunking: header repeated in every chunk, plus one summary chunk per file."""
+"""Row-aware CSV chunking: one chunk per row (columns named in every chunk), plus one summary chunk per file."""
 import csv
 import io
 
-from ...config import CHUNK_MAX_TOKENS, CHUNK_TARGET_TOKENS, CSV_MAX_ROWS, CSV_SUMMARY_SAMPLE_ROWS
+from ...config import CHUNK_MAX_TOKENS, CSV_MAX_ROWS
 from .md_chunker import RawChunk
 from .tokens import count_tokens
 
@@ -19,23 +19,21 @@ def chunk_csv(text: str, filename: str) -> tuple[list[RawChunk], list[str]]:
         warnings.append(f"only the first {CSV_MAX_ROWS} of {len(data)} rows were indexed")
         data = data[:CSV_MAX_ROWS]
 
-    header = "Columns: " + ", ".join(columns)
-    header_tokens = count_tokens(header)
-    chunks = [_summary(filename, columns, data, header)]
-    group: list[str] = []
-    first = 1
-    tokens = header_tokens
+    key_col = _key_column(columns)
+    chunks = [_summary(filename, columns, len(data))]
     for number, row in enumerate(data, start=1):
-        rendered = _render_row(number, columns, row, header_tokens)
-        t = count_tokens(rendered)
-        if group and tokens + t > CHUNK_TARGET_TOKENS:
-            chunks.append(_rows_chunk(header, group, first, number - 1, columns))
-            group, first, tokens = [], number, header_tokens
-        group.append(rendered)
-        tokens += t
-    if group:
-        chunks.append(_rows_chunk(header, group, first, first + len(group) - 1, columns))
+        key = row[key_col].strip() if key_col < len(row) else ""
+        chunks.append(RawChunk(_render_row(number, columns, row), None, None, (), "csv_row",
+                               {"row_start": number, "row_end": number, "row_key": key, "columns": columns}))
     return chunks, warnings
+
+
+def _key_column(columns: list[str]) -> int:
+    """The id-like column (id / key / ...) if there is one, else the first."""
+    for i, col in enumerate(columns):
+        if col.lower() in ("id", "key", "ref", "no", "number") or col.lower().endswith(("_id", " id")):
+            return i
+    return 0
 
 
 def _read_rows(text: str) -> list[list[str]]:
@@ -46,25 +44,16 @@ def _read_rows(text: str) -> list[list[str]]:
     return [r for r in csv.reader(io.StringIO(text), dialect) if any(c.strip() for c in r)]
 
 
-def _render_row(number: int, columns: list[str], row: list[str], header_tokens: int) -> str:
+def _render_row(number: int, columns: list[str], row: list[str]) -> str:
     lines = [f"Row {number}"]
     lines += [f"{col}: {val.strip()}" for col, val in zip(columns, row) if val.strip()]
     lines += [f"extra_{i + 1}: {val.strip()}" for i, val in enumerate(row[len(columns):]) if val.strip()]
     text = "\n".join(lines)
-    budget = CHUNK_MAX_TOKENS - header_tokens - 10
-    while count_tokens(text) > budget:  # a pathological row must still fit the encoder
+    while count_tokens(text) > CHUNK_MAX_TOKENS - 10:  # a pathological row must still fit the encoder
         text = text[: int(len(text) * 0.8)].rstrip() + " …"
     return text
 
 
-def _rows_chunk(header: str, group: list[str], first: int, last: int, columns: list[str]) -> RawChunk:
-    return RawChunk(header + "\n\n" + "\n\n".join(group), None, None, (), "csv_rows",
-                    {"row_start": first, "row_end": last, "columns": columns})
-
-
-def _summary(filename: str, columns: list[str], data: list[list[str]], header: str) -> RawChunk:
-    header_tokens = count_tokens(header)
-    lines = [f"CSV file {filename}", header, f"Rows: {len(data)}"]
-    for number, row in enumerate(data[:CSV_SUMMARY_SAMPLE_ROWS], start=1):
-        lines.append(_render_row(number, columns, row, header_tokens))
-    return RawChunk("\n".join(lines), None, None, (), "csv_summary", {"columns": columns})
+def _summary(filename: str, columns: list[str], row_count: int) -> RawChunk:
+    text = f"CSV file {filename}\nColumns: {', '.join(columns)}\nRows: {row_count}"
+    return RawChunk(text, None, None, (), "csv_summary", {"columns": columns, "row_count": row_count})

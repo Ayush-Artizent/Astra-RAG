@@ -37,7 +37,15 @@ CHUNK_TARGET_TOKENS = 380
 CHUNK_MAX_TOKENS = 480
 CHUNK_MIN_TOKENS = 100
 CHUNK_OVERLAP_TOKENS = 50
-CSV_SUMMARY_SAMPLE_ROWS = 3
+
+# project-data folder name -> doc_type stored on every chunk (unknown folders keep their own name)
+DOC_TYPE_BY_FOLDER = {
+    "emails": "email", "meeting-notes": "meeting-note", "change-requests": "change-request",
+    "requirements": "requirement", "stakeholders": "stakeholder-register", "contracts": "contract",
+    "charter": "charter", "architecture": "architecture", "compliance": "compliance", "legacy": "as-is",
+    "ux": "ux", "raid": "raid-log", "jira-export": "jira-export", "analytics": "analytics",
+}
+DEFAULT_DOC_TYPE = "document"
 
 SUPPORTED_EXTENSIONS = {".md": "md", ".markdown": "md", ".txt": "txt", ".csv": "csv", ".docx": "docx"}
 MAX_FILE_BYTES = 25 * 1024 * 1024

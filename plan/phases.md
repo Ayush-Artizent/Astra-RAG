@@ -228,6 +228,18 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
 **Acceptance**
 - Push to the tracked branch, click Sync now, and search shows the new text with the new commit SHA in `source_url`.
 
+**Learned in P5 (feeds later phases)**
+- Version collections are named `astra_v<run id>__<slug>` (not `<slug>__v<n>`): a repo whose own name ends in `__v3`
+  could otherwise be mistaken for another repo's version. The alias keeps the old collection name, so `search` and any
+  later reader (P9) just use `collection_name(slug)`.
+- Connect now goes through the background sync (one clone/ingest path for every trigger). `register_and_queue` is the
+  only place besides `set_tracked_branch` that may bump `config_version`; `queue_run` never does.
+- The run row is the per-repo lock; triggers during a run set `repos.sync_pending/sync_force` and the worker starts one
+  follow-up when the run ends. P4's 409 is gone.
+- Single instance is enforced by an OS lock on `<data dir>/astra.lock`. Moving to several replicas (or Postgres) needs
+  shared scheduling, distributed run ownership and a different recovery story.
+- Webhooks still fit later: `request_sync(slug, "webhook")` is the call a verified webhook would make.
+
 ---
 
 ## P6: Structure- and metadata-aware ingestion
@@ -430,7 +442,7 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 |---|---|
 | Case-sensitivity of ADO paths for the required root items | P3 |
 | Where the SQLite file lives in deployment, and whether it should be Postgres instead | P4: **settled for now**: SQLite at `data/astra.db`, `ASTRA_DB_PATH` override, single app instance; Postgres later (expect transaction, locking and migration work, not only config) |
-| Nightly sync time and time zone | P5 |
+| Nightly sync time and time zone | P5: **settled**: 02:00 UTC by default, `ASTRA_SYNC_DAILY_AT` override (named time zones would need `tzdata` on Windows) |
 | Real template doc types and filenames, and who owns `golden.yaml` | P7 |
 | ASTRA stage names (the `stages` vocabulary) | P8 |
 | `nomenclature.md` format (for the validator) | P9 |

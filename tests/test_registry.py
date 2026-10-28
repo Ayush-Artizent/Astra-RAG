@@ -15,8 +15,8 @@ OTHER = parse_repo_url("https://dev.azure.com/org/proj/_git/golden")
 URL = "https://github.com/acme/golden"
 
 
-def queue(ref=REF, branch="main") -> int:
-    return runs.queue_run(ref, URL, branch, "env:X_TOKEN", f"astra__{ref.slug}")
+def queue(ref=REF, branch="main") -> int | None:
+    return runs.register_and_queue(ref, URL, branch, "env:X_TOKEN")
 
 
 class MigrationTests(unittest.TestCase):
@@ -51,12 +51,29 @@ class MigrationTests(unittest.TestCase):
         broken = db.MIGRATIONS + (("CREATE TABLE half_done (x INTEGER)", "THIS IS NOT SQL"),)
         with mock.patch.object(db, "MIGRATIONS", broken), self.assertRaises(sqlite3.Error):
             db.migrate()
-        self.assertEqual(self.version(), 1)
+        self.assertEqual(self.version(), db.schema_version())
         self.assertNotIn("half_done", self.tables())
 
     def test_the_first_use_migrates_lazily(self):
         self.assertEqual(repos.list_repos(), [])
         self.assertEqual(self.version(), db.schema_version())
+
+    def test_upgrading_from_schema_1_keeps_existing_rows(self):
+        with mock.patch.object(db, "MIGRATIONS", db.MIGRATIONS[:1]):
+            db.migrate()
+            with db.transaction() as conn:
+                conn.execute("INSERT INTO repos (slug, url, host_kind, host, tracked_branch, credential_ref,"
+                             " created_at, updated_at) VALUES ('s', 'u', 'github', 'h', 'main', 'env:X', 'n', 'n')")
+                conn.execute("INSERT INTO ingestion_runs (repo_slug, state, branch, config_version, queued_at)"
+                             " VALUES ('s', 'done', 'main', 1, 'n')")
+        self.assertEqual(self.version(), 1)
+        db._ready.clear()
+        db.migrate()
+        self.assertEqual(self.version(), db.schema_version())
+        repo = repos.get_repo("s")
+        self.assertEqual((repo["tracked_branch"], repo["sync"]),
+                         ("main", {"last_checked_at": None, "pending": False, "source_error": ""}))
+        self.assertEqual(runs.latest_run("s")["triggered_by"], "connect")
 
     def test_foreign_keys_are_enforced_on_every_connection(self):
         with self.assertRaises(sqlite3.IntegrityError), db.transaction() as conn:
@@ -183,15 +200,73 @@ class RunLifecycleTests(unittest.TestCase):
         self.assertEqual(runs.latest_run(REF.slug)["state"], "failed")
         queue()  # no longer blocked
 
-    def test_one_active_run_per_repo(self):
+    def test_one_active_run_per_repo_and_later_triggers_coalesce(self):
         first = queue()
-        with self.assertRaises(AppError) as ctx:
-            queue(branch="dev")
-        self.assertEqual(ctx.exception.status, 409)
-        self.assertEqual(repos.tracked_branch(REF.slug), "main")
-        queue(OTHER)  # other repos are not blocked
+        self.assertIsNone(queue(branch="dev"))  # coalesced: no second run, a forced follow-up instead
+        repo = repos.get_repo(REF.slug)
+        self.assertEqual((repo["tracked_branch"], repo["sync"]["pending"], repo["sync_status"]),
+                         ("dev", True, "queued"))
+        self.assertIsNone(runs.queue_run(REF.slug, "manual"))
+        self.assertIsNotNone(queue(OTHER))  # other repos are not blocked
         runs.finish_run(first, "failed")
+        self.assertEqual(repos.get_repo(REF.slug)["sync_status"], "pending")
+        self.assertEqual(runs.take_pending(REF.slug), (True, True))
+        self.assertEqual(runs.take_pending(REF.slug), (False, False))  # read and cleared once
+        self.assertIsNotNone(runs.queue_run(REF.slug, "follow_up", force=True))
+
+    def test_a_new_run_satisfies_a_waiting_follow_up(self):
+        first = queue()
+        runs.queue_run(REF.slug, "manual")
+        runs.finish_run(first, "done")
+        runs.queue_run(REF.slug, "manual")  # claimed before the follow-up was taken
+        self.assertEqual(runs.take_pending(REF.slug), (False, False))
+
+    def test_unregistered_repo_cannot_be_queued(self):
+        with self.assertRaises(AppError) as ctx:
+            runs.queue_run("github.com__no__repo", "manual")
+        self.assertEqual(ctx.exception.status, 404)
+
+    def test_config_version_changes_only_with_the_tracked_branch(self):
+        def version():
+            with db.transaction(write=False) as conn:
+                return conn.execute("SELECT config_version FROM repos WHERE slug = ?", (REF.slug,)).fetchone()[0]
+
+        runs.finish_run(queue(), "done")
+        for trigger, force in (("manual", False), ("nightly", False), ("follow_up", True), ("settings", True)):
+            runs.finish_run(runs.queue_run(REF.slug, trigger, force), "done")
+        runs.finish_run(queue(), "done")  # reconnecting on the same branch is not a change either
+        self.assertEqual(version(), 1)
+        self.assertFalse(repos.get_repo(REF.slug)["needs_rebuild"])
+        runs.finish_run(queue(branch="dev"), "done")
+        self.assertEqual(version(), 2)
+        self.assertFalse(repos.get_repo(REF.slug)["needs_rebuild"])
+
+    def test_adopt_run_records_a_swept_run_as_the_indexed_build(self):
+        run_id = queue()
+        runs.update_run(run_id, commit_sha="abc", collection="astra_v1__x")
+        runs.sweep_interrupted()
+        runs.adopt_run(run_id)
+        status = runs.latest_run(REF.slug)
+        self.assertEqual((status["state"], status["error"]), ("done", runs.RECOVERED_NOTE))
+        self.assertEqual(repos.get_repo(REF.slug)["indexed"]["commit_sha"], "abc")
+        active = queue()
+        runs.adopt_run(active)  # only a failed (swept) run can be adopted
+        self.assertEqual(runs.latest_run(REF.slug)["state"], "queued")
+
+    def test_check_results_and_catch_up_selection(self):
         queue()
+        repos.mark_checked(REF.slug, "The host rejected the saved token.")
+        self.assertEqual(repos.get_repo(REF.slug)["sync"]["source_error"], "The host rejected the saved token.")
+        self.assertEqual(repos.due_slugs(24), [])
+        with db.transaction() as conn:
+            conn.execute("UPDATE repos SET last_checked_at = '2000-01-01T00:00:00+00:00'")
+        self.assertEqual(repos.due_slugs(24), [REF.slug])
+        repos.mark_checked(REF.slug)
+        repo = repos.get_repo(REF.slug)
+        self.assertEqual(repo["sync"]["source_error"], "")
+        self.assertEqual(repos.due_slugs(24), [])
+        repos.request_rebuild(REF.slug)
+        self.assertEqual(repos.due_slugs(24), [REF.slug])
 
     def test_concurrent_queues_start_exactly_one_run(self):
         db.migrate()
@@ -199,19 +274,17 @@ class RunLifecycleTests(unittest.TestCase):
 
         def attempt():
             barrier.wait()
-            try:
-                results.append(queue())
-            except AppError as exc:
-                results.append(exc.status)
+            results.append(queue())
 
         threads = [threading.Thread(target=attempt) for _ in range(8)]
         for t in threads:
             t.start()
         for t in threads:
             t.join()
-        self.assertEqual(results.count(409), 7, results)
+        self.assertEqual(results.count(None), 7, results)
         with db.transaction(write=False) as conn:
             self.assertEqual(conn.execute("SELECT COUNT(*) FROM ingestion_runs").fetchone()[0], 1)
+        self.assertTrue(repos.get_repo(REF.slug)["sync"]["pending"])
 
     def test_unknown_run_fields_are_rejected(self):
         run_id = queue()

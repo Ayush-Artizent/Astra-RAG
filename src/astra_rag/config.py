@@ -58,3 +58,10 @@ SUPPORTED_EXTENSIONS = {".md": "md", ".markdown": "md", ".txt": "txt", ".csv": "
 MAX_FILE_BYTES = 25 * 1024 * 1024
 CSV_MAX_ROWS = 100_000
 ENV_FILE = BASE_DIR / ".env"  # saved repo URL + PAT pairs (git-ignored)
+
+# --- Sync (nightly check + Sync now) -------------------------------------
+SYNC_DAILY_AT = os.environ.get("ASTRA_SYNC_DAILY_AT", "02:00")  # HH:MM in UTC
+# Off: no nightly check, startup catch-up or startup index recovery (tests and maintenance only).
+SYNC_SCHEDULER_ENABLED = os.environ.get("ASTRA_SYNC_SCHEDULER", "1") != "0"
+SYNC_WORKERS = 1  # embedding is CPU-heavy; runs queue behind each other
+SYNC_CATCHUP_HOURS = 24  # at startup, check repos not checked for this long (e.g. the server was down at night)

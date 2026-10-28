@@ -55,6 +55,13 @@ MIGRATIONS: tuple[tuple[str, ...], ...] = (
         )""",
         "CREATE INDEX ingestion_runs_repo ON ingestion_runs(repo_slug, id)",
     ),
+    (  # P5 sync: coalesced follow-up runs, last check and source errors, what started a run
+        "ALTER TABLE repos ADD COLUMN sync_pending INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE repos ADD COLUMN sync_force INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE repos ADD COLUMN last_checked_at TEXT",
+        "ALTER TABLE repos ADD COLUMN source_error TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE ingestion_runs ADD COLUMN triggered_by TEXT NOT NULL DEFAULT 'connect'",
+    ),
 )
 
 _path = DB_PATH
@@ -66,6 +73,10 @@ def use_db(path: Path | None) -> None:
     """Point the registry at another file (tests); None restores the configured path."""
     global _path
     _path = Path(path) if path else DB_PATH
+
+
+def current_path() -> Path:
+    return _path
 
 
 def now() -> str:

@@ -1,4 +1,8 @@
-"""Orchestrates load -> chunk -> embed -> store, and records progress on the run in the registry."""
+"""Orchestrates load -> chunk -> embed -> store, and records progress on the run in the registry.
+
+Each run builds a new version collection and only then switches the repo's alias to it, so a failed or
+running rebuild never empties search.
+"""
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,7 +14,7 @@ from .chunker import chunk_document
 from .embedder import Embedder, get_embedder
 from .loader import load_documents
 from .models import Chunk, RepoContext
-from .store import QdrantStore, collection_name
+from .store import QdrantStore, collection_name, version_name
 
 
 @dataclass
@@ -31,6 +35,7 @@ def run_ingestion(run_id: int, repo: RepoContext, repo_dir: Path, embedder: Embe
                   store: QdrantStore | None = None) -> None:
     """Never raises: the outcome is recorded on the run so the UI can show it."""
     status = IngestionStatus()
+    store = store or QdrantStore()
     state, error = "failed", ""
     try:
         runs.update_run(run_id, state="running", started_at=_now())
@@ -40,6 +45,11 @@ def run_ingestion(run_id: int, repo: RepoContext, repo_dir: Path, embedder: Embe
         error = exc.message
     except Exception as exc:
         error = f"Unexpected error during ingestion ({type(exc).__name__})."
+    if state == "failed":
+        try:  # drop the half-built version; the alias still serves the last good one
+            store.delete_version(repo.slug, version_name(repo.slug, run_id))
+        except Exception:
+            pass  # Qdrant is unreachable; the next sync or startup recovery removes it
     try:
         runs.finish_run(run_id, state, error=error, **asdict(status))
     except Exception:
@@ -47,11 +57,10 @@ def run_ingestion(run_id: int, repo: RepoContext, repo_dir: Path, embedder: Embe
 
 
 def _ingest(run_id: int, repo: RepoContext, repo_dir: Path, status: IngestionStatus,
-            embedder: Embedder | None, store: QdrantStore | None) -> None:
+            embedder: Embedder | None, store: QdrantStore) -> None:
     def save(**extra) -> None:
         runs.update_run(run_id, **asdict(status), **extra)
 
-    store = store or QdrantStore()
     store.ping()
 
     docs, skipped = load_documents(repo_dir)
@@ -68,9 +77,9 @@ def _ingest(run_id: int, repo: RepoContext, repo_dir: Path, status: IngestionSta
         status.warnings.append("No indexable content found in project-data/.")
 
     embedder = embedder or get_embedder()
-    collection = collection_name(repo.slug)
-    save(index_replaced=1)  # from here the previous index is gone (until P5's alias swap)
-    store.recreate(collection, embedder.dense_dim)
+    collection = version_name(repo.slug, run_id)
+    save(collection=collection)
+    store.create(collection, embedder.dense_dim)
 
     ingested_at = _now()
     for i in range(0, len(chunks), EMBED_BATCH_SIZE):
@@ -82,6 +91,15 @@ def _ingest(run_id: int, repo: RepoContext, repo_dir: Path, status: IngestionSta
         store.upsert(collection, batch, dense, sparse)
         status.chunks_stored += len(batch)
         save()
+
+    stored = store.count(collection)
+    if stored != len(chunks):
+        raise AppError(f"Index check failed: {stored} of {len(chunks)} chunks were stored.", 500)
+    store.swap_alias(collection_name(repo.slug), collection)
+    try:
+        store.drop_versions(repo.slug, keep=collection)
+    except Exception:
+        status.warnings.append("Older index versions could not be removed yet; the next sync removes them.")
 
 
 def search(slug: str, query: str, limit: int = 8, folder_top: str | None = None,

@@ -1,4 +1,4 @@
-"""Ingestion runs: queue (with the one-active-run guard), progress, finish, and the restart sweep."""
+"""Ingestion runs: queue (coalescing while one is active), progress, finish, recovery and the restart sweep."""
 import json
 
 from ..errors import AppError
@@ -6,33 +6,68 @@ from ..repo_ref import RepoRef
 from .db import now, transaction
 
 ACTIVE_STATES = ("queued", "running")
+RECOVERED_NOTE = "Recovered at startup: the index swap had completed."
 _JSON_FIELDS = ("files_skipped", "warnings")
-_UPDATABLE = {"state", "commit_sha", "index_replaced", "files_loaded", "files_skipped", "chunks_total",
+_UPDATABLE = {"state", "commit_sha", "collection", "index_replaced", "files_loaded", "files_skipped", "chunks_total",
               "chunks_stored", "warnings", "error", "started_at", "finished_at"}
 
 
-def queue_run(ref: RepoRef, url: str, branch: str, credential_ref: str, collection: str) -> int:
-    """Register or update the repo and queue a run, atomically; 409 if a run is already active for it."""
+def register_and_queue(ref: RepoRef, url: str, branch: str, credential_ref: str, triggered_by: str = "connect",
+                       force: bool = True) -> int | None:
+    """Connect: register or update the repo and queue a run, atomically.
+
+    Only a real change of tracked branch bumps config_version. The host just accepted the token, so the
+    last source error is cleared. Returns None when a run is already active (the request is coalesced).
+    """
     stamp = now()
     with transaction() as db:
-        if db.execute("SELECT 1 FROM ingestion_runs WHERE repo_slug = ? AND state IN (?, ?)",
-                      (ref.slug, *ACTIVE_STATES)).fetchone():
-            raise AppError("An ingestion is already running for this repository. Try again when it finishes.", 409)
-        row = db.execute("SELECT tracked_branch FROM repos WHERE slug = ?", (ref.slug,)).fetchone()
+        row = db.execute("SELECT 1 FROM repos WHERE slug = ?", (ref.slug,)).fetchone()
         if row is None:
             db.execute("INSERT INTO repos (slug, url, host_kind, host, tracked_branch, credential_ref, created_at,"
-                       " updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                       (ref.slug, url, ref.host_kind, ref.host, branch, credential_ref, stamp, stamp))
+                       " updated_at, last_checked_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                       (ref.slug, url, ref.host_kind, ref.host, branch, credential_ref, stamp, stamp, stamp))
         else:
-            # A new branch is a new configuration: bump the version so older runs can't satisfy it.
-            db.execute("UPDATE repos SET url = ?, credential_ref = ?, updated_at = ?,"
-                       " config_version = config_version + (tracked_branch != ?), tracked_branch = ?"
-                       " WHERE slug = ?", (url, credential_ref, stamp, branch, branch, ref.slug))
-        cursor = db.execute(
-            "INSERT INTO ingestion_runs (repo_slug, state, branch, config_version, collection, queued_at)"
-            " SELECT slug, 'queued', tracked_branch, config_version, ?, ? FROM repos WHERE slug = ?",
-            (collection, stamp, ref.slug))
-        return cursor.lastrowid
+            db.execute("UPDATE repos SET url = ?, credential_ref = ?, updated_at = ?, last_checked_at = ?,"
+                       " source_error = '', config_version = config_version + (tracked_branch != ?),"
+                       " tracked_branch = ? WHERE slug = ?",
+                       (url, credential_ref, stamp, stamp, branch, branch, ref.slug))
+        return _queue(db, ref.slug, triggered_by, force, stamp)
+
+
+def queue_run(slug: str, triggered_by: str, force: bool = False) -> int | None:
+    """Queue a run for a registered repo, or coalesce into a follow-up if one is active (returns None).
+
+    Never touches config_version or tracked_branch: a sync is not a configuration change.
+    """
+    with transaction() as db:
+        return _queue(db, slug, triggered_by, force, now())
+
+
+def _queue(db, slug: str, triggered_by: str, force: bool, stamp: str) -> int | None:
+    if db.execute("SELECT 1 FROM ingestion_runs WHERE repo_slug = ? AND state IN (?, ?)",
+                  (slug, *ACTIVE_STATES)).fetchone():
+        db.execute("UPDATE repos SET sync_pending = 1, sync_force = MAX(sync_force, ?) WHERE slug = ?",
+                   (int(force), slug))
+        return None
+    cursor = db.execute(
+        "INSERT INTO ingestion_runs (repo_slug, state, branch, config_version, triggered_by, queued_at)"
+        " SELECT slug, 'queued', tracked_branch, config_version, ?, ? FROM repos WHERE slug = ?",
+        (triggered_by, stamp, slug))
+    if not cursor.rowcount:
+        raise AppError("This repository is not registered. Connect it first.", 404)
+    # This run rebuilds from scratch, so it also satisfies any follow-up that was waiting.
+    db.execute("UPDATE repos SET sync_pending = 0, sync_force = 0 WHERE slug = ?", (slug,))
+    return cursor.lastrowid
+
+
+def take_pending(slug: str) -> tuple[bool, bool]:
+    """Read and clear the coalesced follow-up request: (pending, force)."""
+    with transaction() as db:
+        row = db.execute("SELECT sync_pending, sync_force FROM repos WHERE slug = ?", (slug,)).fetchone()
+        if row is None or not row["sync_pending"]:
+            return False, False
+        db.execute("UPDATE repos SET sync_pending = 0, sync_force = 0 WHERE slug = ?", (slug,))
+        return True, bool(row["sync_force"])
 
 
 def update_run(run_id: int, **fields) -> None:
@@ -57,12 +92,25 @@ def finish_run(run_id: int, state: str, **fields) -> None:
         cursor = db.execute(f"UPDATE ingestion_runs SET {columns} WHERE id = ? AND state IN (?, ?)",
                             (*values, run_id, *ACTIVE_STATES))
         if cursor.rowcount and state == "done":
-            db.execute(
-                "UPDATE repos SET indexed_run_id = r.id, indexed_branch = r.branch, indexed_commit_sha = r.commit_sha,"
-                " indexed_collection = r.collection, indexed_config_version = r.config_version,"
-                " indexed_at = r.finished_at FROM ingestion_runs AS r"
-                " WHERE r.id = ? AND repos.slug = r.repo_slug"
-                " AND (repos.indexed_run_id IS NULL OR repos.indexed_run_id < r.id)", (run_id,))
+            _promote(db, run_id)
+
+
+def adopt_run(run_id: int) -> None:
+    """Recovery: the alias already serves this finished run's index, so record it as done and indexed."""
+    with transaction() as db:
+        cursor = db.execute("UPDATE ingestion_runs SET state = 'done', error = ?, finished_at = ?"
+                            " WHERE id = ? AND state = 'failed'", (RECOVERED_NOTE, now(), run_id))
+        if cursor.rowcount:
+            _promote(db, run_id)
+
+
+def _promote(db, run_id: int) -> None:
+    db.execute(
+        "UPDATE repos SET indexed_run_id = r.id, indexed_branch = r.branch, indexed_commit_sha = r.commit_sha,"
+        " indexed_collection = r.collection, indexed_config_version = r.config_version,"
+        " indexed_at = r.finished_at FROM ingestion_runs AS r"
+        " WHERE r.id = ? AND repos.slug = r.repo_slug"
+        " AND (repos.indexed_run_id IS NULL OR repos.indexed_run_id < r.id)", (run_id,))
 
 
 def _assignments(fields: dict) -> tuple[str, list]:
@@ -72,6 +120,13 @@ def _assignments(fields: dict) -> tuple[str, list]:
         raise ValueError(f"Not run fields: {sorted(unknown)}")
     values = [json.dumps(v) if k in _JSON_FIELDS else v for k, v in fields.items()]
     return ", ".join(f"{k} = ?" for k in fields), values
+
+
+def get_run(run_id: int) -> dict | None:
+    """The raw run row (including repo_slug), for the sync worker and recovery."""
+    with transaction(write=False) as db:
+        row = db.execute("SELECT * FROM ingestion_runs WHERE id = ?", (run_id,)).fetchone()
+    return dict(row) if row else None
 
 
 def latest_run(slug: str) -> dict | None:

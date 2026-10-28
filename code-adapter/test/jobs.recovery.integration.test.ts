@@ -36,12 +36,12 @@ afterAll(async () => {
 });
 
 /** A new adapter process: its own registry, job system and server, on the same data and job file. */
-async function startAdapter(executors?: ReturnType<typeof createExecutors>) {
+async function startAdapter() {
   const cfg = config();
   const registry = new ProjectRegistry({ dataDir });
   const jobs = createJobSystem(cfg, {
     storeFile,
-    executors: executors ?? createExecutors(cfg, registry),
+    executors: (deps) => createExecutors(cfg, registry, deps),
     recover: createRecoveryFor(cfg, registry),
   });
   const app = buildServer(cfg, { registry, jobs });

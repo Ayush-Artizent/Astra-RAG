@@ -16,6 +16,8 @@ export interface JobOut {
   commit_sha: string | null;
   coalesced_into: string | null;
   created_at: string;
+  /** What a finished job did, in a sentence. */
+  detail: string | null;
   phase: JobPhase | null;
   progress: number | null;
   started_at: string | null;
@@ -35,6 +37,7 @@ export function jobOut(j: JobRow): JobOut {
     commit_sha: j.commitSha,
     coalesced_into: j.coalescedInto,
     created_at: iso(j.createdAt) as string,
+    detail: j.detail,
     phase: j.phase,
     progress: j.progress,
     started_at: iso(j.startedAt),

@@ -39,15 +39,20 @@ beforeAll(async () => {
 
   const cfg = config();
   registry = new ProjectRegistry({ dataDir });
-  const real = createExecutors(cfg, registry, {
-    runCodegraph: (args, run) => (cliOverride && args[0] === 'sync' ? cliOverride(args) : runCodegraph(args, run)),
+  jobs = createJobSystem(cfg, {
+    storeFile: ':memory:',
+    executors: (deps) => {
+      const real = createExecutors(cfg, registry, deps, {
+        runCodegraph: (args, run) => (cliOverride && args[0] === 'sync' ? cliOverride(args) : runCodegraph(args, run)),
+      });
+      const watchedSync: Executor = (ctx) => {
+        const seen: JobPhase[] = [];
+        phasesOfSyncs.push(seen);
+        return real.sync!({ ...ctx, update: (p) => { if (p.phase) seen.push(p.phase); ctx.update(p); } });
+      };
+      return { ...real, sync: watchedSync };
+    },
   });
-  const watchedSync: Executor = (ctx) => {
-    const seen: JobPhase[] = [];
-    phasesOfSyncs.push(seen);
-    return real.sync!({ ...ctx, update: (p) => { if (p.phase) seen.push(p.phase); ctx.update(p); } });
-  };
-  jobs = createJobSystem(cfg, { storeFile: ':memory:', executors: { ...real, sync: watchedSync } });
   app = buildServer(cfg, { registry, jobs });
   await app.ready();
 }, SLOW);

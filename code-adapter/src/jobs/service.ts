@@ -31,10 +31,6 @@ export class JobService {
     const req = validateJobRequest(body, policy);
     const key = validateIdempotencyKey(idempotencyKeyHeader);
     requireScope(env, SCOPE[req.type]);
-    if (req.type === 'reconcile') {
-      // TODO(phase 2, L5): reconcile compares the index commit with the remote branch head.
-      throw new ProblemError(501, 'not_implemented', 'Not implemented', 'reconcile jobs are not available yet');
-    }
 
     const hash = requestHash(req);
     if (key !== undefined) {
@@ -66,16 +62,51 @@ export class JobService {
     if (!project || project.bootstrappedAt === null) {
       throw conflict('The project has not been bootstrapped yet');
     }
-    const job = store.create({
-      orgId: env.org_id,
-      projectId: env.project_id,
-      type: 'sync',
-      commitSha: req.commitSha,
-      idempotencyKey: key,
-      requestHash: hash,
-    });
-    // Only the newest queued sync matters: a sync moves the tree to its commit, so older ones add nothing.
-    store.supersedeQueuedSyncs(env.org_id, env.project_id, job.id);
+
+    if (req.type === 'reconcile') return this.enqueueReconcile(env.org_id, env.project_id, key, hash);
+
+    // A pruned project has no files to move. A push to it is not worth a rebuild by itself, but the reconcile that
+    // rebuilds it clones the newest commit anyway, so that is what the request becomes.
+    if (project.prunedAt !== null) return this.enqueueReconcile(env.org_id, env.project_id, key, hash);
+
+    return this.enqueueSync(env.org_id, env.project_id, req.commitSha, key, hash);
+  }
+
+  /**
+   * Queues a sync of a bootstrapped project to `commitSha`. Only the newest queued sync matters: a sync moves the
+   * tree to its commit, so older queued ones are folded into it. Starts the index-lag clock for the project.
+   */
+  enqueueSync(orgId: string, projectId: string, commitSha: string, key?: string, hash?: string): JobRow {
+    const { store, queue } = this.deps;
+    const job = store.create({ orgId, projectId, type: 'sync', commitSha, idempotencyKey: key ?? null, requestHash: hash ?? null });
+    store.supersedeQueuedSyncs(orgId, projectId, job.id);
+    store.markBehind(orgId, projectId, commitSha);
+    queue.kick();
+    return store.get(job.id) as JobRow;
+  }
+
+  /**
+   * Queues a freshness check. At most one is active per project: asking again returns the one already queued or
+   * running, because a second check would only repeat the first.
+   */
+  enqueueReconcile(orgId: string, projectId: string, key?: string, hash?: string): JobRow {
+    const { store, queue } = this.deps;
+    const active = store.activeForProject(orgId, projectId).find((j) => j.type === 'reconcile');
+    if (active) return active;
+    const job = store.create({ orgId, projectId, type: 'reconcile', idempotencyKey: key ?? null, requestHash: hash ?? null });
+    queue.kick();
+    return store.get(job.id) as JobRow;
+  }
+
+  /**
+   * Queues a rebuild of a project that already has a repo binding: a fresh clone and index. It goes through the
+   * same one-bootstrap-at-a-time rule as a first bootstrap. Not reachable from the API.
+   */
+  enqueueBootstrap(orgId: string, projectId: string): JobRow {
+    const { store, queue } = this.deps;
+    const active = store.activeForProject(orgId, projectId).find((j) => j.type === 'bootstrap');
+    if (active) return active;
+    const job = store.create({ orgId, projectId, type: 'bootstrap' });
     queue.kick();
     return store.get(job.id) as JobRow;
   }

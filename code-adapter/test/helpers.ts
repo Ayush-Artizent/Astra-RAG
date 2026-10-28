@@ -4,6 +4,28 @@ import path from 'node:path';
 import '../src/env.js';
 import type { Config } from '../src/config.js';
 import { signEnvelope } from '../src/envelope.js';
+import type { ProjectBinding } from '../src/jobs/types.js';
+
+/** A project binding with every field filled in, for tests that build one by hand. */
+export const binding = (over: Partial<ProjectBinding> = {}): ProjectBinding => ({
+  orgId: 'orgA',
+  projectId: 'p1',
+  repoUrl: 'https://github.com/a/b',
+  branch: null,
+  credentialsRef: null,
+  createdAt: 0,
+  bootstrappedAt: null,
+  remoteHead: null,
+  remoteCheckedAt: null,
+  behindSince: null,
+  lastUsedAt: null,
+  prunedAt: null,
+  diskTreeBytes: null,
+  diskGitBytes: null,
+  diskIndexBytes: null,
+  diskMeasuredAt: null,
+  ...over,
+});
 
 // Shared setup for the tests that run the real HTTP routes against real CodeGraph indexes.
 
@@ -26,6 +48,11 @@ export function testConfig(dataDir: string): Config {
     allowFileRepos: false,
     bootstrapTimeoutMs: 60_000,
     syncTimeoutMs: 60_000,
+    // Tests start no schedule and delete nothing unless one asks for it.
+    reconcileIntervalMs: 0,
+    idleProjectDays: 0,
+    gcLooseKb: 20_000,
+    gcLooseObjects: 500,
   };
 }
 

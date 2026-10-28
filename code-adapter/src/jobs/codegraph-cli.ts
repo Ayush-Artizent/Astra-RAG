@@ -36,10 +36,12 @@ export function runCodegraph(args: readonly string[], run: CodegraphRun): Promis
 /** Coarse progress for each phase the CLI announces. Resolving and linking take most of the time on big repos. */
 export const PHASE_PROGRESS: Record<JobPhase, number> = {
   clone: 0.05,
+  checking: 0.1,
   scanning: 0.1,
   parsing: 0.2,
   resolving: 0.5,
   linking: 0.9,
+  maintenance: 0.9,
   finalizing: 0.95,
 };
 

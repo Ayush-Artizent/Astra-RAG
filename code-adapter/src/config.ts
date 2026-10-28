@@ -18,11 +18,31 @@ export interface Config {
   bootstrapTimeoutMs: number;
   /** Longest a sync may run. Django took about 1 minute whatever the change size. */
   syncTimeoutMs: number;
+  /** How often every project is checked against its remote (reconcile). 0 turns the schedule off. */
+  reconcileIntervalMs: number;
+  /**
+   * Delete a project's folder after this many days without a query, and rebuild it on the next query.
+   * 0 (the default) never deletes anything: the retention period is a decision for the reviewer.
+   */
+  idleProjectDays: number;
+  /** Run `git gc` on a project when its loose git objects pass this many kilobytes... */
+  gcLooseKb: number;
+  /**
+   * ...or this many objects. Both are checked because `git count-objects` reports tiny objects as 0 KB, so a size
+   * limit alone would never fire for a small repo.
+   */
+  gcLooseObjects: number;
 }
 
 const int = (value: string | undefined, fallback: number): number => {
   const n = Number(value);
   return value !== undefined && Number.isInteger(n) && n > 0 ? n : fallback;
+};
+
+/** Like `int`, but 0 is a valid value (it switches a feature off). */
+const nonNegative = (value: string | undefined, fallback: number): number => {
+  const n = Number(value);
+  return value !== undefined && value.trim() !== '' && Number.isInteger(n) && n >= 0 ? n : fallback;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -45,5 +65,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     allowFileRepos: env.ASTRA_ALLOW_FILE_REPOS === '1',
     bootstrapTimeoutMs: int(env.ASTRA_BOOTSTRAP_TIMEOUT_MS, 60 * 60_000),
     syncTimeoutMs: int(env.ASTRA_SYNC_TIMEOUT_MS, 20 * 60_000),
+    reconcileIntervalMs: nonNegative(env.ASTRA_RECONCILE_INTERVAL_MS, 10 * 60_000),
+    idleProjectDays: nonNegative(env.ASTRA_IDLE_PROJECT_DAYS, 0),
+    gcLooseKb: int(env.ASTRA_GC_LOOSE_KB, 20_000),
+    gcLooseObjects: int(env.ASTRA_GC_LOOSE_OBJECTS, 500),
   };
 }

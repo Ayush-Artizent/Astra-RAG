@@ -176,6 +176,7 @@ export class JobQueue {
           files: result?.files ?? null,
           symbols: result?.symbols ?? null,
           edges: result?.edges ?? null,
+          detail: result?.detail ?? null,
         }),
       );
     } catch (e) {

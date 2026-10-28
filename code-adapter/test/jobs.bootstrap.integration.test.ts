@@ -12,7 +12,7 @@ import { removeDir } from '../src/jobs/workspace.js';
 import { ProjectRegistry } from '../src/projects.js';
 import { buildServer } from '../src/server.js';
 import { gitIn, makeOrigin } from './git-helpers.js';
-import { ORG_A_FILES, seedProject, signedEnvelope, testConfig } from './helpers.js';
+import { binding, ORG_A_FILES, seedProject, signedEnvelope, testConfig } from './helpers.js';
 
 // Bootstrap against real git repositories and the real CodeGraph CLI: clone, index, serve, and clean up.
 
@@ -41,10 +41,15 @@ beforeAll(async () => {
 
   const cfg = config();
   registry = new ProjectRegistry({ dataDir });
-  const real = createExecutors(cfg, registry);
-  // Watch the phases the real executor reports, to check the CLI output really maps to them.
-  const watched: Executor = (ctx) => real.bootstrap!({ ...ctx, update: (p) => { phasesSeen.push(p.phase); ctx.update(p); } });
-  jobs = createJobSystem(cfg, { storeFile: ':memory:', executors: { ...real, bootstrap: watched } });
+  jobs = createJobSystem(cfg, {
+    storeFile: ':memory:',
+    executors: (deps) => {
+      const real = createExecutors(cfg, registry, deps);
+      // Watch the phases the real executor reports, to check the CLI output really maps to them.
+      const watched: Executor = (ctx) => real.bootstrap!({ ...ctx, update: (p) => { phasesSeen.push(p.phase); ctx.update(p); } });
+      return { ...real, bootstrap: watched };
+    },
+  });
   app = buildServer(cfg, { registry, jobs });
   await app.ready();
 }, SLOW);
@@ -222,7 +227,7 @@ describe('a bootstrap that fails', () => {
   it('gives up when the time is up, and cleans up the half-made clone', async () => {
     const cfg = { ...config(), bootstrapTimeoutMs: 1 };
     const reg = new ProjectRegistry({ dataDir });
-    const system = createJobSystem(cfg, { storeFile: ':memory:', executors: createExecutors(cfg, reg) });
+    const system = createJobSystem(cfg, { storeFile: ':memory:', executors: (deps) => createExecutors(cfg, reg, deps) });
     const slowApp = buildServer(cfg, { registry: reg, jobs: system });
     await slowApp.ready();
     const origin = makeOrigin(origins, 'slow-repo', { 'a.ts': 'export function f() { return 1; }\n' });
@@ -244,7 +249,7 @@ describe('a bootstrap that fails', () => {
 describe('the bootstrap executor on its own', () => {
   const ctxFor = (project: string): JobContext => ({
     job: { id: 'job_x', orgId: 'orgA', projectId: project, type: 'bootstrap' } as JobRow,
-    project: { orgId: 'orgA', projectId: project, repoUrl: 'file:///nowhere', branch: null, credentialsRef: null, createdAt: 0, bootstrappedAt: null },
+    project: binding({ projectId: project, repoUrl: 'file:///nowhere' }),
     update: () => {},
     signal: new AbortController().signal,
   });

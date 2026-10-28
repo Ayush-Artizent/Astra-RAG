@@ -1,7 +1,17 @@
+import type { JobStore } from './store.js';
+
 export type JobType = 'bootstrap' | 'sync' | 'reconcile';
 export type JobState = 'queued' | 'running' | 'done' | 'failed' | 'superseded';
 /** Phases a job can report. The same list is in the contract. */
-export type JobPhase = 'clone' | 'scanning' | 'parsing' | 'resolving' | 'linking' | 'finalizing';
+export type JobPhase =
+  | 'clone'
+  | 'checking'
+  | 'scanning'
+  | 'parsing'
+  | 'resolving'
+  | 'linking'
+  | 'maintenance'
+  | 'finalizing';
 
 export interface JobRow {
   id: string;
@@ -13,6 +23,8 @@ export interface JobRow {
   phase: JobPhase | null;
   progress: number | null;
   error: string | null;
+  /** What a finished job did, in a sentence. Mostly useful for reconcile: "up to date", "queued a sync", "pruned". */
+  detail: string | null;
   createdAt: number;
   startedAt: number | null;
   finishedAt: number | null;
@@ -24,7 +36,7 @@ export interface JobRow {
   requestHash: string | null;
 }
 
-/** What the adapter remembers about a project's repo. The credential itself is never stored, only its name. */
+/** What the adapter remembers about a project. The credential itself is never stored, only its name. */
 export interface ProjectBinding {
   orgId: string;
   projectId: string;
@@ -34,6 +46,19 @@ export interface ProjectBinding {
   createdAt: number;
   /** Null until the first bootstrap has finished successfully. */
   bootstrappedAt: number | null;
+  /** The newest commit known to exist on the remote, from a sync request or a reconcile check. */
+  remoteHead: string | null;
+  remoteCheckedAt: number | null;
+  /** When the index first fell behind `remoteHead`. Null while it is up to date. */
+  behindSince: number | null;
+  /** Last time a query used the project, or a job finished for it. Drives idle pruning. */
+  lastUsedAt: number | null;
+  /** Set when idle pruning deleted the folder. The next query rebuilds it. */
+  prunedAt: number | null;
+  diskTreeBytes: number | null;
+  diskGitBytes: number | null;
+  diskIndexBytes: number | null;
+  diskMeasuredAt: number | null;
 }
 
 /** A validated job request. */
@@ -55,6 +80,7 @@ export interface JobResult {
   files?: number;
   symbols?: number;
   edges?: number;
+  detail?: string;
 }
 
 export interface JobContext {
@@ -67,3 +93,12 @@ export interface JobContext {
 }
 
 export type Executor = (ctx: JobContext) => Promise<JobResult | void>;
+
+/** What the executors need from the job system that is created after them. */
+export interface ExecutorDeps {
+  store: JobStore;
+  /** Queues a sync to `commitSha` for a bootstrapped project, folding older queued syncs into it. */
+  enqueueSync(orgId: string, projectId: string, commitSha: string): JobRow;
+  /** Queues a rebuild of a project that already has a repo binding. */
+  enqueueBootstrap(orgId: string, projectId: string): JobRow;
+}

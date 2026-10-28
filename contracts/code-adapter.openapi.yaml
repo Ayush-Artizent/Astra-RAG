@@ -89,7 +89,17 @@ paths:
           or running. Rebuilding an existing project is not done through this call.
         - `sync` moves the working tree to `commit_sha` and runs an incremental sync (D4). Needs scope
           `code:sync`. Refused with 409 `job_conflict` when the project has not been bootstrapped.
-        - `reconcile` is reserved for the adapter's own freshness check and answers 501 until it is built.
+        - `reconcile` brings one project back in line with reality. Needs scope `code:sync`; refused with 409
+          `job_conflict` when the project has not been bootstrapped. The adapter also queues one for every
+          project on a schedule, because a push webhook can be missed. It: rebuilds a project whose folder or
+          index is damaged (as a bootstrap job); compares the remote branch head with the commit the index
+          reflects and queues a sync if the index is behind; runs `git gc` when loose git objects pile up;
+          measures disk use; and, only if the deployment sets an idle period, deletes a project nobody has
+          queried for that long. At most one reconcile is active per project: asking again returns the one
+          already queued or running. `detail` on the finished job says what it did.
+
+        A `sync` for a project whose folder was pruned for being idle becomes a reconcile, which rebuilds it
+        from the newest commit, since there are no files to move.
 
         Idempotent when `Idempotency-Key` is supplied: the same key with the same request returns the
         same job, the same key with a different request is 409 `job_conflict`. A job that failed is returned
@@ -131,7 +141,6 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/Invalid' }
         '429': { $ref: '#/components/responses/RateLimited' }
-        '501': { $ref: '#/components/responses/NotImplemented' }
         '503': { $ref: '#/components/responses/Unavailable' }
 
   /internal/v1/code/jobs/{job_id}:
@@ -414,7 +423,25 @@ components:
         index_lag_seconds:
           type: integer
           nullable: true
-          description: Seconds since `last_synced_sha` was behind the branch head. Null if unknown.
+          description: |
+            How long the index has been behind the remote. 0 when it is up to date. Counts from the first push (a
+            sync request) or reconcile check that found a commit the index did not have yet, and stops when a sync
+            to the newest known commit finishes. Null while the remote has never been checked.
+        disk:
+          type: object
+          nullable: true
+          description: Disk used by the project, measured after each sync and by reconcile. Null until measured.
+          required: [tree_bytes, git_bytes, index_bytes, measured_at]
+          properties:
+            tree_bytes: { type: integer, description: Source files of the working tree. }
+            git_bytes: { type: integer, description: The `.git` folder. }
+            index_bytes: { type: integer, description: The index database and its log. }
+            measured_at: { type: string, format: date-time }
+        pruned_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When idle pruning deleted the project's folder. A query for it queues a rebuild. Null if it was never pruned.
         files: { type: integer }
         symbols: { type: integer }
         edges: { type: integer }
@@ -479,16 +506,21 @@ components:
           nullable: true
           description: For a `superseded` sync, the newer job that took its place.
         created_at: { type: string, format: date-time }
+        detail:
+          type: string
+          nullable: true
+          description: What a finished job did, in a sentence. Mostly useful for reconcile, for example "up to date at a1b2c3d" or "behind ... queued sync job_...".
         phase:
           type: string
           nullable: true
           description: |
             Where the job is. `clone` means getting the code (a clone for bootstrap, a fetch and reset for sync);
             `scanning`, `parsing`, `resolving` and `linking` are the indexer's own steps, and `resolving` is where
-            most of the time goes on a large repo; `finalizing` is the check that the index is complete and stamped
-            with the right commit. `progress` is coarse: it moves by phase, not by work done.
+            most of the time goes on a large repo; `checking` and `maintenance` belong to reconcile (comparing with
+            the remote, then `git gc` and measuring disk); `finalizing` is the check that the index is complete and
+            stamped with the right commit. `progress` is coarse: it moves by phase, not by work done.
           # OpenAPI 3.0: a nullable enum must list null itself, or strict validators reject a job with no phase.
-          enum: [clone, scanning, parsing, resolving, linking, finalizing, null]
+          enum: [clone, checking, scanning, parsing, resolving, linking, maintenance, finalizing, null]
         progress: { type: number, minimum: 0, maximum: 1, nullable: true }
         started_at: { type: string, format: date-time, nullable: true }
         finished_at: { type: string, format: date-time, nullable: true }
@@ -549,7 +581,7 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     NotImplemented:
-      description: The operation is part of the contract but not built yet. Today this is `flow` mode and `reconcile` jobs.
+      description: The operation is part of the contract but not built yet. Today this is `flow` mode.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

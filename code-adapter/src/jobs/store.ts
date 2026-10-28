@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { DatabaseSync, type Database } from '../sqlite.js';
 import type { JobPhase, JobRow, JobState, NewJob, ProjectBinding } from './types.js';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS projects (
@@ -15,6 +15,15 @@ CREATE TABLE IF NOT EXISTS projects (
   credentials_ref TEXT,
   created_at INTEGER NOT NULL,
   bootstrapped_at INTEGER,
+  remote_head TEXT,
+  remote_checked_at INTEGER,
+  behind_since INTEGER,
+  last_used_at INTEGER,
+  pruned_at INTEGER,
+  disk_tree_bytes INTEGER,
+  disk_git_bytes INTEGER,
+  disk_index_bytes INTEGER,
+  disk_measured_at INTEGER,
   PRIMARY KEY (org_id, project_id)
 );
 CREATE TABLE IF NOT EXISTS jobs (
@@ -27,6 +36,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   phase TEXT,
   progress REAL,
   error TEXT,
+  detail TEXT,
   created_at INTEGER NOT NULL,
   started_at INTEGER,
   finished_at INTEGER,
@@ -43,6 +53,20 @@ CREATE UNIQUE INDEX IF NOT EXISTS jobs_idempotency
   ON jobs (org_id, project_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 `;
 
+/** Columns added after version 1. A file written by version 1 gets them on open. */
+const ADDED_IN_V2: Array<[table: string, column: string, type: string]> = [
+  ['projects', 'remote_head', 'TEXT'],
+  ['projects', 'remote_checked_at', 'INTEGER'],
+  ['projects', 'behind_since', 'INTEGER'],
+  ['projects', 'last_used_at', 'INTEGER'],
+  ['projects', 'pruned_at', 'INTEGER'],
+  ['projects', 'disk_tree_bytes', 'INTEGER'],
+  ['projects', 'disk_git_bytes', 'INTEGER'],
+  ['projects', 'disk_index_bytes', 'INTEGER'],
+  ['projects', 'disk_measured_at', 'INTEGER'],
+  ['jobs', 'detail', 'TEXT'],
+];
+
 interface Raw {
   [column: string]: string | number | null;
 }
@@ -57,6 +81,7 @@ const toJob = (r: Raw): JobRow => ({
   phase: r.phase as JobPhase | null,
   progress: r.progress as number | null,
   error: r.error as string | null,
+  detail: r.detail as string | null,
   createdAt: r.created_at as number,
   startedAt: r.started_at as number | null,
   finishedAt: r.finished_at as number | null,
@@ -76,6 +101,15 @@ const toProject = (r: Raw): ProjectBinding => ({
   credentialsRef: r.credentials_ref as string | null,
   createdAt: r.created_at as number,
   bootstrappedAt: r.bootstrapped_at as number | null,
+  remoteHead: r.remote_head as string | null,
+  remoteCheckedAt: r.remote_checked_at as number | null,
+  behindSince: r.behind_since as number | null,
+  lastUsedAt: r.last_used_at as number | null,
+  prunedAt: r.pruned_at as number | null,
+  diskTreeBytes: r.disk_tree_bytes as number | null,
+  diskGitBytes: r.disk_git_bytes as number | null,
+  diskIndexBytes: r.disk_index_bytes as number | null,
+  diskMeasuredAt: r.disk_measured_at as number | null,
 });
 
 /** Columns a job update may change. */
@@ -84,6 +118,7 @@ export interface JobPatch {
   phase?: JobPhase | null;
   progress?: number | null;
   error?: string | null;
+  detail?: string | null;
   startedAt?: number | null;
   finishedAt?: number | null;
   files?: number | null;
@@ -98,6 +133,7 @@ const COLUMN: Record<keyof JobPatch, string> = {
   phase: 'phase',
   progress: 'progress',
   error: 'error',
+  detail: 'detail',
   startedAt: 'started_at',
   finishedAt: 'finished_at',
   files: 'files',
@@ -127,11 +163,20 @@ export class JobStore {
         throw new Error(`The job store was written by a newer adapter (schema ${version}, this one is ${SCHEMA_VERSION})`);
       }
       this.db.exec(SCHEMA);
+      this.addMissingColumns();
       this.db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
     } catch (e) {
       // Release the file before failing: an open handle makes the file undeletable on Windows.
       this.db.close();
       throw e;
+    }
+  }
+
+  /** Brings a file written by an older adapter up to the current columns. Does nothing for a new file. */
+  private addMissingColumns(): void {
+    for (const [table, column, type] of ADDED_IN_V2) {
+      const have = (this.db.prepare(`PRAGMA table_info(${table})`).all() as Raw[]).some((c) => c.name === column);
+      if (!have) this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
     }
   }
 
@@ -146,8 +191,12 @@ export class JobStore {
     return row ? toProject(row as Raw) : undefined;
   }
 
+  listProjects(): ProjectBinding[] {
+    return (this.db.prepare('SELECT * FROM projects ORDER BY org_id, project_id').all() as Raw[]).map(toProject);
+  }
+
   /** Returns false if the project already has a binding. */
-  addProject(p: Omit<ProjectBinding, 'createdAt' | 'bootstrappedAt'>): boolean {
+  addProject(p: Pick<ProjectBinding, 'orgId' | 'projectId' | 'repoUrl' | 'branch' | 'credentialsRef'>): boolean {
     const r = this.db
       .prepare(
         `INSERT OR IGNORE INTO projects (org_id, project_id, repo_url, branch, credentials_ref, created_at)
@@ -157,14 +206,72 @@ export class JobStore {
     return Number(r.changes) === 1;
   }
 
+  /** The first (or a repeated, after a rebuild) bootstrap finished. A pruned project is whole again. */
   markBootstrapped(orgId: string, projectId: string): void {
     this.db
-      .prepare('UPDATE projects SET bootstrapped_at = ? WHERE org_id = ? AND project_id = ?')
-      .run(this.now(), orgId, projectId);
+      .prepare('UPDATE projects SET bootstrapped_at = ?, pruned_at = NULL, last_used_at = ? WHERE org_id = ? AND project_id = ?')
+      .run(this.now(), this.now(), orgId, projectId);
   }
 
   deleteProject(orgId: string, projectId: string): void {
     this.db.prepare('DELETE FROM projects WHERE org_id = ? AND project_id = ?').run(orgId, projectId);
+  }
+
+  /** A sync was requested to `commitSha`, so the remote is at least that far ahead. The lag clock starts. */
+  markBehind(orgId: string, projectId: string, commitSha: string): void {
+    this.db
+      .prepare(
+        `UPDATE projects SET remote_head = ?, behind_since = COALESCE(behind_since, ?)
+         WHERE org_id = ? AND project_id = ?`,
+      )
+      .run(commitSha, this.now(), orgId, projectId);
+  }
+
+  /** A sync to `commitSha` finished. If that is still the newest known commit, the lag clock stops. */
+  markCaughtUp(orgId: string, projectId: string, commitSha: string): void {
+    this.db
+      .prepare('UPDATE projects SET behind_since = NULL WHERE org_id = ? AND project_id = ? AND remote_head = ?')
+      .run(orgId, projectId, commitSha);
+  }
+
+  /** Records what the remote says its head is, against the commit the index reflects. */
+  noteRemoteHead(orgId: string, projectId: string, remoteHead: string, indexedCommit: string | null): void {
+    const t = this.now();
+    if (remoteHead === indexedCommit) {
+      this.db
+        .prepare('UPDATE projects SET remote_head = ?, remote_checked_at = ?, behind_since = NULL WHERE org_id = ? AND project_id = ?')
+        .run(remoteHead, t, orgId, projectId);
+    } else {
+      this.db
+        .prepare(
+          `UPDATE projects SET remote_head = ?, remote_checked_at = ?, behind_since = COALESCE(behind_since, ?)
+           WHERE org_id = ? AND project_id = ?`,
+        )
+        .run(remoteHead, t, t, orgId, projectId);
+    }
+  }
+
+  /** Notes that the project was used. Pass a time to set it explicitly (tests). */
+  touchProject(orgId: string, projectId: string, at: number = this.now()): void {
+    this.db.prepare('UPDATE projects SET last_used_at = ? WHERE org_id = ? AND project_id = ?').run(at, orgId, projectId);
+  }
+
+  markPruned(orgId: string, projectId: string): void {
+    this.db
+      .prepare(
+        `UPDATE projects SET pruned_at = ?, behind_since = NULL, disk_tree_bytes = NULL, disk_git_bytes = NULL,
+           disk_index_bytes = NULL, disk_measured_at = NULL WHERE org_id = ? AND project_id = ?`,
+      )
+      .run(this.now(), orgId, projectId);
+  }
+
+  setDisk(orgId: string, projectId: string, bytes: { tree: number; git: number; index: number }): void {
+    this.db
+      .prepare(
+        `UPDATE projects SET disk_tree_bytes = ?, disk_git_bytes = ?, disk_index_bytes = ?, disk_measured_at = ?
+         WHERE org_id = ? AND project_id = ?`,
+      )
+      .run(bytes.tree, bytes.git, bytes.index, this.now(), orgId, projectId);
   }
 
   // ---- jobs --------------------------------------------------------------------------------
@@ -209,6 +316,15 @@ export class JobStore {
            ORDER BY created_at, rowid`,
         )
         .all(orgId, projectId) as Raw[]
+    ).map(toJob);
+  }
+
+  /** A project's most recent jobs, newest first. */
+  recentJobs(orgId: string, projectId: string, limit = 20): JobRow[] {
+    return (
+      this.db
+        .prepare('SELECT * FROM jobs WHERE org_id = ? AND project_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?')
+        .all(orgId, projectId, limit) as Raw[]
     ).map(toJob);
   }
 

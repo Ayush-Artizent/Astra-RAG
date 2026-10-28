@@ -114,6 +114,41 @@ export async function cloneShallow(o: CloneOptions): Promise<void> {
 
 export const headSha = (dir: string, run: Omit<GitRun, 'cwd'>) => git(['rev-parse', 'HEAD'], { ...run, cwd: dir });
 
+/**
+ * The commit the remote's tracked branch points at right now (its default branch when none was chosen).
+ * One small request; nothing is downloaded.
+ */
+export async function remoteHead(dir: string, branch: string | null, run: Omit<GitRun, 'cwd'>): Promise<string> {
+  const ref = branch ? `refs/heads/${branch}` : 'HEAD';
+  const out = await git(['ls-remote', 'origin', ref], { ...run, cwd: dir });
+  const sha = out.split('\n').map((l) => l.trim().split(/\s+/)[0] ?? '').find((s) => /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(s));
+  if (!sha) throw new GitError(`The remote has no ${branch ? `branch ${branch}` : 'default branch'}`);
+  return sha;
+}
+
+export interface ObjectCounts {
+  /** Loose objects, which pile up as syncs fetch and replace commits. */
+  looseCount: number;
+  looseKb: number;
+}
+
+/** How many loose objects the repo holds, from `git count-objects -v`. */
+export async function looseObjects(dir: string, run: Omit<GitRun, 'cwd'>): Promise<ObjectCounts> {
+  const out = await git(['count-objects', '-v'], { ...run, cwd: dir });
+  const field = (name: string) => Number(new RegExp(`^${name}: (\\d+)$`, 'm').exec(out)?.[1] ?? 0);
+  return { looseCount: field('count'), looseKb: field('size') };
+}
+
+/**
+ * Removes objects nothing needs any more. A shallow sync leaves the previous commit behind, and the reflog would
+ * keep it alive for 90 days, so the reflog is emptied first. Never touches the working tree or `.codegraph`.
+ */
+export async function collectGarbage(dir: string, run: Omit<GitRun, 'cwd'>): Promise<void> {
+  const at = { ...run, cwd: dir };
+  await git(['reflog', 'expire', '--expire=now', '--all'], at);
+  await git(['-c', 'gc.autoDetach=false', 'gc', '--prune=now', '--quiet'], at);
+}
+
 /** The directory git considers the root of the working tree that contains `dir`. */
 export const topLevel = (dir: string, run: Omit<GitRun, 'cwd'>) => git(['rev-parse', '--show-toplevel'], { ...run, cwd: dir });
 

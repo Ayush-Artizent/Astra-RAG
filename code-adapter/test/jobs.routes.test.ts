@@ -17,15 +17,17 @@ let jobs: JobSystem;
 /** Replaceable per test. */
 let bootstrapImpl: Executor;
 let syncImpl: Executor;
+let reconcileImpl: Executor;
 
 beforeEach(async () => {
   dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-jobs-'));
   bootstrapImpl = async () => ({ files: 10, symbols: 100, edges: 300 });
   syncImpl = async () => ({ files: 10, symbols: 101, edges: 301 });
+  reconcileImpl = async () => ({ detail: 'up to date' });
   const config = testConfig(dataDir);
   jobs = createJobSystem(config, {
     storeFile: ':memory:',
-    executors: { bootstrap: (ctx) => bootstrapImpl(ctx), sync: (ctx) => syncImpl(ctx) },
+    executors: { bootstrap: (ctx) => bootstrapImpl(ctx), sync: (ctx) => syncImpl(ctx), reconcile: (ctx) => reconcileImpl(ctx) },
   });
   app = buildServer(config, { jobs });
   await app.ready();
@@ -309,12 +311,50 @@ describe('idempotency', () => {
 });
 
 describe('reconcile', () => {
-  it('answers 501 until it is built, and still checks the scope', async () => {
-    const res = await submit({ type: 'reconcile' });
-    expect(res.statusCode).toBe(501);
-    expect(res.json().error_code).toBe('not_implemented');
-    const denied = await submit({ type: 'reconcile' }, { scopes: ['query'] });
+  it('needs the code:sync scope, and project:admin does not satisfy it', async () => {
+    await bootstrapAndWait();
+    const denied = await submit({ type: 'reconcile' }, { scopes: ['query', 'project:admin'] });
     expect(denied.statusCode).toBe(403);
+    expect(denied.json().error_code).toBe('scope_missing');
+  });
+
+  it('is refused for a project that has not been bootstrapped', async () => {
+    const res = await submit({ type: 'reconcile' });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().error_code).toBe('job_conflict');
+  });
+
+  it('is accepted for a bootstrapped project, and asking again returns the check already active', async () => {
+    await bootstrapAndWait();
+    let release!: () => void;
+    const held = new Promise<void>((res) => (release = res));
+    reconcileImpl = async () => {
+      await held;
+      return { detail: 'up to date at aaaaaaa' };
+    };
+    const first = await submit({ type: 'reconcile' });
+    expect(first.statusCode).toBe(202);
+    const again = await submit({ type: 'reconcile' });
+    expect(again.statusCode).toBe(202);
+    expect(again.json().job_id).toBe(first.json().job_id);
+    release();
+    await jobs.queue.idle();
+    expect((await getJob(first.json().job_id)).json()).toMatchObject({ type: 'reconcile', state: 'done', detail: 'up to date at aaaaaaa' });
+
+    // Once finished, the next request is a new check.
+    const next = await submit({ type: 'reconcile' });
+    expect(next.json().job_id).not.toBe(first.json().job_id);
+    await jobs.queue.idle();
+  });
+
+  it('turns a sync for a pruned project into a reconcile, which rebuilds it', async () => {
+    await bootstrapAndWait();
+    jobs.store.markPruned('orgA', 'p1');
+    const res = await syncTo('a');
+    expect(res.statusCode).toBe(202);
+    const job = (await getJob(res.json().job_id)).json();
+    expect(job.type).toBe('reconcile');
+    await jobs.queue.idle();
   });
 });
 

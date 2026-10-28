@@ -7,10 +7,22 @@ import type { ProjectRegistry } from '../projects.js';
 import { countSymbols } from '../status.js';
 import type { runCodegraph } from './codegraph-cli.js';
 import { resolveCredential } from './credentials.js';
+import { measureDisk } from './disk.js';
 import { gitEnvironment, headSha, samePath, topLevel } from './git.js';
 import { readIndexedCommit } from './stamp.js';
+import type { JobStore } from './store.js';
 import type { ProjectBinding } from './types.js';
 import { findSymlinks } from './workspace.js';
+
+/** Measures a project's disk use and records it. Failures are ignored: the figure is informational. */
+export async function measureAndStore(store: JobStore, orgId: string, projectId: string, dir: string): Promise<void> {
+  try {
+    const use = await measureDisk(dir);
+    store.setDisk(orgId, projectId, use);
+  } catch {
+    // the store may be closed during shutdown, or the folder may be gone
+  }
+}
 
 /** Everything the executors share. */
 export interface JobEnvironment {

@@ -184,7 +184,7 @@ Made by the reviewer to unblock Phase 2 (jobs, sync, flow). Each is the option r
 | 3 | How is the repo fetched? (Q1) | `git clone` over HTTPS with a token. The job carries `repo_url` and a `credentials_ref` that the adapter resolves from an environment variable or file. | One repo per project. GitHub App installs, several repos per project and uploaded archives are not covered and stay open. |
 | 4 | Index-lag target? (Q2) | Scaled by repo size: 2 minutes up to 1,000 files, 5 minutes up to 5,000 files, measured case by case beyond. | Sets the sync timeout, the coalescing window and the reconcile interval. The thresholds are my proposal from one Django measurement, not a tested result. |
 | 5 | Where does customer source live? | **A local working tree is kept next to the index** (`data/<org>/<project>/`), cloned shallow (depth 1). Ephemeral-tree and remote-only variants are deferred. | See 12.1. Customer source is at rest on our disks, so the hardening in 12.1 is a requirement of the clone step, not an option. |
-| 6 | Where does `commit_sha` come from? | CodeGraph's own stamp, `indexed_at_commit` in the index's `project_metadata` table, not a record we write. **Adopted when Phase 2 started, for the reviewer to confirm.** | The stamp is written together with the index data, so it cannot name a commit the index does not reflect. Reading an internal table couples us to CodeGraph 1.6.2, so the version stays pinned and a test fails if the key disappears. See 12.2. |
+| 6 | Where does `commit_sha` come from? | CodeGraph's own stamp, `indexed_at_commit` in the index's `project_metadata` table, not a record we write. **Confirmed by the reviewer on 2026-10-28.** | The stamp is written together with the index data, so it cannot name a commit the index does not reflect. Reading an internal table couples us to CodeGraph 1.6.2, so the version stays pinned and a test fails if the key disappears. See 12.2. |
 
 Testing approach (not a reviewer decision): local git repositories created inside the tests, so cloning and syncing
 are exercised with no network.
@@ -248,8 +248,8 @@ root, and the clone step checks that.
 
 ## 13. Phase 2 status (2026-10-28)
 
-Built and tested: L1 (job intake), L2 (bootstrap), L3 (sync) and most of L4 (failure handling). Not built: L5
-(reconcile, `git gc`, idle pruning, disk report) and L6 (flow mode). 478 tests pass; typecheck is clean.
+Built and tested: L1 (job intake), L2 (bootstrap), L3 (sync), most of L4 (failure handling) and L5 (reconcile,
+`git gc`, idle pruning, disk report). Not built: L6 (flow mode). 536 tests pass; typecheck is clean.
 
 | Task | State | What exists |
 |---|---|---|
@@ -257,8 +257,48 @@ Built and tested: L1 (job intake), L2 (bootstrap), L3 (sync) and most of L4 (fai
 | L2 bootstrap | Done | Shallow clone (`core.symlinks=false`, no submodules, only https, token through the environment), own-git-root and symlink checks, `codegraph init` as a child process, index check (complete, stamped with the checked-out commit). A failure deletes the folder and the repo record. |
 | L3 sync | Done | Fetch the commit (by id, else the branch tip), `reset --hard`, `codegraph sync` as a child process, index check. A commit the index already reflects is skipped. If indexing fails the files are moved back to the indexed commit. `commit_sha` in every result now comes from the index. |
 | L4 failure handling | Mostly done | Timeouts that kill the whole process tree, cancellation on shutdown (with a time limit), cleanup of half-made folders, rollback of a failed sync, and startup recovery for a job cut off by a crash. Not done: stale CodeGraph lock files (`codegraph unlock`) have never been seen in these tests. |
-| L5 reconcile | Not started | Contract returns 501 for `reconcile`. |
+| L5 reconcile and upkeep | Done | `reconcile` job (see 13.1), a schedule that queues one per project, `git gc`, disk measurement, index lag in status, idle pruning with rebuild on the next query. |
 | L6 flow | Not started | Query returns 501 for `flow`. |
+
+### 13.1 What reconcile does (L5, 2026-10-28)
+
+A reconcile is an ordinary job, so nothing else runs on the project while it works. The adapter queues one for
+every project at startup and then every `ASTRA_RECONCILE_INTERVAL_MS` (default 10 minutes; 0 means only at
+startup), skipping projects that already have a job and pruned projects. It runs these steps in order and stops at
+the first that applies:
+
+1. **Pruned project:** queue a rebuild (a query asked for it).
+2. **Idle project:** delete it if it has not been queried for `ASTRA_IDLE_PROJECT_DAYS` days. **Default 0: never.**
+3. **Damaged project:** if the folder, git data or index is missing, unreadable, or marked failed or interrupted,
+   delete it and queue a rebuild. A rebuild is a normal bootstrap job, so the one-bootstrap-at-a-time rule holds,
+   and a failed rebuild keeps the repo record so a later check retries it.
+4. **Behind the remote:** if the files are ahead of the index, move them back. Then compare the remote branch head
+   (`git ls-remote`, nothing is downloaded) with the commit the index reflects, and queue a sync if they differ.
+   This is the catch for a missed push webhook. CodeGraph already copes with force-pushes, so no history check is done.
+5. **Housekeeping:** run `git gc` when loose git objects pass `ASTRA_GC_LOOSE_OBJECTS` (default 500) or
+   `ASTRA_GC_LOOSE_KB` (default 20,000), then measure disk use.
+
+**Index lag** (`index_lag_seconds` in status) counts from the first push (a sync request) or reconcile check that
+found a commit the index did not have, and stops when a sync to the newest known commit finishes. 0 means up to
+date; null means the remote has never been checked. This is the figure to measure against the target in decision 4.
+
+**Disk use** (`disk` in status) is measured after each bootstrap, sync and reconcile: working tree, `.git` and index.
+There is no per-org quota yet.
+
+**Findings that changed the design:**
+- `git count-objects` reports `size: 0` KiB for tiny loose objects on this machine, so a size-only gc trigger would
+  never fire on a small repo. The trigger now also counts objects.
+- A garbage index file is reported by CodeGraph as "not initialised", so the health check says "damaged", not "missing".
+- The scheduler tick queues a check for every project in the store, so a test that calls it has side effects on all of them.
+
+**Limits of the evidence for L5:**
+- Same as the rest of Phase 2: one Windows machine, local `file://` remotes, tiny repos, no real git host.
+- The health check opens the index and reads its tables. It does not run SQLite's full integrity check (seconds on
+  a large index), so damage in pages that are never read is not detected.
+- Reconcile on a very large number of projects has not been load tested: each is a job and an `ls-remote` request.
+- The 10 minute default interval and the object and size thresholds for gc are starting values, not measured ones.
+- Idle pruning is tested but disabled by default. It deletes data, and the retention period is still the
+  reviewer's decision (checklist).
 
 **Behaviour added beyond the plan** (each is in the contract):
 - `snapshot.sync_in_progress`, and `plane_status` `degraded` while it is true. A sync moves the files before the
@@ -294,11 +334,12 @@ Built and tested: L1 (job intake), L2 (bootstrap), L3 (sync) and most of L4 (fai
 Open decisions and measurements. Questions in section 9 and the open items in
 [codegraph-spike-report.md](codegraph-spike-report.md) are tracked in their own documents.
 
-- [ ] **Idle-project retention.** How long may an unused project stay on disk before it is deleted and rebuilt on demand? (12.1)
+- [ ] **Idle-project retention.** How long may an unused project stay on disk before it is deleted and rebuilt on demand? (12.1) The mechanism is built and tested (13.1) but off until you set `ASTRA_IDLE_PROJECT_DAYS`; a rebuild of a Django-sized project took about 7 minutes in the spikes.
+- [ ] **Per-org disk quota.** Disk use is now reported per project (13.1). Is a limit per org wanted, and what happens at the limit?
 - [ ] **Secrets in snippets.** Does the platform need hardcoded credentials redacted before code is returned? The design document has no such requirement. (12.1)
 - [ ] **Encryption at rest and folder permissions.** Who owns them, the platform team or this service? (12.1)
 - [ ] **Symlink isolation on Linux.** Reproduce the cross-tenant symlink case with real symlinks (no symlink rights on the Windows test account). (12.1)
-- [ ] **Confirm decision 6.** Read `commit_sha` from CodeGraph's own stamp. (12.2)
+- [x] **Confirm decision 6.** Read `commit_sha` from CodeGraph's own stamp. Confirmed 2026-10-28. (12.2)
 - [ ] **Stamp after a killed sync.** Not tested. (12.2)
 
 - [ ] **Symbol discovery (to discuss).** How does the calling agent learn which symbols to send?

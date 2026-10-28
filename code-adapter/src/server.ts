@@ -8,7 +8,7 @@ import { createExecutors, createRecoveryFor } from './jobs/executors.js';
 import { createJobSystem, type JobSystem } from './jobs/index.js';
 import { registerJobRoutes } from './jobs/routes.js';
 import { readIndexedCommit } from './jobs/stamp.js';
-import type { Executor, JobType } from './jobs/types.js';
+import type { Executor, ExecutorDeps, JobType } from './jobs/types.js';
 import type { GraphApi } from './modes.js';
 import { projectDir } from './paths.js';
 import { ProjectRegistry } from './projects.js';
@@ -51,8 +51,8 @@ export interface ServerDeps {
   registry?: ProjectRegistry;
   /** Replaces the whole job system. For tests that need to control it. */
   jobs?: JobSystem;
-  /** What runs each job type. Defaults to the real executors (git clone and the CodeGraph CLI). */
-  executors?: Partial<Record<JobType, Executor>>;
+  /** What runs each job type. Defaults to the real executors (git and the CodeGraph CLI). */
+  executors?: Partial<Record<JobType, Executor>> | ((deps: ExecutorDeps) => Partial<Record<JobType, Executor>>);
   ambiguousPolicy?: AmbiguousPolicy;
   /** The commit a project's index reflects. Defaults to reading CodeGraph's own stamp from the index. */
   commitSha?: (orgId: string, projectId: string) => string | null;
@@ -67,10 +67,23 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
   const jobs =
     deps.jobs ??
     createJobSystem(config, {
-      executors: deps.executors ?? createExecutors(config, registry),
+      executors: deps.executors ?? ((d) => createExecutors(config, registry, d)),
       recover: createRecoveryFor(config, registry),
     });
-  app.addHook('onReady', async () => jobs.queue.start());
+  // Records that a project was queried, at most once a minute, so idle pruning knows what is in use.
+  const lastTouched = new Map<string, number>();
+  const touch = (orgId: string, projectId: string): void => {
+    const key = `${orgId}/${projectId}`;
+    const now = Date.now();
+    if (now - (lastTouched.get(key) ?? 0) < 60_000) return;
+    lastTouched.set(key, now);
+    jobs.store.touchProject(orgId, projectId);
+  };
+
+  app.addHook('onReady', async () => {
+    await jobs.queue.start();
+    jobs.maintenance.start();
+  });
   app.addHook('onClose', async () => {
     await jobs.close();
     registry.closeAll();
@@ -116,8 +129,13 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
       const p = lease.project;
       const snapshot = snapshotOf(p, commitSha(env.org_id, env.project_id), isSyncing(jobs, env));
       if (!p.ready) {
+        // A project deleted for being idle is rebuilt when somebody asks for it. This answer is `not_ready`.
+        if (jobs.store.getProject(env.org_id, env.project_id)?.prunedAt) {
+          jobs.service.enqueueReconcile(env.org_id, env.project_id);
+        }
         return { request_id: requestId, plane_status: 'not_ready', snapshot, resolved_symbols: [], results: [], truncated: false };
       }
+      touch(env.org_id, env.project_id);
       return await runCodeQuery(p.cg as unknown as GraphApi, q, {
         requestId,
         snapshot,
@@ -143,6 +161,7 @@ export function buildServer(config: Config, deps: ServerDeps = {}): FastifyInsta
         commitSha(env.org_id, env.project_id),
         shown ? { id: shown.id, running: running !== undefined } : null,
         isSyncing(jobs, env),
+        { binding: jobs.store.getProject(env.org_id, env.project_id) },
       );
     } finally {
       lease.release();

@@ -2,9 +2,10 @@ import type { Config } from '../config.js';
 import type { ProjectRegistry } from '../projects.js';
 import { createBootstrapExecutor } from './bootstrap.js';
 import { ensureEmptyGitConfig, type JobEnvironment } from './common.js';
+import { createReconcileExecutor } from './reconcile.js';
 import { createRecovery } from './recovery.js';
 import { createSyncExecutor } from './sync.js';
-import type { Executor, JobRow, JobType, ProjectBinding } from './types.js';
+import type { Executor, ExecutorDeps, JobRow, JobType, ProjectBinding } from './types.js';
 
 /** Startup cleanup for jobs a restart cut off, using the same environment as the executors. */
 export function createRecoveryFor(
@@ -17,17 +18,18 @@ export function createRecoveryFor(
 
 /**
  * The real executors. Each job type is a function the queue runs; the queue knows nothing about git or CodeGraph.
- * `overrides` lets tests replace the CodeGraph CLI.
- * TODO(phase 2, L5): the `reconcile` executor.
+ * `deps` lets reconcile queue follow-up jobs. `overrides` lets tests replace the CodeGraph CLI.
  */
 export function createExecutors(
   config: Config,
   registry: ProjectRegistry,
+  deps: ExecutorDeps,
   overrides: Pick<JobEnvironment, 'runCodegraph'> = {},
 ): Partial<Record<JobType, Executor>> {
   const env: JobEnvironment = { config, registry, emptyGitConfig: ensureEmptyGitConfig(config.dataDir), ...overrides };
   return {
     bootstrap: createBootstrapExecutor(env),
     sync: createSyncExecutor(env),
+    reconcile: createReconcileExecutor(env, deps),
   };
 }

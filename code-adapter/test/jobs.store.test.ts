@@ -164,7 +164,143 @@ describe('projects', () => {
   });
 });
 
+describe('freshness bookkeeping', () => {
+  const bind = { orgId: 'orgA', projectId: 'p1', repoUrl: 'https://github.com/a/b', branch: null, credentialsRef: null };
+  const A = 'a'.repeat(40);
+  const B = 'b'.repeat(40);
+  const C = 'c'.repeat(40);
+
+  it('starts the lag clock on the first unindexed commit and keeps it while the remote moves further ahead', () => {
+    const { store, tick } = memoryStore();
+    store.addProject(bind);
+    store.markBehind('orgA', 'p1', A);
+    const started = store.getProject('orgA', 'p1')?.behindSince as number;
+    expect(started).toBeGreaterThan(0);
+    expect(store.getProject('orgA', 'p1')?.remoteHead).toBe(A);
+
+    tick(5_000);
+    store.markBehind('orgA', 'p1', B); // another push before the first was indexed
+    expect(store.getProject('orgA', 'p1')).toMatchObject({ remoteHead: B, behindSince: started });
+  });
+
+  it('stops the clock only when the sync that finished is the newest known commit', () => {
+    const { store } = memoryStore();
+    store.addProject(bind);
+    store.markBehind('orgA', 'p1', A);
+    store.markBehind('orgA', 'p1', B);
+    store.markCaughtUp('orgA', 'p1', A); // an older sync finished; the remote is already at B
+    expect(store.getProject('orgA', 'p1')?.behindSince).not.toBeNull();
+    store.markCaughtUp('orgA', 'p1', B);
+    expect(store.getProject('orgA', 'p1')?.behindSince).toBeNull();
+  });
+
+  it('records a remote check: up to date clears the clock, behind starts or keeps it', () => {
+    const { store, tick } = memoryStore();
+    store.addProject(bind);
+    store.noteRemoteHead('orgA', 'p1', A, A);
+    expect(store.getProject('orgA', 'p1')).toMatchObject({ remoteHead: A, behindSince: null });
+    expect(store.getProject('orgA', 'p1')?.remoteCheckedAt).toBeGreaterThan(0);
+
+    store.noteRemoteHead('orgA', 'p1', B, A);
+    const since = store.getProject('orgA', 'p1')?.behindSince as number;
+    expect(since).toBeGreaterThan(0);
+    tick(10_000);
+    store.noteRemoteHead('orgA', 'p1', C, A);
+    expect(store.getProject('orgA', 'p1')).toMatchObject({ remoteHead: C, behindSince: since });
+    store.noteRemoteHead('orgA', 'p1', C, C);
+    expect(store.getProject('orgA', 'p1')?.behindSince).toBeNull();
+  });
+
+  it('treats an index with no known commit as behind', () => {
+    const { store } = memoryStore();
+    store.addProject(bind);
+    store.noteRemoteHead('orgA', 'p1', A, null);
+    expect(store.getProject('orgA', 'p1')?.behindSince).not.toBeNull();
+  });
+
+  it('keeps projects apart', () => {
+    const { store } = memoryStore();
+    store.addProject(bind);
+    store.addProject({ ...bind, orgId: 'orgB' });
+    store.markBehind('orgA', 'p1', A);
+    expect(store.getProject('orgB', 'p1')).toMatchObject({ remoteHead: null, behindSince: null });
+  });
+
+  it('tracks use, pruning and disk, and a bootstrap makes a pruned project whole again', () => {
+    const { store, tick } = memoryStore();
+    store.addProject(bind);
+    expect(store.getProject('orgA', 'p1')).toMatchObject({ lastUsedAt: null, prunedAt: null, diskTreeBytes: null });
+
+    store.touchProject('orgA', 'p1', 123);
+    expect(store.getProject('orgA', 'p1')?.lastUsedAt).toBe(123);
+    store.setDisk('orgA', 'p1', { tree: 10, git: 20, index: 30 });
+    expect(store.getProject('orgA', 'p1')).toMatchObject({ diskTreeBytes: 10, diskGitBytes: 20, diskIndexBytes: 30 });
+    expect(store.getProject('orgA', 'p1')?.diskMeasuredAt).toBeGreaterThan(0);
+
+    store.markBehind('orgA', 'p1', A);
+    tick();
+    store.markPruned('orgA', 'p1');
+    expect(store.getProject('orgA', 'p1')).toMatchObject({ behindSince: null, diskTreeBytes: null, diskMeasuredAt: null });
+    expect(store.getProject('orgA', 'p1')?.prunedAt).toBeGreaterThan(0);
+
+    store.markBootstrapped('orgA', 'p1');
+    expect(store.getProject('orgA', 'p1')?.prunedAt).toBeNull();
+    expect(store.getProject('orgA', 'p1')?.lastUsedAt).toBeGreaterThan(123);
+  });
+
+  it('lists every project in a stable order, and stores a job detail', () => {
+    const { store } = memoryStore();
+    store.addProject({ ...bind, orgId: 'orgB' });
+    store.addProject(bind);
+    store.addProject({ ...bind, projectId: 'a1' });
+    expect(store.listProjects().map((p) => `${p.orgId}/${p.projectId}`)).toEqual(['orgA/a1', 'orgA/p1', 'orgB/p1']);
+    const job = store.create({ orgId: 'orgA', projectId: 'p1', type: 'reconcile' });
+    store.update(job.id, { detail: 'up to date at aaaaaaa' });
+    expect(store.get(job.id)?.detail).toBe('up to date at aaaaaaa');
+  });
+});
+
 describe('persistence and schema', () => {
+  it('upgrades a file written by schema version 1 without losing anything', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-store-v1-'));
+    dirs.push(dir);
+    const file = path.join(dir, 'jobs.db');
+    const old = new DatabaseSync(file);
+    old.exec(`
+      CREATE TABLE projects (org_id TEXT NOT NULL, project_id TEXT NOT NULL, repo_url TEXT NOT NULL, branch TEXT,
+        credentials_ref TEXT, created_at INTEGER NOT NULL, bootstrapped_at INTEGER, PRIMARY KEY (org_id, project_id));
+      CREATE TABLE jobs (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, project_id TEXT NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('bootstrap', 'sync', 'reconcile')),
+        state TEXT NOT NULL CHECK (state IN ('queued', 'running', 'done', 'failed', 'superseded')),
+        commit_sha TEXT, phase TEXT, progress REAL, error TEXT, created_at INTEGER NOT NULL, started_at INTEGER,
+        finished_at INTEGER, files INTEGER, symbols INTEGER, edges INTEGER, coalesced_into TEXT,
+        idempotency_key TEXT, request_hash TEXT);
+      INSERT INTO projects VALUES ('orgA', 'p1', 'https://github.com/a/b', 'main', 'acme', 5, 7);
+      INSERT INTO jobs (id, org_id, project_id, type, state, created_at, files) VALUES ('job_old', 'orgA', 'p1', 'bootstrap', 'done', 5, 42);
+      PRAGMA user_version = 1;
+    `);
+    old.close();
+
+    const store = new JobStore(file);
+    stores.push(store);
+    expect(store.getProject('orgA', 'p1')).toMatchObject({
+      repoUrl: 'https://github.com/a/b', branch: 'main', credentialsRef: 'acme', bootstrappedAt: 7,
+      remoteHead: null, behindSince: null, lastUsedAt: null, prunedAt: null, diskTreeBytes: null,
+    });
+    expect(store.get('job_old')).toMatchObject({ state: 'done', files: 42, detail: null });
+    // The new columns work on the old rows.
+    store.markBehind('orgA', 'p1', 'a'.repeat(40));
+    store.update('job_old', { detail: 'kept' });
+    expect(store.getProject('orgA', 'p1')?.behindSince).toBeGreaterThan(0);
+    expect(store.get('job_old')?.detail).toBe('kept');
+    // Opening it again changes nothing.
+    store.close();
+    stores.pop();
+    const again = new JobStore(file);
+    stores.push(again);
+    expect(again.get('job_old')?.files).toBe(42);
+  });
+
   const tmp = () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-store-'));
     dirs.push(dir);

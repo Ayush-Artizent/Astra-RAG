@@ -24,11 +24,13 @@ let jobs: JobSystem;
 let dataDir: string;
 let syncImpl: Executor;
 let bootstrapImpl: Executor;
+let reconcileImpl: Executor;
 
 // Reset before every test, so one test that fails part way cannot leave a broken executor for the next.
 beforeEach(() => {
   bootstrapImpl = async () => ({ files: 3, symbols: 20, edges: 40 });
   syncImpl = async () => ({ files: 3, symbols: 21, edges: 41 });
+  reconcileImpl = async () => ({ detail: 'up to date at aaaaaaa' });
 });
 
 beforeAll(async () => {
@@ -37,7 +39,7 @@ beforeAll(async () => {
   const config = testConfig(dataDir);
   jobs = createJobSystem(config, {
     storeFile: ':memory:',
-    executors: { bootstrap: (c) => bootstrapImpl(c), sync: (c) => syncImpl(c) },
+    executors: { bootstrap: (c) => bootstrapImpl(c), sync: (c) => syncImpl(c), reconcile: (c) => reconcileImpl(c) },
   });
   app = buildServer(config, { jobs });
   await app.ready();
@@ -127,7 +129,8 @@ describe('job responses match the contract', () => {
     ['422 unknown field', () => submit({ type: 'sync', commit_sha: sha('a'), org_id: 'x' }, 'e3'), 422, JOBS, 'post'],
     ['422 short commit', () => submit({ type: 'sync', commit_sha: 'abc1234' }, 'e4'), 422, JOBS, 'post'],
     ['409 sync before bootstrap', () => submit({ type: 'sync', commit_sha: sha('a') }, 'e5'), 409, JOBS, 'post'],
-    ['501 reconcile', () => submit({ type: 'reconcile' }, 'e6'), 501, JOBS, 'post'],
+    ['409 reconcile before bootstrap', () => submit({ type: 'reconcile' }, 'e6'), 409, JOBS, 'post'],
+    ['403 reconcile without the sync scope', () => submit({ type: 'reconcile' }, 'e6', ['query']), 403, JOBS, 'post'],
     ['401 no envelope', () => app.inject({ method: 'POST', url: JOBS, payload: { type: 'reconcile' } }), 401, JOBS, 'post'],
     ['404 unknown job', () => getJob('job_00000000000000000000000000000000', 'e7'), 404, `${JOBS}/{job_id}`, 'get'],
     ['403 job read without a scope', () => getJob('job_x', 'e8', ['docs:write']), 403, `${JOBS}/{job_id}`, 'get'],
@@ -138,6 +141,18 @@ describe('job responses match the contract', () => {
     expect(res.headers['content-type']).toContain('application/problem+json');
     expect(declaredStatuses(doc, pathName, method), `${method} ${pathName} declares ${status}`).toContain(String(status));
     conforms(doc.components.schemas.Problem as Schema, res.json());
+  });
+
+  it('POST 202 and GET job for a reconcile, with its detail', async () => {
+    await submit({ type: 'bootstrap', repo_url: REPO }, 'rec1');
+    await jobs.queue.idle();
+    const accepted = await submit({ type: 'reconcile' }, 'rec1');
+    expect(accepted.statusCode).toBe(202);
+    conforms(responseSchema(doc, JOBS, 'post', 202), accepted.json());
+    await jobs.queue.idle();
+    const job = await getJob(accepted.json().job_id, 'rec1');
+    expect(job.json()).toMatchObject({ type: 'reconcile', state: 'done', detail: 'up to date at aaaaaaa' });
+    conforms(responseSchema(doc, `${JOBS}/{job_id}`, 'get', 200), job.json());
   });
 
   it('409 when a bootstrap is repeated', async () => {

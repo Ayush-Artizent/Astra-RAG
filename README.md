@@ -20,6 +20,19 @@ warning; without it nothing is guaranteed to apply (the page warns "no always-on
 must match), and the best-matching template variant with its **whole text**. Sections that have no scope are never selected;
 the response warns how many, so mark them `always: true` or give them `applies_to`.
 
+`POST /api/context` is the full call (`project_id`, `doc_type`, `text`, optionally `stage`, `tags`, `budget`). It returns the
+same rules and template plus `knowledge.items`: one hybrid search on `text`, reranked, each item with its file, heading path,
+`doc_date`, `doc_type` and `source_url`. Nothing is preferred by date or type; when sources disagree the caller decides.
+The response fits a token budget (default 12,000), spent in this order: always rules, template, scope rules, knowledge;
+whatever does not fit is left out and named in `budget.truncated`. `snapshot` shows the rules commit and the index commit
+(they can differ by up to a day), and `status` says whether rules came from a stale cache, whether knowledge was
+available, and whether the reranker ran or was skipped. If Qdrant is down, rules and template are still returned.
+The reranker (`BAAI/bge-reranker-base`, about 1 GB) downloads into `.cache/fastembed` on first use.
+
+`GET /api/tools?project_id=` lists the Claude tool schemas (`get_document_context`, `search_project_data`; the `doc_type`
+enum comes from the project's catalog) and `POST /api/tools/invoke` (`name`, `arguments`) runs one. Results are wrapped with
+a notice that the content is reference data, not instructions.
+
 ## Keeping the index fresh (sync)
 Nothing to set up on the repository side: the server uses the PAT it already has.
 - **Nightly:** every night at `ASTRA_SYNC_DAILY_AT` (default `02:00`, **UTC**) the server checks each repo's tracked
@@ -73,6 +86,8 @@ API:
 - `PUT /api/projects/{project_id}/binding` (`repo_slug`), `GET /api/projects/{project_id}`
 - `GET /api/projects/{project_id}/catalog`, `GET /api/repos/{slug}/catalog` (rules and templates read live from the tracked branch, with warnings; `?include_text=true` adds rule text)
 - `POST /api/context/preview` (body: `project_id`, `doc_type`, optional `stage`, `tags`; the selected rules and the whole template)
+- `POST /api/context` (body: `project_id`, `doc_type`, `text`, optional `stage`, `tags`, `budget`; rules, whole template and reranked knowledge within a token budget)
+- `GET /api/tools` (optional `project_id`), `POST /api/tools/invoke` (`name`, `arguments`)
 - `POST /api/search` (body has `slug`)
 
 A repo's `slug` is host-aware, e.g. `github.com__acme__golden`; the clone response returns it.
@@ -98,7 +113,8 @@ src/astra_rag/
     cloner.py                picks temp_storage/<slug>, replaces an old clone, asks the adapter to clone
     ingestion/               loader, chunkers (md/csv), embedder (fastembed), store (Qdrant versions + alias), pipeline
     catalog/                 golden catalog: golden.yaml manifest, rule sections, templates, warnings (live reads of rules and templates)
-    context/                 picks the rules and template variant for a doc type, stage and tags (preview endpoint)
+    context/                 picks the rules and template variant for a doc type, stage and tags; knowledge search, rerank, token budget (preview and context endpoints)
+    tools/                   Claude tool schemas (get_document_context, search_project_data) and the dispatcher
     errors.py                user-safe AppError
   templates/index.html       the UI
   static/                    style.css, app.js

@@ -53,6 +53,15 @@ CHUNK_MAX_TOKENS = 480
 CHUNK_MIN_TOKENS = 100
 CHUNK_OVERLAP_TOKENS = 50
 
+# --- Context (rules + template + knowledge in one response) ---------------
+RERANK_MODEL = "BAAI/bge-reranker-base"
+KNOWLEDGE_CANDIDATES = 30  # hybrid hits fetched, then reranked
+RERANK_TIMEOUT_SECONDS = 8.0  # past this the search order is kept and the response says rerank was skipped
+# Total tokens for one context response, filled in order: always rules, template, scope rules, knowledge.
+CONTEXT_BUDGET_TOKENS = 12_000
+CONTEXT_BUDGET_RANGE = (500, 100_000)  # what a caller may ask for
+SEARCH_DEFAULT_LIMIT = 8  # search_project_data tool
+
 # project-data folder name -> doc_type stored on every chunk (unknown folders keep their own name)
 DOC_TYPE_BY_FOLDER = {
     "emails": "email", "meeting-notes": "meeting-note", "change-requests": "change-request",

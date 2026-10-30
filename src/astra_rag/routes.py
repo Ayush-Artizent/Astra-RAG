@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from .config import REQUIRED_FILES, REQUIRED_FOLDERS, TEMPLATES_DIR
-from .services import connections, sync
+from .services import connections, sync, tools
 from .services.catalog import service as catalog_service
 from .services.context import service as context_service
 from .services.errors import AppError
@@ -36,6 +36,16 @@ class ContextRequest(BaseModel):
     doc_type: str
     stage: str | None = None
     tags: list[str] = Field(default_factory=list, max_length=50)
+
+
+class FullContextRequest(ContextRequest):
+    text: str = Field(max_length=4000)  # the request itself; used to search the project data
+    budget: int | None = None
+
+
+class ToolCall(BaseModel):
+    name: str
+    arguments: dict = Field(default_factory=dict)
 
 
 class SearchRequest(BaseModel):
@@ -128,6 +138,22 @@ def repo_catalog(slug: str, include_text: bool = False):
 def context_preview(body: ContextRequest):
     return {"ok": True, "project_id": body.project_id,
             **context_service.preview(body.project_id, body.doc_type, body.stage, body.tags)}
+
+
+@router.post("/api/context")
+def context(body: FullContextRequest):
+    return {"ok": True, "project_id": body.project_id,
+            **context_service.get_context(body.project_id, body.doc_type, body.text, body.stage, body.tags, body.budget)}
+
+
+@router.get("/api/tools")
+def list_tools(project_id: str | None = None):
+    return {"ok": True, "tools": tools.describe_tools(check_project_id(project_id) if project_id else None)}
+
+
+@router.post("/api/tools/invoke")
+def invoke_tool(body: ToolCall):
+    return {"ok": True, "result": tools.run_tool(body.name, body.arguments)}
 
 
 @router.post("/api/search")

@@ -380,6 +380,12 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 ---
 
 ## P9: `get_context` API, rerank, tools
+> **Done 2026-10-30** (acceptance review with the team still to do). Learned: one shared token budget (default 12,000) is spent in the
+> stated order instead of a separate budget per section. `validate_document_name` is deferred (it needs the `nomenclature.md` format).
+> The tool layer is the `guru-workitem-w2` design ported to `project_id` + catalog. The sample golden repos have no `golden.yaml`, so
+> their `rules` come back empty until one is added; reranker timeout (8 s) and budgets are guesses for P11 to tune. The reranker model is
+> about 1 GB, so first use downloads it and the first request may report `rerank: skipped: timeout` while it loads.
+>
 > **Rescoped 2026-10-30.** Knowledge comes from **one** search on the request text, not one search per template heading. We do not
 > control the structure of a golden repo's templates or of its project data, so the search must not depend on template headings.
 > The LLM receives the whole template and the rules, and can run its own targeted searches with `search_project_data`.

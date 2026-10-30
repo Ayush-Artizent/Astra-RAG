@@ -1,6 +1,6 @@
 # Current state
 
-_Last updated: 2026-10-30 (branch `goldan-repo-re-manoj`, P5 merged in: P0-P5 and the chunking part of P6 done, P7 and P8 done; see `plan/phases.md`)_
+_Last updated: 2026-10-30 (branch `goldan-repo-re-p9`: P0-P5, P7, P8, P9 and the chunking part of P6 done; see `plan/phases.md`)_
 
 ## What the app does today
 A FastAPI web app (src layout, managed by `uv`, Python >=3.14). The user enters a GitHub or Azure DevOps repo
@@ -92,6 +92,8 @@ Endpoints:
   tracked branch; `?include_text=true` adds rule text; 404 unbound / unregistered, 400 no saved token)
 - `POST /api/context/preview` (`project_id`, `doc_type`, optional `stage`, `tags`: the selected rules and the whole template;
   422 unknown doc type, 404 unbound project, 400 no saved token)
+- `POST /api/context` (`project_id`, `doc_type`, `text`, optional `stage`, `tags`, `budget`: rules, whole template, reranked knowledge, see P9 below)
+- `GET /api/tools` (optional `project_id`), `POST /api/tools/invoke` (`name`, `arguments`)
 - `POST /api/search` (`slug` + `query`; hybrid RRF search; optional `folder`, `file_type` filters)
 
 Page at `/` (connect form with a branch field; repos table with indexed commit and time, last checked, sync status,
@@ -156,14 +158,37 @@ requests are not used (head-sha check + blob-sha body reuse cover it for now).
   `stale` when the host is down) and returns `request`, `snapshot.rules_commit`, `rules[]` (`file`, `section`, `text`,
   `matched_on`, `priority`, `source_url` to the section's lines at the rules commit), `template` (`path`, `variant`, `text`,
   `sections`, `source_url`), the catalog warnings plus selection warnings, and `stale`.
-- Not yet: knowledge retrieval, budgets, rerank and the Claude tools (P9); inference and relevance selection are deferred.
+- Inference and relevance selection are deferred.
+
+## Context response and tools (P9, done)
+`POST /api/context` (`project_id`, `doc_type`, `text`, optional `stage`, `tags`, `budget`) = P8 selection + knowledge, in `services/context/`.
+- `knowledge.py`: **one** `pipeline.search` on `text` (`KNOWLEDGE_CANDIDATES` = 30, through the repo's alias), then `rerank.py`.
+  Items: `text`, `file`, `heading_path`, `doc_type`, `doc_date`, `doc_meta`, `source_url`, `score` (+ `rerank_score`). No date, type or
+  folder preference; template headings are not used to search. Failures become `status.knowledge`: `empty`, `no_index`,
+  `unavailable: <safe reason>`; they never fail the request.
+- `rerank.py`: `BAAI/bge-reranker-base` via fastembed `TextCrossEncoder`, loaded lazily on a single worker thread, limited to
+  `RERANK_TIMEOUT_SECONDS` (8). Timeout or error keeps the search order: `status.rerank` = `skipped: timeout` / `skipped: <ErrorType>`
+  (`ok`, or `not_run` for fewer than 2 hits). A timed-out call keeps running and later calls queue behind it.
+- `budget.py` + `service.get_context`: one shared budget (`CONTEXT_BUDGET_TOKENS` = 12,000; request `budget` 500-100,000), counted with
+  `ingestion/tokens.count_tokens`, spent as always rules, template, scope rules, knowledge. Rules and knowledge items are kept whole
+  and in order (the first that does not fit ends that list); the template keeps whole leading lines. Left-out sections are named in
+  `budget.truncated`, `knowledge.truncated` / `template.truncated` are set, and a `budget_truncated` warning is added.
+- Response: `request`, `snapshot {rules_commit, index_commit}` (index commit = registry `indexed.commit_sha`, `null` before the first
+  build), `rules[]`, `template`, `knowledge {items, total_count, truncated}`, `budget`, `status {rules: ok|stale, knowledge, rerank}`,
+  `warnings[]`, `stale`. Blank `text` and an out-of-range `budget` give 422.
+- `services/tools/`: `Tool` (pydantic args -> Claude schema), `get_document_context` (the same call as `/api/context`; `doc_type` gets an
+  enum from the project's catalog when `GET /api/tools?project_id=` is used) and `search_project_data` (`query`, `limit` <= 20,
+  `folder`, `file_type`; same search + rerank). `POST /api/tools/invoke` returns `{notice, data}`; the notice says the data is
+  reference content, not instructions. Bad arguments name the fields only, never echo values. Ported from the `guru-workitem-w2` design.
+- Not built: `validate_document_name` (needs the `nomenclature.md` format), per-heading search, parent-section expansion.
+- Note: the sample repos in `temp_storage/` have no `golden.yaml`, so `rules` is empty for them until one is added.
 
 ## Not built yet
 - P6 remainder: YAML front-matter parsing (`fm.*` payload fields).
 - Webhooks (instant updates; needs a public URL and per-repo setup by the customer) and hash-diff incremental ingest.
 - Several app instances (needs shared scheduling and a shared database).
 - Free-text inference and relevance selection of untagged rule sections (deferred from P8; revisit after P11).
-- P9 (old W2): `get_context` / function-calling tool returning policies + nomenclature + template, with budgets and rerank.
+- `validate_document_name` tool (old W2.3b): waits for the `nomenclature.md` format.
 - Incremental re-ingest (currently full rebuild), pdf/xlsx loaders, reranking.
 - API authentication; deleting repos or bindings.
 
@@ -176,7 +201,8 @@ src/astra_rag/  __init__ (app factory + lifespan, main), config, routes
                 (startup recovery), instance (single-instance lock)
     sources/    base (SourceAdapter port), credentials (PatCredential), registry (adapter lookup), github, azure_devops, git, http, json_reply, errors
     catalog/    manifest, sections, templates, catalog, local, live, service, models
-    context/    selection (rules + template variant from doc type, stage, tags), service (preview response)
+    context/    selection (rules + template variant from doc type, stage, tags), knowledge (one search), rerank, budget, service (preview + context responses)
+    tools/      base (Tool, schema renderer), document_context, search_project_data, __init__ (table + dispatcher)
     ingestion/  loader, md_chunker, csv_chunker, doc_meta, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
 tests/          unittest suites + helpers (temp registry) + fixtures/repo; tests/sources/ holds the adapter contract suite

@@ -39,6 +39,11 @@ def _lookup(catalog: Catalog) -> dict[str, str]:
     return found
 
 
+def doc_type_names(catalog: Catalog) -> list[str]:
+    """The canonical doc types a request may name."""
+    return sorted(set(_lookup(catalog).values()))
+
+
 def resolve_doc_type(catalog: Catalog, name: str) -> str:
     known = _lookup(catalog)
     canonical = known.get(normalise(name or ""))

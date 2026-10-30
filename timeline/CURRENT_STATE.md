@@ -1,6 +1,6 @@
 # Current state
 
-_Last updated: 2026-10-30 (branch `goldan-repo-re-manoj`, P5 merged in: P0-P5 and the chunking part of P6 done, P7 done; see `plan/phases.md`)_
+_Last updated: 2026-10-30 (branch `goldan-repo-re-manoj`, P5 merged in: P0-P5 and the chunking part of P6 done, P7 and P8 done; see `plan/phases.md`)_
 
 ## What the app does today
 A FastAPI web app (src layout, managed by `uv`, Python >=3.14). The user enters a GitHub or Azure DevOps repo
@@ -90,6 +90,8 @@ Endpoints:
 - `PUT /api/projects/{project_id}/binding` (`repo_slug`), `GET /api/projects/{project_id}`
 - `GET /api/projects/{project_id}/catalog` and `GET /api/repos/{slug}/catalog` (live catalog of rules and templates on the
   tracked branch; `?include_text=true` adds rule text; 404 unbound / unregistered, 400 no saved token)
+- `POST /api/context/preview` (`project_id`, `doc_type`, optional `stage`, `tags`: the selected rules and the whole template;
+  422 unknown doc type, 404 unbound project, 400 no saved token)
 - `POST /api/search` (`slug` + `query`; hybrid RRF search; optional `folder`, `file_type` filters)
 
 Page at `/` (connect form with a branch field; repos table with indexed commit and time, last checked, sync status,
@@ -108,7 +110,7 @@ match and the LLM decides between conflicting sources.
 ## Golden catalog (P7, done)
 `services/catalog/` builds a catalog of the rules and templates outside `project-data/` from a `SourceReader`
 (`head_sha`, `list_dir`, `read_file`); the endpoints above call it through `catalog/service.py`. It only lists and
-warns: nothing selects rules for a request yet (P8).
+warns; choosing rules for a request is `services/context` (P8, below).
 - `manifest.py`: parses the optional root `golden.yaml` v1 (`doc_types` + aliases, `stages`, `tags`, `rules`, `templates`,
   `project_data`). Bad YAML or wrong shapes give warnings and fall back to conventions, never errors.
 - `sections.py`: splits a markdown file into heading sections with stable ids (`policies.md#data-handling/retention`);
@@ -131,16 +133,36 @@ warns: nothing selects rules for a request yet (P8).
   after a new commit.
 - UI: a "Rules" button on each repo row shows the head, counts of always / scoped / relevance rule sections, templates per
   doc type with their default variant, and every warning.
-Not yet: rule selection (P8), the combined context response (P9). The cache is in memory, so it is cold after a restart.
+- Each `TemplateVariant` also keeps the whole template `text` (read when the catalog is built, so it is cached with the catalog
+  and served `stale` when the host is down); `to_dict` still lists only headings.
+Not yet: the combined context response (P9). The cache is in memory, so it is cold after a restart.
 Open: a template's doc type is its file or folder name uppercased (`brd.md` -> `BRD`) unless `golden.yaml` `doc_types` names it
 (or an alias); real template names and the `nomenclature.md` format are still to be confirmed with the team. ETag conditional
 requests are not used (head-sha check + blob-sha body reuse cover it for now).
+
+## Rule and template selection (P8, done)
+`services/context/` turns explicit request fields into the rules and template to use. No free text, embedder or inference.
+- `selection.py`: `select(catalog, Request(doc_type, stage, tags))`.
+  - The doc type is required, matched case-insensitively against the catalog's doc types, their aliases and template types;
+    unknown -> `AppError` 422 listing the known types.
+  - A scope matches when every dimension it lists is satisfied (`doc_types`/`stages`: the value is in the list; `tags`: any
+    overlap); a dimension the request omits does not satisfy a scope that lists it; an unlisted dimension means any.
+  - Rules: `always` first, then `applies_to` matches, each ordered by priority, file, then position in the file. `matched_on` is
+    `always` or `scope: <dimensions that matched>`. Untagged (`relevance`) sections are never selected; one `unscoped_rules`
+    warning counts them.
+  - Template: among the doc type's variants whose scope matches, the one matching the most dimensions wins (a default breaks
+    ties), else the default; none gives `template: null` and a `no_template` / `no_matching_template` warning.
+- `service.py`: `preview(project_id, doc_type, stage, tags)` gets the project's catalog (so it is cached by head sha and
+  `stale` when the host is down) and returns `request`, `snapshot.rules_commit`, `rules[]` (`file`, `section`, `text`,
+  `matched_on`, `priority`, `source_url` to the section's lines at the rules commit), `template` (`path`, `variant`, `text`,
+  `sections`, `source_url`), the catalog warnings plus selection warnings, and `stale`.
+- Not yet: knowledge retrieval, budgets, rerank and the Claude tools (P9); inference and relevance selection are deferred.
 
 ## Not built yet
 - P6 remainder: YAML front-matter parsing (`fm.*` payload fields).
 - Webhooks (instant updates; needs a public URL and per-repo setup by the customer) and hash-diff incremental ingest.
 - Several app instances (needs shared scheduling and a shared database).
-- P8: rule selection and request inference (which sections and which template variant a request gets).
+- Free-text inference and relevance selection of untagged rule sections (deferred from P8; revisit after P11).
 - P9 (old W2): `get_context` / function-calling tool returning policies + nomenclature + template, with budgets and rerank.
 - Incremental re-ingest (currently full rebuild), pdf/xlsx loaders, reranking.
 - API authentication; deleting repos or bindings.
@@ -154,6 +176,7 @@ src/astra_rag/  __init__ (app factory + lifespan, main), config, routes
                 (startup recovery), instance (single-instance lock)
     sources/    base (SourceAdapter port), credentials (PatCredential), registry (adapter lookup), github, azure_devops, git, http, json_reply, errors
     catalog/    manifest, sections, templates, catalog, local, live, service, models
+    context/    selection (rules + template variant from doc type, stage, tags), service (preview response)
     ingestion/  loader, md_chunker, csv_chunker, doc_meta, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
 tests/          unittest suites + helpers (temp registry) + fixtures/repo; tests/sources/ holds the adapter contract suite

@@ -12,6 +12,14 @@ STATIC_DIR = PACKAGE_DIR / "static"
 REQUIRED_FILES = ("policies.md", "nomenclature.md")
 REQUIRED_FOLDERS = ("project-data", "templates")
 
+# Golden catalog: rules and templates read from the repo outside project-data/ (see services/catalog).
+GOLDEN_MANIFEST_NAME = "golden.yaml"
+RULE_FILES = ("policies.md", "nomenclature.md")
+RULES_FOLDER = "rules"  # optional: extra rule files, `rules/**.md`
+TEMPLATES_FOLDER = "templates"
+MAX_CATALOG_FILE_BYTES = 1024 * 1024
+DEFAULT_RULE_PRIORITY = 100
+
 # Host kinds a repo URL may point at today (see services/repo_ref.host_kind).
 SUPPORTED_HOST_KINDS = ("github", "ghe", "azure_devops")
 

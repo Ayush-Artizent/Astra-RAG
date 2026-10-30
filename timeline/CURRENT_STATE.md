@@ -1,6 +1,6 @@
 # Current state
 
-_Last updated: 2026-10-28 (branch `goldan-repo-re-guru`, phase P5 of `plan/phases.md`; P0-P4 and the chunking part of P6 done)_
+_Last updated: 2026-10-30 (branch `goldan-repo-re-manoj`, P5 merged in: P0-P5 and the chunking part of P6 done, P7 done; see `plan/phases.md`)_
 
 ## What the app does today
 A FastAPI web app (src layout, managed by `uv`, Python >=3.14). The user enters a GitHub or Azure DevOps repo
@@ -88,6 +88,8 @@ Endpoints:
 - `POST /api/repos/{slug}/sync` (Sync now: `up_to_date` + `commit_sha` / `queued` + `run_id` / `pending`)
 - `PUT /api/repos/{slug}/settings` (`tracked_branch`; checks the branch exists with the saved token, then starts a rebuild)
 - `PUT /api/projects/{project_id}/binding` (`repo_slug`), `GET /api/projects/{project_id}`
+- `GET /api/projects/{project_id}/catalog` and `GET /api/repos/{slug}/catalog` (live catalog of rules and templates on the
+  tracked branch; `?include_text=true` adds rule text; 404 unbound / unregistered, 400 no saved token)
 - `POST /api/search` (`slug` + `query`; hybrid RRF search; optional `folder`, `file_type` filters)
 
 Page at `/` (connect form with a branch field; repos table with indexed commit and time, last checked, sync status,
@@ -103,11 +105,43 @@ first use into `.cache/fastembed` (git-ignored).
 Retrieval has **no recency or authority preference**: date and doc type are information only, search returns every hybrid
 match and the LLM decides between conflicting sources.
 
+## Golden catalog (P7, done)
+`services/catalog/` builds a catalog of the rules and templates outside `project-data/` from a `SourceReader`
+(`head_sha`, `list_dir`, `read_file`); the endpoints above call it through `catalog/service.py`. It only lists and
+warns: nothing selects rules for a request yet (P8).
+- `manifest.py`: parses the optional root `golden.yaml` v1 (`doc_types` + aliases, `stages`, `tags`, `rules`, `templates`,
+  `project_data`). Bad YAML or wrong shapes give warnings and fall back to conventions, never errors.
+- `sections.py`: splits a markdown file into heading sections with stable ids (`policies.md#data-handling/retention`);
+  headings in code fences are ignored; a heading with no body makes no section.
+- `templates.py`: finds `templates/<type>.md` and `templates/<type>/<variant>.md`, reads each heading list; a flat file or the
+  only variant is the default when the manifest names none.
+- `catalog.py`: rule files are `policies.md`, `nomenclature.md` and `rules/**.md`. Each rule entry (`file`, optional `section`,
+  `always` or `applies_to`, `priority`) sets a section's `selection` to `always` / `scope` (children inherit a parent
+  heading's scope); every other section stays `relevance`. `CatalogCache` rebuilds only when the head sha changes and
+  keeps file bodies by blob sha. Warnings: `required_missing`, `rule_file_missing`, `rule_section_missing`, `rule_no_scope`,
+  `unknown_doc_type`, `template_missing`, `no_templates`, `no_default_variant`, `no_always_rules`, `manifest_*`.
+- `local.py`: `LocalCloneReader` reads a local clone (no symlinks, nothing outside the clone).
+- `live.py`: `AdapterReader` reads a repo through a `SourceAdapter` on the tracked branch. It looks up the head once and
+  pins every read to that commit (a consistent snapshot; `head_sha` is exactly what was read). A missing file is `None`, a
+  missing folder is empty, files over `MAX_CATALOG_FILE_BYTES` are skipped, other host errors propagate.
+- `service.py`: `catalog_for_project` / `catalog_for_repo` look up the repo (P4 registry), its saved token and tracked branch,
+  and go through one process-wide `CatalogCache` keyed `slug@branch`. If the host is unreachable and an earlier catalog
+  exists it is returned with `stale: true`; with nothing cached the host error is returned.
+- Adapters: `DirEntry` has an optional `sha` (GitHub `sha`, Azure DevOps `objectId`), so unchanged files are not re-downloaded
+  after a new commit.
+- UI: a "Rules" button on each repo row shows the head, counts of always / scoped / relevance rule sections, templates per
+  doc type with their default variant, and every warning.
+Not yet: rule selection (P8), the combined context response (P9). The cache is in memory, so it is cold after a restart.
+Open: a template's doc type is its file or folder name uppercased (`brd.md` -> `BRD`) unless `golden.yaml` `doc_types` names it
+(or an alias); real template names and the `nomenclature.md` format are still to be confirmed with the team. ETag conditional
+requests are not used (head-sha check + blob-sha body reuse cover it for now).
+
 ## Not built yet
 - P6 remainder: YAML front-matter parsing (`fm.*` payload fields).
 - Webhooks (instant updates; needs a public URL and per-repo setup by the customer) and hash-diff incremental ingest.
 - Several app instances (needs shared scheduling and a shared database).
-- W2 / P7-P9: function-calling tool returning policies + nomenclature + template from the host.
+- P8: rule selection and request inference (which sections and which template variant a request gets).
+- P9 (old W2): `get_context` / function-calling tool returning policies + nomenclature + template, with budgets and rerank.
 - Incremental re-ingest (currently full rebuild), pdf/xlsx loaders, reranking.
 - API authentication; deleting repos or bindings.
 
@@ -119,6 +153,7 @@ src/astra_rag/  __init__ (app factory + lifespan, main), config, routes
     sync/       service (check, queue, clone, ingest, follow-up), worker, scheduler (nightly + catch-up), reconcile
                 (startup recovery), instance (single-instance lock)
     sources/    base (SourceAdapter port), credentials (PatCredential), registry (adapter lookup), github, azure_devops, git, http, json_reply, errors
+    catalog/    manifest, sections, templates, catalog, local, live, service, models
     ingestion/  loader, md_chunker, csv_chunker, doc_meta, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
 tests/          unittest suites + helpers (temp registry) + fixtures/repo; tests/sources/ holds the adapter contract suite

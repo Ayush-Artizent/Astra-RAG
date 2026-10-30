@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from .config import REQUIRED_FILES, REQUIRED_FOLDERS, TEMPLATES_DIR
 from .services import connections, sync
+from .services.catalog import service as catalog_service
 from .services.errors import AppError
 from .services.ingestion import pipeline
 from .services.registry import repos, runs
@@ -100,6 +101,19 @@ def get_project(project_id: str):
     if project is None:
         raise AppError("This project is not bound to a repository.", 404)
     return {"ok": True, "project": project}
+
+
+@router.get("/api/projects/{project_id}/catalog")
+def project_catalog(project_id: str, include_text: bool = False):
+    repo, catalog = catalog_service.catalog_for_project(project_id)
+    return {"ok": True, "project_id": project_id, "repo": repo["slug"], "branch": repo["tracked_branch"],
+            **catalog.to_dict(include_text)}
+
+
+@router.get("/api/repos/{slug}/catalog")
+def repo_catalog(slug: str, include_text: bool = False):
+    repo, catalog = catalog_service.catalog_for_repo(slug)
+    return {"ok": True, "repo": repo["slug"], "branch": repo["tracked_branch"], **catalog.to_dict(include_text)}
 
 
 @router.post("/api/search")

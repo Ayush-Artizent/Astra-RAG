@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 from urllib.parse import ParseResult
 
 from ..errors import AppError
@@ -13,6 +13,7 @@ from .credentials import Credential
 class DirEntry(TypedDict):
     name: str
     type: str  # 'file' | 'dir' (hosts may report others, e.g. 'symlink' or 'submodule')
+    sha: NotRequired[str]  # blob/tree id when the host reports it; lets callers cache file bodies
 
 
 @dataclass(frozen=True)

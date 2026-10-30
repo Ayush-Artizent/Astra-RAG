@@ -6,6 +6,16 @@ default branch, or the branch saved earlier). The app checks the root of that br
 registers the repo and starts a background sync: clone into `temp_storage/`, then ingest `project-data/` into Qdrant
 (chunks + local embeddings, with source metadata); otherwise it lists exactly what is missing.
 
+## Rules and templates (golden catalog)
+Besides `project-data/`, the repo's rules and templates are read **live from the host** (not indexed). The **Rules**
+button on a repo row (or `GET /api/repos/{slug}/catalog`, `GET /api/projects/{project_id}/catalog`) shows what the
+app found on the tracked branch: rule sections from `policies.md`, `nomenclature.md` and `rules/**.md` (one per heading),
+templates from `templates/<type>.md` or `templates/<type>/<variant>.md`, and warnings.
+An optional `golden.yaml` at the repo root marks sections `always: true` or `applies_to: {doc_types, stages, tags}`, names
+the default template variant, and lists doc-type aliases, stages and tags. A missing or broken `golden.yaml` is only a
+warning; without it nothing is guaranteed to apply (the page warns "no always-on rules defined"). Picking rules for a
+request is not built yet (P8).
+
 ## Keeping the index fresh (sync)
 Nothing to set up on the repository side: the server uses the PAT it already has.
 - **Nightly:** every night at `ASTRA_SYNC_DAILY_AT` (default `02:00`, **UTC**) the server checks each repo's tracked
@@ -57,6 +67,7 @@ API:
 - `GET /api/repos` (with sync status and the nightly `schedule`), `POST /api/repos/{slug}/sync` (Sync now:
   `up_to_date` / `queued` / `pending`), `PUT /api/repos/{slug}/settings` (`tracked_branch`; starts a rebuild from it)
 - `PUT /api/projects/{project_id}/binding` (`repo_slug`), `GET /api/projects/{project_id}`
+- `GET /api/projects/{project_id}/catalog`, `GET /api/repos/{slug}/catalog` (rules and templates read live from the tracked branch, with warnings; `?include_text=true` adds rule text)
 - `POST /api/search` (body has `slug`)
 
 A repo's `slug` is host-aware, e.g. `github.com__acme__golden`; the clone response returns it.
@@ -81,6 +92,7 @@ src/astra_rag/
     ingestion/               loader, chunkers (md per section, csv per row), doc_meta (header metadata), embedder (fastembed), store (Qdrant), pipeline
     cloner.py                picks temp_storage/<slug>, replaces an old clone, asks the adapter to clone
     ingestion/               loader, chunkers (md/csv), embedder (fastembed), store (Qdrant versions + alias), pipeline
+    catalog/                 golden catalog: golden.yaml manifest, rule sections, templates, warnings (live reads of rules and templates)
     errors.py                user-safe AppError
   templates/index.html       the UI
   static/                    style.css, app.js

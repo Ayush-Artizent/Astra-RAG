@@ -114,7 +114,7 @@ warns; choosing rules for a request is `services/context` (P8, below).
 - `manifest.py`: parses the optional root `golden.yaml` v1 (`doc_types` + aliases, `stages`, `tags`, `rules`, `templates`,
   `project_data`). Bad YAML or wrong shapes give warnings and fall back to conventions, never errors.
 - `sections.py`: splits a markdown file into heading sections with stable ids (`policies.md#data-handling/retention`);
-  headings in code fences are ignored; a heading with no body makes no section.
+  headings in code fences are ignored; a heading with no body makes no section; a leading YAML front-matter block is skipped.
 - `templates.py`: finds `templates/<type>.md` and `templates/<type>/<variant>.md`, reads each heading list; a flat file or the
   only variant is the default when the manifest names none.
 - `catalog.py`: rule files are `policies.md`, `nomenclature.md` and `rules/**.md`. Each rule entry (`file`, optional `section`,

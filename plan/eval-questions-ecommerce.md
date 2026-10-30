@@ -6,6 +6,11 @@
 Paths are relative to `project-data/` of the ecommerce example repo. A question marked **all** passes only if every listed source
 is returned, because nothing prefers newer or authoritative sources: the LLM, not retrieval, resolves conflicts.
 
+> **Note (2026-10-30):** the example repo was extended (more files and facts, plus `rules/`, `golden.yaml` and templates). The expected
+> sources below are unchanged and still correct, but retrieval now has more near-miss chunks, so re-run the baseline before comparing
+> with earlier results. E09 and E22 were kept intact: the COD new-customer limit stays undecided, and no source gives an address
+> retention period.
+
 ## Questions
 
 | # | Question | Type / difficulty | Expected source(s) | Facts the chunks should contain |

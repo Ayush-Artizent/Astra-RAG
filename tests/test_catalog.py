@@ -78,6 +78,16 @@ class SectionTests(unittest.TestCase):
         secs = split_sections("a.md", "## A\nx\n## A\ny\n")
         self.assertEqual([s.id for s in secs], ["a.md#a", "a.md#a-2"])
 
+    def test_front_matter_is_not_a_section_and_lines_still_match(self):
+        text = "---\nversion: 1\n# a yaml comment\n---\n# Title\n\n## Rule\nbody\n"
+        secs = split_sections("r.md", text)
+        self.assertEqual([s.title for s in secs], ["Rule"])
+        self.assertEqual(secs[0].start_line, 7)  # counted in the original file
+
+    def test_leading_horizontal_rule_is_not_front_matter(self):
+        secs = split_sections("r.md", "---\nIntro text\n---\n## Rule\nbody\n")
+        self.assertEqual([s.title for s in secs], ["Preamble", "Rule"])
+
     def test_heading_without_body_is_skipped(self):
         secs = split_sections("a.md", "# Top\n## Child\ntext\n")
         self.assertEqual([s.heading_path for s in secs], [("Top", "Child")])

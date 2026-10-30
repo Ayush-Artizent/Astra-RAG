@@ -41,12 +41,13 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
      - file: rules/security.md
        section: "R-12 Payment data retention"
        applies_to: {doc_types: [BRD, SPEC], stages: [design], tags: [payments]}
-   # every section not listed is chosen by relevance to the query
+   # every section not listed is untagged: not selected for now (see B6)
    ```
-3. Three selection levels:
+3. Selection levels (revised 2026-10-30, see `phases.md` P8):
    - `always` sections are included on every call;
    - `applies_to` sections are included when doc type, stage and tags match;
-   - **untagged sections are chosen by relevance to the query.** This applies even with no `golden.yaml`.
+   - **untagged sections are not selected** in the first build. They are reported as a warning so the repo author can mark them.
+     Relevance selection is deferred (B6).
 4. **Risk to document.** Nothing is guaranteed unless it is marked `always`. A repo without `golden.yaml` has no
    guaranteed rules. Mitigation: a validation warning "no always-on rules defined", shown in the UI and status, plus
    onboarding guidance telling orgs to mark their must-apply sections.
@@ -54,21 +55,20 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
    - every dimension given in `applies_to` must match;
    - an absent dimension means "any";
    - order is `priority`, then file, then section;
-   - each selected rule reports `matched_on` (`always` | `scope` | `relevance` + score).
-6. Relevance selection for untagged sections:
+   - each selected rule reports `matched_on` (`always` | `scope`, and later `relevance` + score).
+6. **Deferred (2026-10-30): relevance selection for untagged sections.** Build it only if P11 shows important rules are missed:
    - sections are embedded with the same bge model, cached by blob SHA + section hash;
    - scored by hybrid similarity to the query;
    - kept if above a threshold, up to a max count and token budget;
    - scores are reported in the response.
 
-### C. Request and inference
+### C. Request (inference deferred, 2026-10-30)
 1. Callers: **both** the ASTRA backend (structured HTTP API) and the LLM (tool calls). There is one API, and the tool schemas are thin wrappers over it.
-2. Input: `project_id` plus **free text**. Optional explicit `doc_type`, `stage` and `tags`, which **win over inference**.
-3. Inference uses **rules + embeddings, with no LLM**:
-   - match against the doc-type aliases and tag vocabulary from `golden.yaml` and template filenames;
-   - then compare by embedding similarity against template titles/headings and rule scopes.
-4. Ambiguity: **pick the best match and report it.** The response lists the inferred `doc_type`, `stage` and `tags`, each
-   with a confidence score and its runner-up candidates, so the caller can re-ask with explicit fields.
+2. Input: `project_id`, `doc_type` (required), and optional `stage` and `tags`. P9 also takes the request `text`, used only for the
+   knowledge search. The caller sends canonical values; for the LLM tool, `doc_type` is an enum taken from the project's catalog.
+3. **Deferred: inference** of the fields from free text (rules + embeddings, no LLM): match aliases and the tag vocabulary, then embedding
+   similarity against template titles, headings and rule scopes, with a confidence score and runner-up candidates. Build it only if
+   callers cannot send explicit fields.
 
 ### D. Repos, projects, hosts, branches, sync
 1. Several golden repos per org. Each **ASTRA project is bound to exactly one golden repo** (a repo can serve many
@@ -115,18 +115,19 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
 ### F. Retrieval
 1. The response has typed sections (review §8.7):
    ```
-   {inferred:{doc_type,stage,tags,confidence,candidates}, snapshot:{rules_commit,index_commit},
-    rules:[{file,section,text,matched_on,score?,source_url}], template:{path,variant,text,sections[]},
-    knowledge:{by_section:{<template heading>:[evidence]}, general:[evidence], total_count, truncated},
+   {request:{doc_type,stage,tags}, snapshot:{rules_commit,index_commit},
+    rules:[{file,section,text,matched_on,priority,source_url}], template:{path,variant,text,sections[]},  // text = the whole template file
+    knowledge:{items:[evidence], total_count, truncated},  // evidence = chunk text + file, heading path, doc_date, doc_type, source_url
     status:{rules,knowledge,rerank}}
    ```
 2. Knowledge retrieval:
    - hybrid dense + BM25 with RRF (existing `store.search`), filtered to the project's repo;
-   - **template-section sub-queries** (each template heading plus the request text becomes one query, results grouped per section);
+   - **one search on the request text** (revised 2026-10-30). Template headings are not used to search, because a golden repo's
+     templates and data are not under our control. The LLM gets the whole template and can call `search_project_data` for a
+     section that lacks evidence. Per-heading search is deferred until P11 shows it is needed;
    - a **reranker** (bge-reranker-base) on the top ~30, with a time budget (skipping it is reported);
-   - dedupe across sections;
    - **return every relevant match with its `doc_date`, `doc_type` and `source_url`; do not prefer newer sources, the LLM resolves conflicts**;
-   - token budgets filled in this order: always rules, template, scope rules, relevance rules, knowledge. Anything truncated is flagged.
+   - token budgets filled in this order: always rules, template, scope rules, knowledge. Anything truncated is flagged.
 3. Later: parent-section expansion, front-matter filters in the API, an eval set (review R13).
 
 ### Open (to settle while writing the docs)
@@ -135,7 +136,7 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
 - Where project→repo bindings and repo settings live (SQLite next to sync state is the proposal).
 - PAT storage: today `.env`; target a secrets store. Several repos and hosts make `.env` keys host-aware.
 - API authentication for deployed use (review ADR-05 gateway claims).
-- Relevance threshold and budget defaults (set after measuring on a sample repo).
+- Budget defaults (set after measuring on a sample repo). The relevance threshold only matters if relevance selection is built (deferred).
 
 ## Gaps in current code this plan must address (for accuracy in the docs)
 - `github_client.parse_repo_url` assumes `host/owner/name`. ADO is `dev.azure.com/{org}/{project}/_git/{repo}` and GitLab has
@@ -157,12 +158,12 @@ The final deliverable is documentation only: a `plan/` folder (files listed at t
 |---|---|
 | `README.md` | Overview, end-to-end Mermaid diagram (Context path + Knowledge path → one response), glossary, index |
 | `01-golden-repo-contract.md` | §A plus the full `golden.yaml` v1 schema and example, conventions, warning list, org onboarding checklist |
-| `02-rules-model.md` | §B: three levels, matching algorithm, relevance selection, risk and mitigation, worked examples |
-| `03-request-and-inference.md` | §C: inputs, inference steps, confidence/candidates, explicit overrides |
+| `02-rules-model.md` | §B: selection levels, matching algorithm, deferred relevance selection, risk and mitigation, worked examples |
+| `03-request-and-inference.md` | §C: inputs and explicit fields; the deferred inference design (confidence/candidates) |
 | `04-sources-and-adapters.md` | §D: `SourceAdapter` + credential ports (signatures), ADO-first notes, host matrix, contract tests, `RepoRef` redesign |
 | `05-branch-and-sync.md` | §D6-8 + §E2: tracked branch config, nightly/manual triggers, locking, state store, alias swap, failure handling, later webhooks |
 | `06-ingestion.md` | §E: loader, front-matter, section/row chunking, header metadata, payload fields, versioning, safety fix, later formats/redaction |
-| `07-retrieval.md` | §F: response contract, sub-queries, rerank, budgets, degraded modes, citations |
+| `07-retrieval.md` | §F: response contract, single search, rerank, budgets, degraded modes, citations |
 | `08-api-and-tools.md` | Endpoints (context, catalog, sync, bindings, repo settings) and Claude tool schemas as wrappers |
 | `09-security-and-ops.md` | PATs, symlinks, untrusted content as data, observability, runbook |
 | `10-roadmap.md` | Workstreams in dependency order with acceptance criteria and tests; mapping of the old W2/W4 tasks; review R#/ADR# mapping |
@@ -173,10 +174,10 @@ Proposed build order for `10-roadmap.md`:
 2. `sources/` port + ADO adapter + `RepoRef`/keys redesign.
 3. Bindings + repo settings + branch config.
 4. `golden.yaml` parser + rule/section catalog (live reads).
-5. Inference + rule selection + template variants.
+5. Rule selection (explicit fields) + template variants + whole template text. Inference is deferred.
 6. Sync (nightly/manual, alias swap, state).
 7. Front-matter ingestion.
-8. `get_context` with sub-queries + rerank.
+8. `get_context` with one knowledge search + rerank.
 9. GitHub, GitLab and Bitbucket adapters.
 10. Eval set.
 

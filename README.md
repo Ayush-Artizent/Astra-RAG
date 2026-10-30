@@ -13,8 +13,12 @@ app found on the tracked branch: rule sections from `policies.md`, `nomenclature
 templates from `templates/<type>.md` or `templates/<type>/<variant>.md`, and warnings.
 An optional `golden.yaml` at the repo root marks sections `always: true` or `applies_to: {doc_types, stages, tags}`, names
 the default template variant, and lists doc-type aliases, stages and tags. A missing or broken `golden.yaml` is only a
-warning; without it nothing is guaranteed to apply (the page warns "no always-on rules defined"). Picking rules for a
-request is not built yet (P8).
+warning; without it nothing is guaranteed to apply (the page warns "no always-on rules defined").
+
+`POST /api/context/preview` picks the rules and template for a request: send `project_id`, `doc_type` and optionally
+`stage` and `tags`. It returns the `always` rules, then the rules whose `applies_to` matches (every dimension a rule lists
+must match), and the best-matching template variant with its **whole text**. Sections that have no scope are never selected;
+the response warns how many, so mark them `always: true` or give them `applies_to`.
 
 ## Keeping the index fresh (sync)
 Nothing to set up on the repository side: the server uses the PAT it already has.
@@ -68,6 +72,7 @@ API:
   `up_to_date` / `queued` / `pending`), `PUT /api/repos/{slug}/settings` (`tracked_branch`; starts a rebuild from it)
 - `PUT /api/projects/{project_id}/binding` (`repo_slug`), `GET /api/projects/{project_id}`
 - `GET /api/projects/{project_id}/catalog`, `GET /api/repos/{slug}/catalog` (rules and templates read live from the tracked branch, with warnings; `?include_text=true` adds rule text)
+- `POST /api/context/preview` (body: `project_id`, `doc_type`, optional `stage`, `tags`; the selected rules and the whole template)
 - `POST /api/search` (body has `slug`)
 
 A repo's `slug` is host-aware, e.g. `github.com__acme__golden`; the clone response returns it.
@@ -93,6 +98,7 @@ src/astra_rag/
     cloner.py                picks temp_storage/<slug>, replaces an old clone, asks the adapter to clone
     ingestion/               loader, chunkers (md/csv), embedder (fastembed), store (Qdrant versions + alias), pipeline
     catalog/                 golden catalog: golden.yaml manifest, rule sections, templates, warnings (live reads of rules and templates)
+    context/                 picks the rules and template variant for a doc type, stage and tags (preview endpoint)
     errors.py                user-safe AppError
   templates/index.html       the UI
   static/                    style.css, app.js

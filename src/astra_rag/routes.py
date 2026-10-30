@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .config import REQUIRED_FILES, REQUIRED_FOLDERS, TEMPLATES_DIR
 from .services import connections, sync
 from .services.catalog import service as catalog_service
+from .services.context import service as context_service
 from .services.errors import AppError
 from .services.ingestion import pipeline
 from .services.registry import repos, runs
@@ -28,6 +29,13 @@ class RepoSettings(BaseModel):
 
 class BindingRequest(BaseModel):
     repo_slug: str
+
+
+class ContextRequest(BaseModel):
+    project_id: str
+    doc_type: str
+    stage: str | None = None
+    tags: list[str] = Field(default_factory=list, max_length=50)
 
 
 class SearchRequest(BaseModel):
@@ -114,6 +122,12 @@ def project_catalog(project_id: str, include_text: bool = False):
 def repo_catalog(slug: str, include_text: bool = False):
     repo, catalog = catalog_service.catalog_for_repo(slug)
     return {"ok": True, "repo": repo["slug"], "branch": repo["tracked_branch"], **catalog.to_dict(include_text)}
+
+
+@router.post("/api/context/preview")
+def context_preview(body: ContextRequest):
+    return {"ok": True, "project_id": body.project_id,
+            **context_service.preview(body.project_id, body.doc_type, body.stage, body.tags)}
 
 
 @router.post("/api/search")

@@ -27,10 +27,10 @@
 | P5 | Sync: nightly + Sync now, alias swap | M | P4 | Index follows the tracked branch with no empty-index window |
 | P6 | Structure- and metadata-aware ingestion | S | P0 | Per-section and per-row chunks, header metadata, open items (done); front-matter in payload (todo) |
 | P7 | Golden catalog (`golden.yaml`, rule sections, templates) | L | P4 (live reads also need P2) | Live catalog of rules and templates, plus warnings |
-| P8 | Rule selection and request inference | M | P7 | always / scope / relevance selection, doc type, stage and tag inference |
-| P9 | `get_context` API, sub-queries, rerank, tools | L | P5, P6, P8 | The combined context response and Claude tool schemas |
+| P8 | Rule and template selection (explicit fields) | S | P7 | `always` + `applies_to` rules, template variant, the whole template text |
+| P9 | `get_context` API, rerank, tools | L | P5, P6, P8 | The combined context response and Claude tool schemas |
 | P10 | GitLab and Bitbucket adapters | M | P2 (any time after) | Two more hosts |
-| P11 | Evaluation set and tuning | M | P9 | Measured defaults for thresholds and budgets |
+| P11 | Evaluation set and tuning | M | P9 | Measured defaults for budgets and rerank; decides whether inference and relevance selection are needed |
 
 Size key: S is about 1-2 days, M about 3-5 days, L about 1-2 weeks. These are rough guides, not commitments.
 P6 depends only on P0, so it can be done early if someone is free. P10 can run in parallel with P5-P9.
@@ -330,70 +330,97 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 
 ---
 
-## P8: Rule selection and request inference
-**Goal:** given free text plus optional explicit fields, pick the rules and template (§B3-6, §C).
+## P8: Rule and template selection (explicit fields)
+> **Done 2026-10-30.** Delivered as written, with one change: the template body is kept on `TemplateVariant.text` when the catalog is
+> built (it is already read there) instead of a separate `read_template(path)`; it is cached by head SHA and served `stale` the same way.
+> Rules are ordered by priority, file, then position in the file. Real-repo acceptance review still to do.
+>
+> **Rescoped 2026-10-30.** The caller is another system (ASTRA) that sends `doc_type`, `stage` and `tags`, so P8 is a deterministic
+> filter over the P7 catalog. Free-text inference and relevance selection with embeddings are deferred (see "Later"); they are
+> revisited with measurements in P11.
+
+**Goal:** given explicit `doc_type`, `stage` and `tags`, pick the rules and the template and return them with the whole template text (§B3, §B5, §F).
 
 **Scope**
-- `services/context/inference.py`:
-  - match doc-type aliases and tag vocabulary, then use embedding similarity against template titles, headings and rule scopes;
-  - explicit fields always win;
-  - return the best match with a confidence score and runner-up candidates.
 - `services/context/selection.py`:
-  - `always` sections first;
-  - then `applies_to` matches (an absent dimension means any; order by priority, then file, then section);
-  - then untagged sections by relevance (section embeddings cached by blob SHA + section hash, with a threshold, max count and budget);
-  - every selected rule reports `matched_on` and its score.
-- Template variant: the most specific match wins, otherwise the default.
-- `POST /api/context/preview`: returns only the inference, rules and template. This is a debugging aid before P9.
+  - **Doc type.** It is required and matched case-insensitively against the catalog's doc types (and their aliases, which the catalog already holds). An unknown type raises `AppError` (422) that lists the known types.
+  - **Matching.** A rule or variant scope matches when every dimension it lists is satisfied by the request, and an unlisted dimension means "any":
+    - `doc_types` and `stages`: the request value is in the list;
+    - `tags`: at least one listed tag is among the request tags;
+    - a dimension the scope lists but the request omits does not match.
+  - **Rules.** `always` sections first, then `applies_to` matches ordered by priority, then file, then section. Each selected rule reports `matched_on` (`always`, or `scope` with the dimensions that matched) and its `priority`.
+  - **Not selected.** Untagged sections (selection `relevance` in the catalog) are not returned. The preview reports their count as a warning (`unscoped_rules`), so a golden repo author knows which sections need `always` or `applies_to`.
+  - **Template variant.** Among variants of the doc type whose scope matches, the one that matches the most dimensions wins; otherwise the default variant. No match and no default gives `template: null` plus a warning.
+- **The whole template.** P8 reads the chosen variant's file and returns its full text next to `path`, `variant` and the heading list (`sections`).
+  - The catalog keeps only headings (P7), so the catalog service gains `read_template(path)`, which reads through the same blob-SHA body cache.
+  - The existing size cap (`MAX_CATALOG_FILE_BYTES`) applies; a file over it gives a warning and `template: null`.
+  - A host failure serves the cached body and marks the response `stale`.
+- `POST /api/context/preview`: takes `project_id`, `doc_type` and optional `stage` and `tags`, and returns:
+  - `request`: the resolved `doc_type` (canonical name), `stage` and `tags`;
+  - `snapshot`: `rules_commit`;
+  - `rules[]`: `{file, section, text, matched_on, priority, source_url}`;
+  - `template`: `{path, variant, text, sections[]}`;
+  - `warnings[]` and `stale`.
+  This is a debugging aid before P9, which reuses the same selection code.
 
-**Out of scope:** knowledge retrieval and budgets across sections (P9).
+**Out of scope:** free-text inference, embedding similarity, confidence scores and candidates, relevance selection of untagged sections, knowledge retrieval and budgets (P9).
 
-**Tests**
-- Each selection level.
-- An explicit override beats inference.
-- An ambiguous request returns the best match plus candidates.
-- Variant selection.
-- A fake embedder keeps the tests deterministic.
+**Tests** (no network, no embedder)
+- `always` rules come first.
+- `applies_to` matching per dimension, including an absent dimension in the scope, a dimension the request omits, and tag overlap.
+- Order by priority, then file, then section.
+- Untagged sections are not returned and are counted in the warning.
+- Variant selection: most specific, default, none.
+- The whole template text is returned, from the cache on a second call.
+- Unknown doc type, alias and case-insensitive match.
 
 **Acceptance**
-- A set of hand-written requests against the sample repo picks the expected doc type, template variant and rules, and the team reviews the results.
+- For explicit requests against the sample repo (for example `BRD`, stage `design`, tag `payments`), the preview returns the expected rules, template variant and full template text, and the team reviews the results.
 
 ---
 
-## P9: `get_context` API, sub-queries, rerank, tools
+## P9: `get_context` API, rerank, tools
+> **Rescoped 2026-10-30.** Knowledge comes from **one** search on the request text, not one search per template heading. We do not
+> control the structure of a golden repo's templates or of its project data, so the search must not depend on template headings.
+> The LLM receives the whole template and the rules, and can run its own targeted searches with `search_project_data`.
+> Per-heading search is deferred and only built if P11 shows missed evidence.
+
 **Goal:** the full response ASTRA and the LLM will use (§F, §C1).
 
 **Scope**
-- `POST /api/context`, taking `project_id`, `text`, and optional `doc_type`, `stage`, `tags` and `budget`. It returns the typed response from §F1.
-- Template-section sub-queries: one hybrid search per template heading plus the request text, results grouped by section, deduplicated across sections.
+- `POST /api/context`, taking `project_id`, `doc_type`, `text` (the request, used for the knowledge search), and optional `stage`, `tags` and `budget`. It calls P8's selection for the rules and the whole template, adds knowledge, and returns the typed response from §F1 (no `inferred` section: the fields are explicit).
+- Knowledge search: one hybrid (dense + BM25, RRF) search on `text` through the existing `store.search`, filtered to the project's repo.
+  - It fetches about 30 candidates, reranks them, and returns a flat `knowledge.items` list.
+  - Each item carries its chunk text, file, heading path, `doc_date`, `doc_type` and `source_url`.
+  - Nothing is preferred by date, doc type or folder, and the template headings are not used to search.
 - Reranker: bge-reranker-base through fastembed's cross-encoder support (check the model is available).
-  - It re-scores the top ~30 candidates.
+  - It re-scores the ~30 candidates.
   - It has a time budget, and `status.rerank` reports when it was skipped.
 - Token budgets are filled in this order:
   1. always rules
   2. template
   3. scope rules
-  4. relevance rules
-  5. knowledge
+  4. knowledge
 
   Anything truncated is flagged.
 - Degraded modes:
   - Qdrant down: rules and template are still returned;
   - host down: the cached catalog is used and marked `stale`.
-- `services/tools/`: Claude tool schemas `get_document_context`, `search_project_data` and `validate_document_name` as thin wrappers, plus a dispatcher. Repo content is clearly labelled as data.
+- `services/tools/`: Claude tool schemas `get_document_context`, `search_project_data` and `validate_document_name` as thin wrappers, plus a dispatcher. Repo content is clearly labelled as data. The `doc_type` parameter of `get_document_context` is an enum built from the project's catalog, since there is no inference to fall back on.
 - The nomenclature validator, once the `nomenclature.md` format is known (open question).
 
-**Out of scope:** API authentication, parent-section expansion.
+**Out of scope:** API authentication, parent-section expansion, per-template-heading search, any preference for folders, dates or doc types.
 
 **Tests**
 - Response shape.
+- One search is made per request, whatever the template's headings are.
 - Budget order and truncation flags.
 - Rerank skipped under the budget.
 - Each degraded mode.
 - Tool dispatch.
 
 **Acceptance**
-- For three real requests (for example a BRD for payments at the design stage), the team reviews the response and agrees it holds the right rules, template and evidence.
+- For three real requests (for example `BRD`, stage `design`, tag `payments`), the team reviews the response and agrees it holds the right rules, template and evidence.
 
 ---
 
@@ -422,12 +449,17 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 - A small set of real requests (20-50) per sample org, each with the rules, template and evidence it should return.
   Starter list for retrieval only (22 ecommerce questions with expected sources and facts): [eval-questions.md](eval-questions.md).
 - A script that reports recall@k for evidence and for rules.
-- Tune the relevance threshold, budgets and rerank candidate count. Record the results in the CHANGELOG.
+- Tune the budgets and rerank candidate count. Record the results in the CHANGELOG.
+- Check whether one search on the request text misses evidence that a template section needs. If it often does, build per-heading search (see "Later").
+- Check rule recall: do callers' explicit fields cover the rules the team expects? If important rules are missed, or callers cannot send the fields, build the deferred free-text inference or relevance selection (see "Later") and tune its threshold here.
 - Use the set as a check before merging any change to chunking, models or selection.
 
 ---
 
 ## Later (not phased yet)
+- Per-template-heading knowledge search (one search per heading plus the request text, grouped by section, deduplicated). Deferred from P9 (2026-10-30); build only if P11 shows one search misses evidence. It would need a way to skip boilerplate headings such as the title and `Document Control`.
+- Free-text inference of `doc_type`, `stage` and `tags` (aliases, then embedding similarity), with confidence and runner-up candidates. Deferred from P8 (2026-10-30); build only if callers cannot send explicit fields.
+- Relevance selection of untagged rule sections (embeddings cached by blob SHA + section hash, threshold, max count, budget). Deferred from P8; build only if P11 shows important rules are missed.
 - Webhooks per host (the adapter slot exists from P2).
 - Hash-diff incremental ingest.
 - PDF, xlsx and pptx loaders.

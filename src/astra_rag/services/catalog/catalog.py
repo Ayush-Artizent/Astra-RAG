@@ -171,7 +171,7 @@ def _templates(reads: _Reads, root: list[dict], manifest: Manifest, warnings: li
         doc_type, known = _canonical_type(name, manifest)
         if not known:
             warnings.append(Warning_("unknown_doc_type", f"Template type {name!r} is not declared under doc_types.", path))
-        variants.append(TemplateVariant(doc_type, variant, path, template_headings(text)))
+        variants.append(TemplateVariant(doc_type, variant, path, template_headings(text), text=text))
     if not variants:
         warnings.append(Warning_("no_templates", "templates/ contains no markdown templates.", TEMPLATES_FOLDER))
 

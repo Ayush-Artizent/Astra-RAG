@@ -48,6 +48,7 @@ class TemplateVariant:
     headings: tuple[str, ...]
     scope: Scope | None = None
     default: bool = False
+    text: str = field(default="", repr=False)  # the whole template file, as read when the catalog was built
 
 
 @dataclass

@@ -1,11 +1,11 @@
-"""Connect a golden repo (token, branch, structure, register, queue a sync) and change its tracked branch."""
+"""Connect a golden repo (token, branch, structure, register, bind its project, queue a sync) and change its tracked branch."""
 from dataclasses import dataclass
 
 from . import sync, token_store, validator
 from .errors import AppError
 from .ingestion.models import RepoContext
 from .registry import repos, runs
-from .registry.rules import check_branch_name
+from .registry.rules import check_branch_name, check_project_id
 from .sources import PatCredential, adapter_for, parse_repo_url
 
 
@@ -20,14 +20,17 @@ class Connected:
     run_id: int | None  # None: a sync was already running, so this one is queued as its follow-up
     context: RepoContext  # commit_sha is the branch head seen while connecting
     token_saved: bool
+    project_id: str = ""  # the project now bound to this repo, if one was given
 
 
-def connect(url: str, typed_token: str, branch: str = "") -> Connected:
+def connect(url: str, typed_token: str, branch: str = "", project_id: str = "") -> Connected:
     """Check token, branch and structure, then register the repo and queue a full sync; the caller starts it.
 
     Branch: the one asked for, else the repo's saved tracked branch, else the host's default branch.
+    Project: when given, it is bound to this repo (replacing its earlier binding) once the repo is registered.
     """
     repo = parse_repo_url(url)
+    project = check_project_id(project_id.strip()) if project_id.strip() else ""
     typed = typed_token.strip()
     token = typed or token_store.get_token(repo)
     if not token:
@@ -45,7 +48,9 @@ def connect(url: str, typed_token: str, branch: str = "") -> Connected:
         raise MissingItemsError(missing, bool(typed))
 
     run_id = runs.register_and_queue(repo, adapter.web_url, branch, token_store.credential_ref(repo))
-    return Connected(run_id, RepoContext(repo, branch, head), bool(typed))
+    if project:
+        repos.bind_project(project, repo.slug)
+    return Connected(run_id, RepoContext(repo, branch, head), bool(typed), project)
 
 
 def change_branch(slug: str, branch: str) -> dict:

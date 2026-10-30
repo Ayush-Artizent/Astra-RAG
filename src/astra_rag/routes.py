@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from .config import REQUIRED_FILES, REQUIRED_FOLDERS, TEMPLATES_DIR
-from .services import connections, sync, tools
+from .services import connections, local_models, sync, tools
 from .services.catalog import service as catalog_service
 from .services.context import service as context_service
 from .services.errors import AppError
@@ -21,6 +21,7 @@ class RepoRequest(BaseModel):
     url: str = ""
     token: str = ""
     branch: str = ""  # blank = the saved tracked branch, else the host's default branch
+    project_id: str = ""  # blank = bind no project; otherwise bound to this repo once the connect succeeds
 
 
 class RepoSettings(BaseModel):
@@ -68,7 +69,7 @@ def index(request: Request):
 @router.post("/api/validate-and-clone")
 def validate_and_clone(body: RepoRequest):
     try:
-        done = connections.connect(body.url, body.token, body.branch)
+        done = connections.connect(body.url, body.token, body.branch, body.project_id)
     except connections.MissingItemsError as exc:
         return JSONResponse({"ok": False, "missing": exc.missing, "token_saved": exc.token_saved,
                              "error": exc.message}, status_code=422)
@@ -80,9 +81,15 @@ def validate_and_clone(body: RepoRequest):
         state, message = "queued", f"Connected {repo.full_name}; sync queued."
     return {
         "ok": True, "message": message, "branch": done.context.branch, "commit_sha": done.context.commit_sha,
-        "token_saved": done.token_saved, "token_reused": not done.token_saved,
+        "token_saved": done.token_saved, "token_reused": not done.token_saved, "project_id": done.project_id or None,
         "ingestion": {"slug": repo.slug, "run_id": done.run_id, "state": state},
     }
+
+
+@router.get("/api/health/models")
+def model_status():
+    """Whether the local models (embeddings, reranker) are downloaded and loaded; 200 even while they are not."""
+    return {"ok": True, **local_models.status()}
 
 
 @router.get("/api/ingestion-status/{slug}")

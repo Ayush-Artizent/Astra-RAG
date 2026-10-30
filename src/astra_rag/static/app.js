@@ -210,13 +210,13 @@ form.addEventListener("submit", async (e) => {
     const res = await fetch("/api/validate-and-clone", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: form.url.value, token: form.token.value, branch: form.branch.value }),
+      body: JSON.stringify({ url: form.url.value, token: form.token.value, branch: form.branch.value, project_id: form.project.value }),
     });
     const data = await res.json();
     if (data.ok) {
       form.token.value = "";  // the PAT is not kept in the page once the server has it
       const note = data.token_saved ? " Token saved for this repository." : data.token_reused ? " Used the saved token." : "";
-      show("ok", `${data.message} (${data.branch} @ ${data.commit_sha.slice(0, 7)})${note}`);
+      show("ok", `${data.message} (${data.branch} @ ${data.commit_sha.slice(0, 7)})${note}${data.project_id ? ` Project ${data.project_id} bound.` : ""}`);
       loadRepos();
       if (data.ingestion.state === "queued") await pollIngestion(data.ingestion);
     } else if (data.missing) {

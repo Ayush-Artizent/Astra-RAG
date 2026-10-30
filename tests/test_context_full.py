@@ -117,6 +117,33 @@ class RerankTests(ContextTestBase):
         self.assertEqual(lengths, sorted(lengths, reverse=True))
         self.assertTrue(all("rerank_score" in i for i in items))
 
+    def test_weak_matches_below_the_floor_are_dropped_and_counted(self):
+        class Scores:  # one relevant chunk, two unrelated
+            def score(self, query, texts):
+                return [3.0 if "7,500" in t else -9.0 for t in texts]
+
+        data = context_service.get_context("proj-1", reranker=Scores(), **REQUEST)["knowledge"]
+        self.assertEqual([i["file"] for i in data["items"]], ["meeting-notes/b.md"])
+        self.assertEqual((data["total_count"], data["below_threshold"]), (1, 2))
+
+    def test_nothing_relevant_gives_no_items_and_a_status(self):
+        class Unrelated:
+            def score(self, query, texts):
+                return [-9.0] * len(texts)
+
+        data = context_service.get_context("proj-1", reranker=Unrelated(), **REQUEST)
+        self.assertEqual(data["knowledge"]["items"], [])
+        self.assertEqual(data["status"]["knowledge"], "no_relevant_match")
+        self.assertTrue(data["rules"] and data["template"])  # rules and template are unaffected
+
+    def test_a_skipped_rerank_keeps_every_hit(self):
+        class Broken:
+            def score(self, query, texts):
+                raise RuntimeError("x")
+
+        data = context_service.get_context("proj-1", reranker=Broken(), **REQUEST)
+        self.assertEqual((len(data["knowledge"]["items"]), data["knowledge"]["below_threshold"]), (3, 0))
+
     def test_a_slow_reranker_is_skipped_and_the_search_order_is_kept(self):
         release = threading.Event()
         self.addCleanup(release.set)
@@ -155,7 +182,7 @@ class DegradedModeTests(ContextTestBase):
             data = self.post().json()
         self.assertEqual(data["status"]["knowledge"], "unavailable: Could not reach Qdrant.")
         self.assertEqual(data["status"]["rerank"], "not_run")
-        self.assertEqual(data["knowledge"], {"items": [], "total_count": 0, "truncated": False})
+        self.assertEqual(data["knowledge"], {"items": [], "total_count": 0, "truncated": False, "below_threshold": 0})
         self.assertEqual(len(data["rules"]), 4)
         self.assertTrue(data["template"]["text"])
 

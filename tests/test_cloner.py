@@ -1,3 +1,6 @@
+import os
+import stat
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -35,6 +38,48 @@ class ClonerTests(unittest.TestCase):
     def test_branch_is_passed_to_the_adapter(self):
         _, _, target, _, clone = self._clone(exists=False, branch="dev")
         clone.assert_called_once_with(target, "dev")
+
+
+class RemoveCloneTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        patcher = mock.patch.object(cloner, "TEMP_STORAGE_DIR", self.root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def make_clone(self, name):
+        objects = self.root / name / ".git" / "objects"
+        objects.mkdir(parents=True)
+        pack = objects / "pack"
+        pack.write_text("x")
+        os.chmod(pack, stat.S_IREAD)  # git marks objects read-only; Windows refuses to delete them otherwise
+        return self.root / name
+
+    def test_remove_clone_deletes_the_folder_including_read_only_files(self):
+        clone = self.make_clone("github.com__acme__golden")
+        cloner.remove_clone("github.com__acme__golden")
+        self.assertFalse(clone.exists())
+
+    def test_remove_clone_of_nothing_is_fine(self):
+        cloner.remove_clone("github.com__acme__nope")
+
+    def test_remove_clone_never_raises(self):
+        self.make_clone("github.com__acme__golden")
+        with mock.patch.object(cloner.shutil, "rmtree", side_effect=PermissionError("locked")):
+            cloner.remove_clone("github.com__acme__golden")
+
+    def test_sweep_removes_every_clone_but_keeps_the_gitkeep(self):
+        (self.root / ".gitkeep").write_text("")
+        first, second = self.make_clone("a"), self.make_clone("b")
+        cloner.sweep()
+        self.assertFalse(first.exists() or second.exists())
+        self.assertTrue((self.root / ".gitkeep").exists())
+
+    def test_sweep_without_a_storage_folder_is_fine(self):
+        with mock.patch.object(cloner, "TEMP_STORAGE_DIR", self.root / "missing"):
+            cloner.sweep()
 
 
 if __name__ == "__main__":

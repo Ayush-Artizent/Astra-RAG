@@ -12,6 +12,7 @@ from qdrant_client import QdrantClient
 from astra_rag import create_app
 from astra_rag.services.cloner import CloneResult
 from astra_rag.services.errors import AppError
+from astra_rag.services.local_models import ModelsNotReady
 from astra_rag.services.ingestion import pipeline
 from astra_rag.services.ingestion.store import QdrantStore, collection_name, version_name
 from astra_rag.services.registry import repos, runs
@@ -67,6 +68,42 @@ class SyncTestBase(unittest.TestCase):
 
 
 class SyncServiceTests(SyncTestBase):
+    def test_the_clone_is_removed_after_a_successful_run(self):
+        with mock.patch(f"{SYNC}.cloner.remove_clone") as remove:
+            self.connect()
+        remove.assert_called_once_with(SLUG)
+        self.assertEqual(runs.latest_run(SLUG)["state"], "done")
+
+    def test_the_clone_is_removed_even_when_ingestion_blows_up(self):
+        run_id = runs.register_and_queue(REF, URL, "main", "env:X_TOKEN")
+        with mock.patch(f"{SYNC}.cloner.remove_clone") as remove, \
+                mock.patch(f"{SYNC}.pipeline.run_ingestion", side_effect=RuntimeError("boom")):
+            with self.assertRaises(RuntimeError):
+                service.execute(run_id)
+        remove.assert_called_once_with(SLUG)
+
+    def test_a_failed_clone_leaves_no_partial_folder(self):
+        self.clone.side_effect = AppError("The host refused the clone.")
+        with mock.patch(f"{SYNC}.cloner.remove_clone") as remove:
+            self.connect()
+        remove.assert_called_once_with(SLUG)
+        self.assertEqual(runs.latest_run(SLUG)["state"], "failed")
+
+    def test_a_run_fails_cleanly_when_the_models_cannot_be_prepared(self):
+        with mock.patch(f"{SYNC}.local_models.wait_ready", side_effect=ModelsNotReady("Models are not ready.")):
+            self.connect()
+        run = runs.latest_run(SLUG)
+        self.assertEqual((run["state"], run["error"]), ("failed", "Models are not ready."))
+        self.clone.assert_not_called()  # nothing is cloned for a run that cannot embed
+
+    def test_a_run_waits_for_the_embedder_model_before_cloning(self):
+        order = []
+        self.clone.side_effect = lambda adapter, branch: order.append("clone") or CloneResult(
+            str(FIXTURE_REPO), self.head, branch)
+        with mock.patch(f"{SYNC}.local_models.wait_ready", side_effect=lambda names: order.append(("wait", names))):
+            self.connect()
+        self.assertEqual(order[:2], [("wait", ("embedder",)), "clone"])
+
     def test_unchanged_head_runs_nothing_and_records_the_check(self):
         self.connect()
         before = self.run_count()

@@ -2,7 +2,7 @@
 import logging
 from pathlib import Path
 
-from .. import cloner, token_store
+from .. import cloner, local_models, token_store
 from ..errors import AppError
 from ..ingestion import pipeline
 from ..ingestion.models import RepoContext
@@ -54,19 +54,29 @@ def execute(run_id: int) -> None:
 
 def _build(run_id: int, slug: str, branch: str) -> None:
     try:
+        local_models.wait_ready(("embedder",))  # the models are downloaded before anything is cloned or embedded
+    except AppError as exc:
+        runs.finish_run(run_id, "failed", error=exc.message)
+        return
+    try:
         adapter = _adapter(repos.get_repo(slug))
         clone = cloner.clone_repo(adapter, branch)
     except AppError as exc:
+        cloner.remove_clone(slug)
         repos.mark_checked(slug, _source_message(exc))
         runs.finish_run(run_id, "failed", error=exc.message)
         return
     except Exception as exc:
+        cloner.remove_clone(slug)
         log.warning("Clone for %s failed (%s).", slug, type(exc).__name__)
         runs.finish_run(run_id, "failed", error="Unexpected error while cloning.")
         return
-    runs.update_run(run_id, commit_sha=clone.commit_sha)
-    repos.mark_checked(slug)
-    pipeline.run_ingestion(run_id, RepoContext(adapter.ref, branch, clone.commit_sha), Path(clone.path))
+    try:
+        runs.update_run(run_id, commit_sha=clone.commit_sha)
+        repos.mark_checked(slug)
+        pipeline.run_ingestion(run_id, RepoContext(adapter.ref, branch, clone.commit_sha), Path(clone.path))
+    finally:
+        cloner.remove_clone(slug)  # the index is the product; the clone is not kept
 
 
 def _follow_up(slug: str) -> None:

@@ -1,7 +1,7 @@
-"""Knowledge for a request: one hybrid search on the text, reranked. Nothing is preferred by date, type or folder."""
+"""Knowledge for a request: one hybrid search on the text, reranked, weak matches dropped. Nothing is preferred by date, type or folder."""
 from dataclasses import dataclass, field
 
-from ...config import KNOWLEDGE_CANDIDATES
+from ...config import KNOWLEDGE_CANDIDATES, RERANK_MIN_SCORE
 from ..errors import AppError
 from ..ingestion import pipeline
 from .rerank import Reranker, rerank
@@ -10,8 +10,9 @@ from .rerank import Reranker, rerank
 @dataclass
 class Knowledge:
     items: list[dict] = field(default_factory=list)
-    status: str = "ok"  # ok | empty | no_index | unavailable: <reason>
+    status: str = "ok"  # ok | empty | no_relevant_match | no_index | unavailable: <reason>
     rerank: str = "not_run"
+    dropped: int = 0  # hits left out for scoring below RERANK_MIN_SCORE
 
 
 def _item(hit: dict) -> dict:
@@ -35,4 +36,7 @@ def retrieve(slug: str, text: str, folder: str | None = None, file_type: str | N
     if not items:
         return Knowledge(status="empty")
     items, status = rerank(text, items, reranker)
-    return Knowledge(items, "ok", status)
+    if status != "ok":  # without rerank scores nothing can be judged irrelevant
+        return Knowledge(items, "ok", status)
+    kept = [i for i in items if i["rerank_score"] >= RERANK_MIN_SCORE]
+    return Knowledge(kept, "ok" if kept else "no_relevant_match", status, len(items) - len(kept))

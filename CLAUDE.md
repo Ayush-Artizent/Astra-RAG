@@ -37,7 +37,8 @@ Pure refactors with no visible change still get a CHANGELOG line.
 
 ## Domain rules
 - Required root items are case-sensitive and defined only in `config.py` (`REQUIRED_FILES`, `REQUIRED_FOLDERS`).
-- A repeat clone/ingest of the same repo replaces the previous copy.
+- The clone in `temp_storage/` exists only while a run ingests it and is deleted when the run ends; a repeat ingest replaces the index (alias switch), not a clone.
+- Local models are downloaded by `services/local_models.py` at startup; code that needs one goes through `get_embedder()` / `get_reranker()` (they fail fast with `ModelsNotReady`), never loads a model inside a request.
 - The policies/template tool reads from the host directly (via `services/catalog`), not from the local clone.
 
 ## Git

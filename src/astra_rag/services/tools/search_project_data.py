@@ -20,7 +20,7 @@ def handle(args: SearchArgs) -> dict:
     if project is None:
         raise AppError("This project is not bound to a repository.", 404)
     found = knowledge.retrieve(project["repo"]["slug"], args.query, args.folder, args.file_type)
-    return {"items": found.items[:args.limit], "total_count": len(found.items),
+    return {"items": found.items[:args.limit], "total_count": len(found.items), "below_threshold": found.dropped,
             "status": {"knowledge": found.status, "rerank": found.rerank}}
 
 

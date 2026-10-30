@@ -1,9 +1,10 @@
-"""Local dense (bge) + sparse (BM25) embeddings via fastembed. Models download on first use."""
+"""Local dense (bge) + sparse (BM25) embeddings via fastembed. services/local_models.py downloads them at startup."""
 import os
 from functools import lru_cache
 from typing import Protocol
 
 from ...config import DENSE_DIM, DENSE_MODEL, EMBED_BATCH_SIZE, FASTEMBED_CACHE_DIR, SPARSE_MODEL
+from .. import local_models
 
 Sparse = tuple[list[int], list[float]]
 
@@ -41,5 +42,10 @@ class FastEmbedEmbedder:
 
 
 @lru_cache(maxsize=1)
-def get_embedder() -> Embedder:
+def _load_embedder() -> Embedder:
     return FastEmbedEmbedder()
+
+
+def get_embedder() -> Embedder:
+    local_models.require_ready("embedder")  # never download inside a request or a run
+    return _load_embedder()

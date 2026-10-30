@@ -5,6 +5,7 @@ from functools import lru_cache
 from typing import Protocol
 
 from ...config import FASTEMBED_CACHE_DIR, RERANK_MODEL, RERANK_TIMEOUT_SECONDS
+from .. import local_models
 
 
 class Reranker(Protocol):
@@ -24,8 +25,13 @@ class FastEmbedReranker:
 
 
 @lru_cache(maxsize=1)
-def get_reranker() -> Reranker:
+def _load_reranker() -> Reranker:
     return FastEmbedReranker()
+
+
+def get_reranker() -> Reranker:
+    local_models.require_ready("reranker")  # never download inside a request
+    return _load_reranker()
 
 
 # One worker: a call that outlives its timeout keeps running, so later calls queue behind it instead of piling up.
@@ -47,6 +53,8 @@ def rerank(query: str, items: list[dict], reranker: Reranker | None = None) -> t
         scores = _pool.submit(_score, reranker, query, [i["text"] for i in items]).result(RERANK_TIMEOUT_SECONDS)
     except TimeoutError:
         return items, "skipped: timeout"
+    except local_models.ModelsNotReady:
+        return items, "skipped: models_not_ready"
     except Exception as exc:  # model download or load failure: never fail the request over it
         return items, f"skipped: {type(exc).__name__}"
     ranked = sorted(zip(scores, items), key=lambda pair: -pair[0])

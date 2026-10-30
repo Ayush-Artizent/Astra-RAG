@@ -3,8 +3,8 @@
 Simple web UI: enter a GitHub or Azure DevOps repo URL, a PAT and optionally a branch to track (blank = the repo's
 default branch, or the branch saved earlier). The app checks the root of that branch for
 `policies.md`, `nomenclature.md`, `project-data/` and `templates/`. If **all** exist it
-registers the repo and starts a background sync: clone into `temp_storage/`, then ingest `project-data/` into Qdrant
-(chunks + local embeddings, with source metadata); otherwise it lists exactly what is missing.
+registers the repo (and binds the optional project id) and starts a background sync: clone into `temp_storage/`, ingest `project-data/` into Qdrant
+(chunks + local embeddings, with source metadata), then delete the clone; otherwise it lists exactly what is missing.
 
 ## Rules and templates (golden catalog)
 Besides `project-data/`, the repo's rules and templates are read **live from the host** (not indexed). The **Rules**
@@ -19,6 +19,19 @@ warning; without it nothing is guaranteed to apply (the page warns "no always-on
 `stage` and `tags`. It returns the `always` rules, then the rules whose `applies_to` matches (every dimension a rule lists
 must match), and the best-matching template variant with its **whole text**. Sections that have no scope are never selected;
 the response warns how many, so mark them `always: true` or give them `applies_to`.
+
+`POST /api/context` is the full call (`project_id`, `doc_type`, `text`, optionally `stage`, `tags`, `budget`). It returns the
+same rules and template plus `knowledge.items`: one hybrid search on `text`, reranked, each item with its file, heading path,
+`doc_date`, `doc_type` and `source_url`. Nothing is preferred by date or type; when sources disagree the caller decides.
+The response fits a token budget (default 12,000), spent in this order: always rules, template, scope rules, knowledge;
+whatever does not fit is left out and named in `budget.truncated`. `snapshot` shows the rules commit and the index commit
+(they can differ by up to a day), and `status` says whether rules came from a stale cache, whether knowledge was
+available, and whether the reranker ran or was skipped. If Qdrant is down, rules and template are still returned.
+The reranker (`Xenova/ms-marco-MiniLM-L-12-v2`, about 120 MB) is downloaded into `.cache/fastembed` and loaded in the background at startup, together with the embedding models (about 330 MB in all). Syncs wait for them, and requests get a 503 / `models_not_ready` until they are ready (`GET /api/health/models`; `ASTRA_MODELS_PREFETCH=0` turns this off).
+
+`GET /api/tools?project_id=` lists the Claude tool schemas (`get_document_context`, `search_project_data`; the `doc_type`
+enum comes from the project's catalog) and `POST /api/tools/invoke` (`name`, `arguments`) runs one. Results are wrapped with
+a notice that the content is reference data, not instructions.
 
 ## Keeping the index fresh (sync)
 Nothing to set up on the repository side: the server uses the PAT it already has.
@@ -65,7 +78,8 @@ second instance on the same data directory refuses to start. Do not run uvicorn 
 replicas would need shared scheduling and a shared database (not built).
 
 API:
-- `POST /api/validate-and-clone` (`url`, `token`, optional `branch`; queues a sync and returns `ingestion.state`
+- `GET /api/health/models` (are the local models downloaded and loaded)
+- `POST /api/validate-and-clone` (`url`, `token`, optional `branch`, optional `project_id` to bind; queues a sync and returns `ingestion.state`
   `queued`, or `pending` if one is already running)
 - `GET /api/ingestion-status/{slug}`
 - `GET /api/repos` (with sync status and the nightly `schedule`), `POST /api/repos/{slug}/sync` (Sync now:
@@ -73,6 +87,8 @@ API:
 - `PUT /api/projects/{project_id}/binding` (`repo_slug`), `GET /api/projects/{project_id}`
 - `GET /api/projects/{project_id}/catalog`, `GET /api/repos/{slug}/catalog` (rules and templates read live from the tracked branch, with warnings; `?include_text=true` adds rule text)
 - `POST /api/context/preview` (body: `project_id`, `doc_type`, optional `stage`, `tags`; the selected rules and the whole template)
+- `POST /api/context` (body: `project_id`, `doc_type`, `text`, optional `stage`, `tags`, `budget`; rules, whole template and reranked knowledge within a token budget)
+- `GET /api/tools` (optional `project_id`), `POST /api/tools/invoke` (`name`, `arguments`)
 - `POST /api/search` (body has `slug`)
 
 A repo's `slug` is host-aware, e.g. `github.com__acme__golden`; the clone response returns it.
@@ -95,10 +111,12 @@ src/astra_rag/
     validator.py             required-structure check
     cloner.py                git clone into temp_storage/ (returns path, commit SHA, branch)
     ingestion/               loader, chunkers (md per section, csv per row), doc_meta (header metadata), embedder (fastembed), store (Qdrant), pipeline
-    cloner.py                picks temp_storage/<slug>, replaces an old clone, asks the adapter to clone
+    cloner.py                picks temp_storage/<slug>, asks the adapter to clone, removes the clone after the run (remove_clone, sweep)
+    local_models.py          downloads and loads the embedder and reranker at startup; wait_ready / require_ready
     ingestion/               loader, chunkers (md/csv), embedder (fastembed), store (Qdrant versions + alias), pipeline
     catalog/                 golden catalog: golden.yaml manifest, rule sections, templates, warnings (live reads of rules and templates)
-    context/                 picks the rules and template variant for a doc type, stage and tags (preview endpoint)
+    context/                 picks the rules and template variant for a doc type, stage and tags; knowledge search, rerank, token budget (preview and context endpoints)
+    tools/                   Claude tool schemas (get_document_context, search_project_data) and the dispatcher
     errors.py                user-safe AppError
   templates/index.html       the UI
   static/                    style.css, app.js
@@ -120,5 +138,5 @@ temp_storage/                cloned repos (git-ignored)
   never the token. Sync errors, run errors and logs carry only safe messages (never the token or the host's reply).
 - The token is passed to git as a one-off header through environment variables (not in the URL,
   `.git/config` or process arguments) and is never returned by the API.
-- A repeat clone of the same repo replaces the previous copy. The Qdrant index is replaced only once the new
+- The clone is deleted when the run ends (success or failure). The Qdrant index is replaced only once the new
   version is complete (alias switch), so search is never empty during a rebuild.

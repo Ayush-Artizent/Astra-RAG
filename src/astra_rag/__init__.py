@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import PACKAGE_DIR, STATIC_DIR, SYNC_SCHEDULER_ENABLED
 from .routes import router
-from .services import registry
+from .services import cloner, local_models, registry
 from .services.errors import AppError
 from .services.sync import reconcile, scheduler, worker
 from .services.sync.instance import InstanceLock
@@ -18,7 +18,9 @@ async def lifespan(_: FastAPI):
     lock.acquire()  # one instance per data directory; everything below assumes it owns the runs
     try:
         registry.startup()  # refuses to start on a database newer than this code
+        local_models.start_prefetch()  # download and load every model now, before a sync or a request needs one
         if SYNC_SCHEDULER_ENABLED:
+            cloner.sweep()  # a crash can leave a clone behind; the instance lock means no run is using one
             reconcile.run()
         worker.start()
         if SYNC_SCHEDULER_ENABLED:

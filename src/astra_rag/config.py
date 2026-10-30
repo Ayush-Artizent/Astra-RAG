@@ -53,6 +53,22 @@ CHUNK_MAX_TOKENS = 480
 CHUNK_MIN_TOKENS = 100
 CHUNK_OVERLAP_TOKENS = 50
 
+# --- Context (rules + template + knowledge in one response) ---------------
+# MiniLM-L-12 (~120 MB) scores 30 chunks in ~3 s on CPU; bge-reranker-base (~1 GB) took ~16 s, past the timeout below.
+RERANK_MODEL = "Xenova/ms-marco-MiniLM-L-12-v2"
+# All local models (embeddings, reranker) are downloaded and loaded in the background at startup (services/local_models.py);
+# ingestion waits for them and requests fail fast with a 503 until they are ready. "0" = old lazy loading (tests, maintenance).
+MODELS_PREFETCH = os.environ.get("ASTRA_MODELS_PREFETCH", "1") != "0"
+MODELS_WAIT_SECONDS = 1800  # how long a queued sync waits for the models before it fails
+KNOWLEDGE_CANDIDATES = 30  # hybrid hits fetched, then reranked
+# Reranked hits scoring below this are dropped (MiniLM-L-12 logits: relevant chunks sit above ~-5, an unrelated query scores below -9).
+RERANK_MIN_SCORE = -5.0
+RERANK_TIMEOUT_SECONDS = 8.0  # past this the search order is kept and the response says rerank was skipped
+# Total tokens for one context response, filled in order: always rules, template, scope rules, knowledge.
+CONTEXT_BUDGET_TOKENS = 12_000
+CONTEXT_BUDGET_RANGE = (500, 100_000)  # what a caller may ask for
+SEARCH_DEFAULT_LIMIT = 8  # search_project_data tool
+
 # project-data folder name -> doc_type stored on every chunk (unknown folders keep their own name)
 DOC_TYPE_BY_FOLDER = {
     "emails": "email", "meeting-notes": "meeting-note", "change-requests": "change-request",

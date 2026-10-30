@@ -1,6 +1,6 @@
 # Current state
 
-_Last updated: 2026-10-30 (branch `goldan-repo-re-manoj`, P5 merged in: P0-P5 and the chunking part of P6 done, P7 and P8 done; see `plan/phases.md`)_
+_Last updated: 2026-10-30, models prefetch + clone cleanup + bind on connect (branch `goldan-repo-re-p9`: P0-P5, P7, P8, P9 and the chunking part of P6 done; see `plan/phases.md`)_
 
 ## What the app does today
 A FastAPI web app (src layout, managed by `uv`, Python >=3.14). The user enters a GitHub or Azure DevOps repo
@@ -30,10 +30,15 @@ URL, a PAT and optionally a branch in a single-page UI. The backend (`services/c
    just accepted the token). If a run is already active, nothing new starts: the request is **coalesced** into one
    follow-up run (`sync_pending`/`sync_force` on the repo) and the response says `pending` (P4 answered 409 here).
    The response carries the branch head seen while connecting; the clone happens in the background, not in the request.
+   An optional `project_id` (validated first, a bad one is a 422 before any host call) is **bound to the repo** right after it is
+   registered, so the project can call P8/P9 at once; a repo that fails validation binds nothing. `PUT /api/projects/{id}/binding` still rebinds.
 6. **The sync worker** (`services/sync/service.execute`, on a one-thread pool owned by the app lifespan) shallow-clones the
    tracked branch (`--depth 1 --branch <b> --single-branch`) into `temp_storage/<slug>/` (`services/cloner.py`;
    `adapter.clone` via `sources/git.py`; auth header via `GIT_CONFIG_*` env vars, not the URL, `.git/config` or process
-   args). A clone failure finishes the run as `failed` and records `source_error` on the repo.
+   args). A clone failure finishes the run as `failed` and records `source_error` on the repo. **Before cloning, the worker waits for the
+   embedder model** (`services/local_models.wait_ready`; if it cannot be prepared the run fails with a clear message and nothing is cloned).
+   **The clone is deleted as soon as the run ends** (`cloner.remove_clone` in a `finally`, success or failure; `cloner.sweep()` at startup
+   removes leftovers): only the Qdrant index is kept.
 7. Then ingests `project-data/` (`services/ingestion/pipeline.run_ingestion(run_id, ...)`), writing progress to the run
    row: load (md, txt, csv, docx; others reported as skipped; symlinks, junctions and anything resolving outside the clone
    are never followed; the clone uses `core.symlinks=false`) -> chunk (markdown: **one chunk per heading section** with its own heading path, oversize sections split, tables/code fences kept whole, horizontal-rule lines `---` / `***` / `___` omitted from the text (decoration only, never a chunk boundary); CSV: **one chunk per row** + a small summary chunk; <=~480 est. tokens) -> embed locally with fastembed (dense `BAAI/bge-base-en-v1.5`, sparse `Qdrant/bm25`) ->
@@ -80,7 +85,8 @@ URL, a PAT and optionally a branch in a single-page UI. The backend (`services/c
   ("Interrupted by a server restart.").
 
 Endpoints:
-- `POST /api/validate-and-clone` (`url`, `token`, optional `branch`; returns `branch`, `commit_sha` (head at connect),
+- `GET /api/health/models` (state of the local models: `ready` plus per component `pending | downloading | ready | failed`)
+- `POST /api/validate-and-clone` (`url`, `token`, optional `branch`, optional `project_id` (bound to the repo); returns `branch`, `commit_sha` (head at connect),
   `ingestion: {slug, run_id, state: queued | pending}`; no clone path, no 409)
 - `GET /api/ingestion-status/{slug}` (latest run, from SQLite, survives restarts; includes `triggered_by`)
 - `GET /api/repos` (tracked vs indexed branch/commit, `index_state`, `needs_rebuild`, `sync_status`, `sync`, last run,
@@ -92,6 +98,8 @@ Endpoints:
   tracked branch; `?include_text=true` adds rule text; 404 unbound / unregistered, 400 no saved token)
 - `POST /api/context/preview` (`project_id`, `doc_type`, optional `stage`, `tags`: the selected rules and the whole template;
   422 unknown doc type, 404 unbound project, 400 no saved token)
+- `POST /api/context` (`project_id`, `doc_type`, `text`, optional `stage`, `tags`, `budget`: rules, whole template, reranked knowledge, see P9 below)
+- `GET /api/tools` (optional `project_id`), `POST /api/tools/invoke` (`name`, `arguments`)
 - `POST /api/search` (`slug` + `query`; hybrid RRF search; optional `folder`, `file_type` filters)
 
 Page at `/` (connect form with a branch field; repos table with indexed commit and time, last checked, sync status,
@@ -101,8 +109,11 @@ a Sync now button per repo and a line with the next nightly check), OpenAPI at `
 the server. Keep it on `127.0.0.1` (the default in `main()`) or behind an authenticating reverse proxy; never expose it
 directly to the internet. **One instance per data directory** (enforced by the lock); no `--workers` > 1.
 
-Qdrant runs in Docker (`docker-compose.yml`, v1.20.0, named volume). Embedding models download on
-first use into `.cache/fastembed` (git-ignored).
+Qdrant runs in Docker (`docker-compose.yml`, v1.20.0, named volume). **Local models** (`services/local_models.py`: dense `bge-base-en-v1.5`,
+sparse `bm25`, reranker MiniLM-L-12, ~330 MB in total) are downloaded into `.cache/fastembed` (git-ignored) and loaded by a background thread at
+startup, before any run or request uses them: the sync worker waits for the embedder, `get_embedder()` / `get_reranker()` raise a 503
+`ModelsNotReady` instead of downloading inside a request, and `GET /api/health/models` shows the state. A failed download is retried by the
+next sync. `ASTRA_MODELS_PREFETCH=0` turns this off (lazy loading; tests and maintenance only).
 
 Retrieval has **no recency or authority preference**: date and doc type are information only, search returns every hybrid
 match and the LLM decides between conflicting sources.
@@ -156,14 +167,37 @@ requests are not used (head-sha check + blob-sha body reuse cover it for now).
   `stale` when the host is down) and returns `request`, `snapshot.rules_commit`, `rules[]` (`file`, `section`, `text`,
   `matched_on`, `priority`, `source_url` to the section's lines at the rules commit), `template` (`path`, `variant`, `text`,
   `sections`, `source_url`), the catalog warnings plus selection warnings, and `stale`.
-- Not yet: knowledge retrieval, budgets, rerank and the Claude tools (P9); inference and relevance selection are deferred.
+- Inference and relevance selection are deferred.
+
+## Context response and tools (P9, done)
+`POST /api/context` (`project_id`, `doc_type`, `text`, optional `stage`, `tags`, `budget`) = P8 selection + knowledge, in `services/context/`.
+- `knowledge.py`: **one** `pipeline.search` on `text` (the caller must send a short, clean topic request as `text`, not a long instruction: "Write a BRD for ..." wording made the reranker bury key chunks in the 2026-10-30 manual run) (`KNOWLEDGE_CANDIDATES` = 30, through the repo's alias), then `rerank.py`.
+  Items: `text`, `file`, `heading_path`, `doc_type`, `doc_date`, `doc_meta`, `source_url`, `score` (+ `rerank_score`). No date, type or
+  folder preference; template headings are not used to search. After a successful rerank, hits scoring below `RERANK_MIN_SCORE` (-5.0, MiniLM logits) are dropped and counted in `knowledge.below_threshold`; if none is left `status.knowledge` is `no_relevant_match` (rules and template still returned). A skipped rerank drops nothing. Failures become `status.knowledge`: `empty`, `no_index`,
+  `unavailable: <safe reason>`; they never fail the request.
+- `rerank.py`: `Xenova/ms-marco-MiniLM-L-12-v2` (~120 MB, ~3 s for 30 chunks on CPU) via fastembed `TextCrossEncoder`, on a single worker thread, prepared at startup by `local_models` (`get_reranker()` fails fast with `ModelsNotReady` until then, giving `status.rerank` = `skipped: models_not_ready`), limited to
+  `RERANK_TIMEOUT_SECONDS` (8). Timeout or error keeps the search order: `status.rerank` = `skipped: timeout` / `skipped: <ErrorType>`
+  (`ok`, or `not_run` for fewer than 2 hits). A timed-out call keeps running and later calls queue behind it.
+- `budget.py` + `service.get_context`: one shared budget (`CONTEXT_BUDGET_TOKENS` = 12,000; request `budget` 500-100,000), counted with
+  `ingestion/tokens.count_tokens`, spent as always rules, template, scope rules, knowledge. Rules and knowledge items are kept whole
+  and in order (the first that does not fit ends that list); the template keeps whole leading lines. Left-out sections are named in
+  `budget.truncated`, `knowledge.truncated` / `template.truncated` are set, and a `budget_truncated` warning is added.
+- Response: `request`, `snapshot {rules_commit, index_commit}` (index commit = registry `indexed.commit_sha`, `null` before the first
+  build), `rules[]`, `template`, `knowledge {items, total_count, truncated, below_threshold}`, `budget`, `status {rules: ok|stale, knowledge, rerank}`,
+  `warnings[]`, `stale`. Blank `text` and an out-of-range `budget` give 422.
+- `services/tools/`: `Tool` (pydantic args -> Claude schema), `get_document_context` (the same call as `/api/context`; `doc_type` gets an
+  enum from the project's catalog when `GET /api/tools?project_id=` is used) and `search_project_data` (`query`, `limit` <= 20,
+  `folder`, `file_type`; same search + rerank). `POST /api/tools/invoke` returns `{notice, data}`; the notice says the data is
+  reference content, not instructions. Bad arguments name the fields only, never echo values. Ported from the `guru-workitem-w2` design.
+- Not built: `validate_document_name` (needs the `nomenclature.md` format), per-heading search, parent-section expansion.
+- Note: the sample repos in `temp_storage/` have no `golden.yaml`, so `rules` is empty for them until one is added.
 
 ## Not built yet
 - P6 remainder: YAML front-matter parsing (`fm.*` payload fields).
 - Webhooks (instant updates; needs a public URL and per-repo setup by the customer) and hash-diff incremental ingest.
 - Several app instances (needs shared scheduling and a shared database).
 - Free-text inference and relevance selection of untagged rule sections (deferred from P8; revisit after P11).
-- P9 (old W2): `get_context` / function-calling tool returning policies + nomenclature + template, with budgets and rerank.
+- `validate_document_name` tool (old W2.3b): waits for the `nomenclature.md` format.
 - Incremental re-ingest (currently full rebuild), pdf/xlsx loaders, reranking.
 - API authentication; deleting repos or bindings.
 
@@ -176,7 +210,9 @@ src/astra_rag/  __init__ (app factory + lifespan, main), config, routes
                 (startup recovery), instance (single-instance lock)
     sources/    base (SourceAdapter port), credentials (PatCredential), registry (adapter lookup), github, azure_devops, git, http, json_reply, errors
     catalog/    manifest, sections, templates, catalog, local, live, service, models
-    context/    selection (rules + template variant from doc type, stage, tags), service (preview response)
+    local_models  (startup download + readiness of the embedder and reranker; wait_ready / require_ready)
+    context/    selection (rules + template variant from doc type, stage, tags), knowledge (one search), rerank, budget, service (preview + context responses)
+    tools/      base (Tool, schema renderer), document_context, search_project_data, __init__ (table + dispatcher)
     ingestion/  loader, md_chunker, csv_chunker, doc_meta, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
 tests/          unittest suites + helpers (temp registry) + fixtures/repo; tests/sources/ holds the adapter contract suite

@@ -95,6 +95,35 @@ class ConnectRouteTests(RouteTestBase):
         repo = repos.get_repo(SLUG)
         self.assertEqual((repo["tracked_branch"], repo["index_state"]), ("main", "rebuilding"))
 
+    def test_a_project_id_is_bound_to_the_repo_when_it_connects(self):
+        res, _ = self.connect({**self.body, "project_id": " proj-1 "})
+        self.assertEqual(res.json()["project_id"], "proj-1")
+        self.assertEqual(repos.get_project("proj-1")["repo"]["slug"], SLUG)
+
+    def test_no_project_id_binds_nothing(self):
+        res, _ = self.connect()
+        self.assertIsNone(res.json()["project_id"])
+        self.assertIsNone(repos.get_project("proj-1"))
+
+    def test_a_bad_project_id_is_rejected_before_the_host_is_called(self):
+        res, m = self.connect({**self.body, "project_id": "bad id!"})
+        self.assertEqual(res.status_code, 422)
+        m.adapter.head_sha.assert_not_called()
+        m.save.assert_not_called()
+        self.assertIsNone(repos.get_repo(SLUG))
+
+    def test_a_repo_that_fails_validation_binds_no_project(self):
+        res, _ = self.connect({**self.body, "project_id": "proj-1"}, adapter=fake_adapter(entries=[]))
+        self.assertEqual(res.status_code, 422)
+        self.assertIsNone(repos.get_project("proj-1"))
+
+    def test_connecting_again_with_another_project_keeps_both_bound(self):
+        self.connect({**self.body, "project_id": "proj-1"})
+        self.finish_latest()
+        self.connect({**self.body, "project_id": "proj-2"})
+        self.assertEqual(repos.get_project("proj-1")["repo"]["slug"], SLUG)
+        self.assertEqual(repos.get_project("proj-2")["repo"]["slug"], SLUG)
+
     def test_explicit_branch_is_validated_cloned_and_tracked(self):
         res, m = self.connect({**self.body, "branch": " dev "}, clone=CloneResult("/tmp/x", "d" * 40, "dev"))
         self.assertEqual(res.json()["branch"], "dev")

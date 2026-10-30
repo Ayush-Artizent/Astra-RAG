@@ -6,16 +6,31 @@ from .models import Section
 _HEADING = re.compile(r"^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
 _FENCE = re.compile(r"^\s*(```|~~~)")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
+_YAML_KEY = re.compile(r"^[A-Za-z_][\w-]*\s*:")
 
 
 def slugify(text: str) -> str:
     return _NON_ALNUM.sub("-", text.lower()).strip("-")
 
 
+def strip_front_matter(text: str) -> str:
+    """Blank out a leading YAML front-matter block (kept as empty lines so line numbers stay right)."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return text
+    first = next((ln for ln in lines[1:] if ln.strip()), "")
+    if not _YAML_KEY.match(first):  # a horizontal rule, not front-matter
+        return text
+    for i in range(1, len(lines)):
+        if lines[i].strip() in ("---", "..."):
+            return "\n".join([""] * (i + 1) + lines[i + 1:])
+    return text
+
+
 def headings(text: str) -> list[tuple[int, str, int]]:
     """Return (level, title, line_number) for each ATX heading outside code fences."""
     found, in_fence = [], False
-    for number, line in enumerate(text.splitlines(), start=1):
+    for number, line in enumerate(strip_front_matter(text).splitlines(), start=1):
         if _FENCE.match(line):
             in_fence = not in_fence
         elif not in_fence and (m := _HEADING.match(line)) and m.group(2):
@@ -25,6 +40,7 @@ def headings(text: str) -> list[tuple[int, str, int]]:
 
 def split_sections(file: str, text: str) -> list[Section]:
     """One Section per heading (text up to the next heading of any level); text before the first heading is a preamble."""
+    text = strip_front_matter(text)
     lines = text.splitlines()
     marks = headings(text)
     sections: list[Section] = []

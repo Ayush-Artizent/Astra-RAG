@@ -16,7 +16,8 @@ from pathlib import Path
 
 from ..config import ENV_FILE
 from .errors import AppError
-from .repo_ref import RepoRef, parse_repo_url
+from .repo_ref import RepoRef
+from .sources.registry import parse_repo_url
 
 _lock = threading.Lock()
 
@@ -100,6 +101,11 @@ def save(repo: RepoRef, url: str, token: str, path: Path | None = None) -> None:
         values[f"{key}_URL"] = url.strip()
         values[f"{key}_TOKEN"] = token
         _write(path, values)
+
+
+def credential_ref(repo: RepoRef) -> str:
+    """Where this repo's token is kept (the registry stores this, never the token)."""
+    return f"env:{_key(repo)}_TOKEN"
 
 
 def get_token(repo: RepoRef, path: Path | None = None) -> str | None:

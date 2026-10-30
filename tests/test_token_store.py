@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from astra_rag.services import token_store
-from astra_rag.services.repo_ref import parse_repo_url
+from astra_rag.services.sources.registry import parse_repo_url
 
 
 class TokenStoreTests(unittest.TestCase):

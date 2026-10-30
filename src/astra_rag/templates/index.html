@@ -15,19 +15,32 @@
       at its root.</p>
 
     <form id="form" autocomplete="off">
-      <label>GitHub repository URL
-        <input id="url" type="url" placeholder="https://github.com/owner/repo" required>
+      <label>Repository URL (GitHub or Azure DevOps)
+        <input id="url" type="url" placeholder="https://github.com/owner/repo or https://dev.azure.com/org/project/_git/repo" required>
       </label>
       <label>Personal access token (PAT)
-        <input id="token" type="password" placeholder="ghp_… or github_pat_… (blank = use the saved token)"
+        <input id="token" type="password" placeholder="Your PAT, read access to the repo (blank = use the saved token)"
                autocomplete="new-password">
       </label>
-      <p class="hint">After a successful connect the token is saved locally in <code>.env</code> for this URL and never shown again.</p>
-      <button id="submit" type="submit">Check &amp; clone</button>
+      <label>Branch to track
+        <input id="branch" type="text" placeholder="blank = current tracked branch, or the repo's default"
+               spellcheck="false">
+      </label>
+      <p class="hint">Once the host accepts it, the token is saved on the server in <code>.env</code> for this URL and never shown again.</p>
+      <button id="submit" type="submit">Check &amp; sync</button>
     </form>
 
     <div id="result" role="status" hidden></div>
     <div id="ingestion" role="status" hidden></div>
+
+    <section id="repos" hidden>
+      <h2>Connected repositories</h2>
+      <table>
+        <thead><tr><th>Repository</th><th>Branch</th><th>Indexed commit</th><th>Sync status</th><th></th></tr></thead>
+        <tbody id="repo-rows"></tbody>
+      </table>
+      <p id="schedule" class="hint"></p>
+    </section>
   </main>
   <script src="/static/app.js"></script>
 </body>

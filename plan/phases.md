@@ -112,13 +112,17 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
 - `services/sources/github.py`: the existing `github_client` and `cloner` logic, moved here.
 - `routes.py`, `validator` and ingestion call the adapter, not `github_client` or `cloner` directly.
   - `chunker._source_url` uses `adapter.citation_url`.
-- `tests/sources/contract.py`: a shared contract test suite every adapter must pass, using faked HTTP and a local bare git repo.
+- `tests/sources/contract.py`: a shared contract test mixin every adapter must pass, using faked HTTP (`fake_http.py`) and a local bare git repo.
+  A host's test class supplies `make_adapter` and `stub_*` hooks that script that host's REST replies (see `test_github.py`).
+  - P2 done: `PatCredential`, `base.py` (ABC, not Protocol, so `verify_webhook` has a default), `git.py` (shared clone; adapters supply only the auth header), `http.py`, `errors.py`.
+  - P2 done: `parse_repo_url` now lives in `sources/registry.py`; `repo_ref.py` keeps only `RepoRef` and `host_kind`.
+  - P3 hint: add the new kind to both `config.SUPPORTED_HOST_KINDS` and `registry.ADAPTERS` (a test checks they match).
 
 **Out of scope:** new hosts, ETag caching (P7).
 
 **Tests**
 - The GitHub adapter passes the contract suite.
-- The route tests still pass unchanged.
+- The route tests keep their assertions. Only their patch targets change (`routes.adapter_for` instead of `routes.github_client.list_root`).
 
 **Acceptance**
 - Same behaviour as before, and a diff review confirms no route or response changes.
@@ -182,6 +186,17 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
 **Acceptance**
 - Restart the app and the repo list and last status are still there. Change the branch and the next ingest uses it.
 
+**Learned in P4 (feeds P5)**
+- `repos` keeps the configured branch (`tracked_branch` + `config_version`) apart from the last good build
+  (`indexed_run_id/branch/commit_sha/collection/config_version/at`). Only a `done` run newer than the indexed one writes
+  `indexed_*`; `needs_rebuild` is derived from `config_version`, not a stored flag. P5's `sync_repo` should use the same
+  rule (write `indexed_*` when the alias swaps) and treat `needs_rebuild` as "rebuild even if `head_sha` is unchanged".
+- P4 refuses a second connect for a repo with an active run (409, checked and queued in one `BEGIN IMMEDIATE`
+  transaction). P5's per-repo lock with a coalesced follow-up run replaces this guard.
+- Runs carry `index_replaced`, and `index_state` reports `incomplete` when a failed run had already dropped the
+  collection. The alias swap should make that state impossible; keep the field for runs from before P5.
+- The connect flow now lives in `services/connections.py`; Sync now should reuse its branch and token handling.
+
 ---
 
 ## P5: Sync: nightly and Sync now, with alias swap
@@ -212,6 +227,18 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
 
 **Acceptance**
 - Push to the tracked branch, click Sync now, and search shows the new text with the new commit SHA in `source_url`.
+
+**Learned in P5 (feeds later phases)**
+- Version collections are named `astra_v<run id>__<slug>` (not `<slug>__v<n>`): a repo whose own name ends in `__v3`
+  could otherwise be mistaken for another repo's version. The alias keeps the old collection name, so `search` and any
+  later reader (P9) just use `collection_name(slug)`.
+- Connect now goes through the background sync (one clone/ingest path for every trigger). `register_and_queue` is the
+  only place besides `set_tracked_branch` that may bump `config_version`; `queue_run` never does.
+- The run row is the per-repo lock; triggers during a run set `repos.sync_pending/sync_force` and the worker starts one
+  follow-up when the run ends. P4's 409 is gone.
+- Single instance is enforced by an OS lock on `<data dir>/astra.lock`. Moving to several replicas (or Postgres) needs
+  shared scheduling, distributed run ownership and a different recovery story.
+- Webhooks still fit later: `request_sync(slug, "webhook")` is the call a verified webhook would make.
 
 ---
 
@@ -414,8 +441,8 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 | Question | Needed by |
 |---|---|
 | Case-sensitivity of ADO paths for the required root items | P3 |
-| Where the SQLite file lives in deployment, and whether it should be Postgres instead | P4 |
-| Nightly sync time and time zone | P5 |
+| Where the SQLite file lives in deployment, and whether it should be Postgres instead | P4: **settled for now**: SQLite at `data/astra.db`, `ASTRA_DB_PATH` override, single app instance; Postgres later (expect transaction, locking and migration work, not only config) |
+| Nightly sync time and time zone | P5: **settled**: 02:00 UTC by default, `ASTRA_SYNC_DAILY_AT` override (named time zones would need `tzdata` on Windows) |
 | Real template doc types and filenames, and who owns `golden.yaml` | P7 |
 | ASTRA stage names (the `stages` vocabulary) | P8 |
 | `nomenclature.md` format (for the validator) | P9 |

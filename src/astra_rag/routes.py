@@ -1,15 +1,15 @@
-from pathlib import Path
-
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from .config import REQUIRED_FILES, REQUIRED_FOLDERS, TEMPLATES_DIR
-from .services import cloner, github_client, repo_ref, token_store, validator
+from .services import connections, sync
 from .services.errors import AppError
 from .services.ingestion import pipeline
-from .services.ingestion.models import RepoContext
+from .services.registry import repos, runs
+from .services.registry.rules import check_project_id
+from .services.sync import scheduler
 
 router = APIRouter()
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
@@ -18,6 +18,15 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 class RepoRequest(BaseModel):
     url: str = ""
     token: str = ""
+    branch: str = ""  # blank = the saved tracked branch, else the host's default branch
+
+
+class RepoSettings(BaseModel):
+    tracked_branch: str
+
+
+class BindingRequest(BaseModel):
+    repo_slug: str
 
 
 class SearchRequest(BaseModel):
@@ -36,43 +45,61 @@ def index(request: Request):
     )
 
 
-# Plain `def` so FastAPI runs these blocking network/git calls in a worker thread.
+# Plain `def` so FastAPI runs these blocking network/git/SQLite calls in a worker thread.
 @router.post("/api/validate-and-clone")
-def validate_and_clone(body: RepoRequest, background: BackgroundTasks):
-    repo = repo_ref.parse_repo_url(body.url)
-    typed = body.token.strip()
-    token = typed or token_store.get_token(repo)
-    if not token:
-        raise AppError("A personal access token is required (none is saved for this repository).")
-
-    missing = validator.find_missing(github_client.list_root(repo, token))
-    if missing:
-        return JSONResponse(
-            {"ok": False, "missing": missing,
-             "error": "Repository is missing required items: " + ", ".join(missing)},
-            status_code=422,
-        )
-
-    clone = cloner.clone_repo(repo, token)
-    if typed:  # only a token that just worked is remembered
-        token_store.save(repo, body.url, typed)
-    context = RepoContext(repo, clone.branch, clone.commit_sha)
-    pipeline.mark_queued(context)
-    background.add_task(pipeline.run_ingestion, context, Path(clone.path))
+def validate_and_clone(body: RepoRequest):
+    try:
+        done = connections.connect(body.url, body.token, body.branch)
+    except connections.MissingItemsError as exc:
+        return JSONResponse({"ok": False, "missing": exc.missing, "token_saved": exc.token_saved,
+                             "error": exc.message}, status_code=422)
+    repo = done.context.ref
+    if done.run_id is None:
+        state, message = "pending", f"Connected {repo.full_name}; a sync is running, so another one follows it."
+    else:
+        sync.start(done.run_id)
+        state, message = "queued", f"Connected {repo.full_name}; sync queued."
     return {
-        "ok": True, "message": f"Cloned {repo.full_name}", "path": clone.path,
-        "commit_sha": clone.commit_sha,
-        "token_saved": bool(typed), "token_reused": not typed,
-        "ingestion": {"slug": repo.slug, "state": "queued"},
+        "ok": True, "message": message, "branch": done.context.branch, "commit_sha": done.context.commit_sha,
+        "token_saved": done.token_saved, "token_reused": not done.token_saved,
+        "ingestion": {"slug": repo.slug, "run_id": done.run_id, "state": state},
     }
 
 
 @router.get("/api/ingestion-status/{slug}")
 def ingestion_status(slug: str):
-    status = pipeline.get_status(slug)
+    status = runs.latest_run(slug)
     if status is None:
         raise AppError("No ingestion has been started for this repository.", 404)
     return {"ok": True, **status}
+
+
+@router.get("/api/repos")
+def list_repos():
+    return {"ok": True, "repos": repos.list_repos(), "schedule": scheduler.schedule()}
+
+
+@router.put("/api/repos/{slug}/settings")
+def repo_settings(slug: str, body: RepoSettings):
+    return {"ok": True, "repo": connections.change_branch(slug, body.tracked_branch)}
+
+
+@router.post("/api/repos/{slug}/sync")
+def sync_now(slug: str):
+    return {"ok": True, "slug": slug, **sync.request_sync(slug, "manual")}
+
+
+@router.put("/api/projects/{project_id}/binding")
+def bind_project(project_id: str, body: BindingRequest):
+    return {"ok": True, "project": repos.bind_project(check_project_id(project_id), body.repo_slug)}
+
+
+@router.get("/api/projects/{project_id}")
+def get_project(project_id: str):
+    project = repos.get_project(check_project_id(project_id))
+    if project is None:
+        raise AppError("This project is not bound to a repository.", 404)
+    return {"ok": True, "project": project}
 
 
 @router.post("/api/search")

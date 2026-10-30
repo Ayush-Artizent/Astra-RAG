@@ -16,9 +16,11 @@ from astra_rag.services.ingestion.csv_chunker import chunk_csv
 from astra_rag.services.ingestion.loader import load_documents
 from astra_rag.services.ingestion.md_chunker import chunk_markdown
 from astra_rag.services.ingestion.models import Document, RepoContext
-from astra_rag.services.ingestion.store import QdrantStore, collection_name, point_id
+from astra_rag.services.ingestion.store import QdrantStore, collection_name, point_id, version_name
 from astra_rag.services.ingestion.tokens import count_tokens
-from astra_rag.services.repo_ref import parse_repo_url
+from astra_rag.services.registry import repos, runs
+from astra_rag.services.sources.registry import parse_repo_url
+from tests.helpers import use_temp_registry
 
 REPO = RepoContext(parse_repo_url("https://github.com/acme/golden"), "main", "abc123def456")
 SLUG = "github.com__acme__golden"
@@ -347,15 +349,44 @@ class HorizontalRuleTests(unittest.TestCase):
         self.assertNotIn("---", chunks[0].embed_text)
 
 
+class StoreVersionTests(unittest.TestCase):
+    def setUp(self):
+        self.store = QdrantStore(QdrantClient(":memory:"))
+
+    def test_version_names_belong_to_one_repo_only(self):
+        from astra_rag.services.ingestion.store import version_run_id
+        name = version_name(SLUG, 12)
+        self.assertEqual(name, "astra_v12__github.com__acme__golden")
+        self.assertEqual(version_run_id(SLUG, name), 12)
+        for other in (collection_name(SLUG), version_name(SLUG + "__v3", 12), "astra_v1x__github.com__acme__golden",
+                      None):
+            self.assertIsNone(version_run_id(SLUG, other))
+
+    def test_swap_is_one_step_and_the_live_version_is_never_deleted(self):
+        alias = collection_name(SLUG)
+        for run_id in (1, 2, 3):
+            self.store.create(version_name(SLUG, run_id), 4)
+        self.store.swap_alias(alias, version_name(SLUG, 1))
+        self.store.swap_alias(alias, version_name(SLUG, 2))
+        self.assertEqual(self.store.alias_target(alias), version_name(SLUG, 2))
+        self.assertFalse(self.store.delete_version(SLUG, version_name(SLUG, 2)))
+        self.assertEqual(self.store.drop_versions(SLUG, keep=None), [version_name(SLUG, 1), version_name(SLUG, 3)])
+        self.assertEqual(self.store.versions(SLUG), [version_name(SLUG, 2)])
+        with self.assertRaises(ValueError):
+            self.store.delete_version(SLUG, alias)
+
+
 class PipelineTests(unittest.TestCase):
     def setUp(self):
+        use_temp_registry(self)
         self.store = QdrantStore(QdrantClient(":memory:"))
         self.embedder = FakeEmbedder()
 
-    def run_pipeline(self, repo_dir=FIXTURE_REPO):
-        pipeline.mark_queued(REPO)
-        pipeline.run_ingestion(REPO, repo_dir, self.embedder, self.store)
-        return pipeline.get_status(SLUG)
+    def run_pipeline(self, repo_dir=FIXTURE_REPO, embedder=None, store=None):
+        run_id = runs.register_and_queue(REPO.ref, "https://github.com/acme/golden", REPO.branch, "env:X")
+        runs.update_run(run_id, commit_sha=REPO.commit_sha)
+        pipeline.run_ingestion(run_id, REPO, repo_dir, embedder or self.embedder, store or self.store)
+        return runs.latest_run(SLUG)
 
     def test_end_to_end_ingest_and_hybrid_search(self):
         status = self.run_pipeline()
@@ -377,11 +408,51 @@ class PipelineTests(unittest.TestCase):
                                   embedder=self.embedder, store=self.store)
         self.assertTrue(all(h["folder_top"] == "hr" for h in hr_hits))
 
-    def test_reingest_replaces_the_collection(self):
+    def test_reingest_builds_a_new_version_and_swaps_the_alias(self):
         first = self.run_pipeline()
+        alias = collection_name(SLUG)
+        self.assertEqual(self.store.alias_target(alias), version_name(SLUG, first["run_id"]))
+        self.assertEqual(first["collection"], version_name(SLUG, first["run_id"]))
         second = self.run_pipeline()
-        self.assertEqual(self.store.count(collection_name(SLUG)), second["chunks_total"])
+        self.assertEqual(self.store.alias_target(alias), version_name(SLUG, second["run_id"]))
+        self.assertEqual(self.store.versions(SLUG), [version_name(SLUG, second["run_id"])])  # old one dropped
+        self.assertEqual(self.store.count(alias), second["chunks_total"])
         self.assertEqual(first["chunks_total"], second["chunks_total"])
+        self.assertEqual(repos.get_repo(SLUG)["indexed"]["collection"], version_name(SLUG, second["run_id"]))
+
+    def test_search_keeps_serving_the_old_index_throughout_a_rebuild(self):
+        self.run_pipeline()
+        seen, test = [], self
+
+        class Watching(FakeEmbedder):
+            def embed_passages(self, texts):
+                seen.append(pipeline.search(SLUG, "annual leave", embedder=test.embedder, store=test.store))
+                return super().embed_passages(texts)
+
+        self.run_pipeline(embedder=Watching())
+        self.assertTrue(seen)
+        self.assertTrue(all(hits for hits in seen))  # never empty mid-rebuild
+
+    def test_a_pre_alias_collection_is_replaced_by_the_alias(self):
+        alias = collection_name(SLUG)
+        self.store.create(alias, self.embedder.dense_dim)  # how P4 and earlier stored the index
+        status = self.run_pipeline()
+        self.assertNotIn(alias, self.store.collections())
+        self.assertEqual(self.store.alias_target(alias), version_name(SLUG, status["run_id"]))
+        self.assertTrue(pipeline.search(SLUG, "annual leave", embedder=self.embedder, store=self.store))
+
+    def test_a_short_count_fails_the_run_and_keeps_the_old_index(self):
+        good = self.run_pipeline()
+
+        class Lossy(QdrantStore):
+            def upsert(self, collection, chunks, dense, sparse):
+                super().upsert(collection, chunks[:-1], dense[:-1], sparse[:-1])
+
+        status = self.run_pipeline(store=Lossy(self.store.client))
+        self.assertEqual(status["state"], "failed")
+        self.assertIn("Index check failed", status["error"])
+        self.assertEqual(self.store.alias_target(collection_name(SLUG)), version_name(SLUG, good["run_id"]))
+        self.assertEqual(self.store.versions(SLUG), [version_name(SLUG, good["run_id"])])
 
     def test_empty_project_data_is_done_with_warning(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -396,11 +467,34 @@ class PipelineTests(unittest.TestCase):
             def ping(self):
                 raise AppError("Could not reach Qdrant.", 503)
 
-        pipeline.mark_queued(REPO)
-        pipeline.run_ingestion(REPO, FIXTURE_REPO, self.embedder, Down(QdrantClient(":memory:")))
-        status = pipeline.get_status(SLUG)
+        status = self.run_pipeline(store=Down(QdrantClient(":memory:")))
         self.assertEqual(status["state"], "failed")
         self.assertIn("Qdrant", status["error"])
+        self.assertEqual(repos.get_repo(SLUG)["index_state"], "none")
+
+    def test_failure_mid_rebuild_keeps_the_old_index_serving(self):
+        good = self.run_pipeline()
+
+        class Broken(FakeEmbedder):  # fails after the new version was created
+            def embed_passages(self, texts):
+                raise RuntimeError("model crashed")
+
+        status = self.run_pipeline(embedder=Broken())
+        self.assertEqual(status["state"], "failed")
+        self.assertEqual(status["error"], "Unexpected error during ingestion (RuntimeError).")
+        self.assertEqual(status["chunks_total"], good["chunks_total"])  # progress up to the failure is kept
+        repo = repos.get_repo(SLUG)
+        self.assertEqual(repo["indexed"]["run_id"], good["run_id"])
+        self.assertEqual((repo["index_state"], repo["needs_rebuild"]), ("ready", False))
+        self.assertEqual(self.store.alias_target(collection_name(SLUG)), version_name(SLUG, good["run_id"]))
+        self.assertEqual(self.store.versions(SLUG), [version_name(SLUG, good["run_id"])])  # half-built one gone
+        self.assertEqual(self.store.count(collection_name(SLUG)), good["chunks_total"])
+
+    def test_done_run_records_the_indexed_commit(self):
+        status = self.run_pipeline()
+        repo = repos.get_repo(SLUG)
+        self.assertEqual((repo["index_state"], repo["indexed"]["commit_sha"]), ("ready", REPO.commit_sha))
+        self.assertEqual(status["started_at"] <= status["finished_at"], True)
 
     def test_search_without_index_or_query_errors(self):
         with self.assertRaises(AppError):

@@ -1,7 +1,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f3f4f6;
        font: 16px/1.5 system-ui, sans-serif; color: #111827; }
-.card { width: min(480px, 92vw); background: #fff; padding: 2rem; border-radius: 12px;
+.card { width: min(760px, 92vw); background: #fff; padding: 2rem; border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,.08); }
 h1 { margin: 0 0 .5rem; font-size: 1.4rem; }
 .hint { color: #4b5563; font-size: .9rem; }
@@ -15,3 +15,12 @@ button:disabled { opacity: .6; cursor: wait; }
 #result.ok, #ingestion.ok { background: #ecfdf5; color: #065f46; }
 #result.error, #ingestion.error { background: #fef2f2; color: #991b1b; }
 #result ul, #ingestion ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+h2 { margin: 1.75rem 0 .5rem; font-size: 1.05rem; }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+th, td { text-align: left; padding: .35rem .4rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+td.repo { word-break: break-all; }
+.badge { display: inline-block; margin-top: .2rem; padding: 0 6px; border-radius: 4px; font-size: .75rem;
+         background: #fef3c7; color: #92400e; }
+.badge.error { background: #fef2f2; color: #991b1b; }
+.sub { display: block; color: #6b7280; font-size: .75rem; }
+button.small { width: auto; margin: 0; padding: .25rem .6rem; font-size: .8rem; white-space: nowrap; }

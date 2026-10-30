@@ -1,9 +1,9 @@
 """Turns a Document into Chunks and attaches the traceability metadata."""
 import hashlib
 from pathlib import PurePosixPath
-from urllib.parse import quote
 
 from ...config import PROJECT_DATA_DIR_NAME
+from ..sources import adapter_for
 from .csv_chunker import chunk_csv
 from .doc_meta import DocMeta, extract_metadata, open_items
 from .md_chunker import RawChunk, chunk_markdown, document_title
@@ -68,6 +68,6 @@ def _embed_text(title: str, raw: RawChunk, meta: DocMeta) -> str:
 
 
 def _source_url(repo: RepoContext, path: str, start: int | None, end: int | None) -> str:
-    ref = repo.commit_sha or repo.branch
-    url = f"https://{repo.host}/{repo.ref.full_name}/blob/{quote(ref)}/{quote(path)}"
-    return f"{url}#L{start}-L{end}" if start is not None else url
+    lines = (start, end) if start is not None else None
+    # Pin the link to the commit when known, so it keeps pointing at the text that was indexed.
+    return adapter_for(repo.ref).citation_url(path, repo.commit_sha or repo.branch, lines)

@@ -26,7 +26,7 @@
 | P4 | Repo registry, bindings and tracked branch | M | P3 | Persistent repos, project→repo binding, branch config, persistent status |
 | P5 | Sync: nightly + Sync now, alias swap | M | P4 | Index follows the tracked branch with no empty-index window |
 | P6 | Structure- and metadata-aware ingestion | S | P0 | Per-section and per-row chunks, header metadata, open items (done); front-matter in payload (todo) |
-| P7 | Golden catalog (`golden.yaml`, rule sections, templates) | L | P4 | Live catalog of rules and templates, plus warnings |
+| P7 | Golden catalog (`golden.yaml`, rule sections, templates) | L | P4 (live reads also need P2) | Live catalog of rules and templates, plus warnings |
 | P8 | Rule selection and request inference | M | P7 | always / scope / relevance selection, doc type, stage and tag inference |
 | P9 | `get_context` API, sub-queries, rerank, tools | L | P5, P6, P8 | The combined context response and Claude tool schemas |
 | P10 | GitLab and Bitbucket adapters | M | P2 (any time after) | Two more hosts |
@@ -118,7 +118,7 @@ P6 depends only on P0, so it can be done early if someone is free. P10 can run i
   - P2 done: `parse_repo_url` now lives in `sources/registry.py`; `repo_ref.py` keeps only `RepoRef` and `host_kind`.
   - P3 hint: add the new kind to both `config.SUPPORTED_HOST_KINDS` and `registry.ADAPTERS` (a test checks they match).
 
-**Out of scope:** new hosts, ETag caching (P7).
+**Out of scope:** new hosts, ETag caching (P7 left it out too; see the P7 note).
 
 **Tests**
 - The GitHub adapter passes the contract suite.
@@ -291,6 +291,7 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 ---
 
 ## P7: Golden catalog (`golden.yaml`, rule sections, templates)
+> **Done 2026-10-30.** Delivered as planned, plus `GET /api/repos/{slug}/catalog` (so a repo with no bound project can be inspected from the UI) and a `stale` flag when the host is down. ETag conditional requests were not added: the head-sha check plus blob-sha body reuse already avoids re-downloading unchanged files, so a conditional head request is left for when rate limits show up.
 **Goal:** a live, cached catalog of the repo's rules and templates (§A, §B1-2, §D5). Nothing is selected yet.
 
 **Scope**
@@ -443,7 +444,7 @@ Note: a CSV now costs one vector per row, bounded by `CSV_MAX_ROWS`; add a size 
 | Case-sensitivity of ADO paths for the required root items | P3 |
 | Where the SQLite file lives in deployment, and whether it should be Postgres instead | P4: **settled for now**: SQLite at `data/astra.db`, `ASTRA_DB_PATH` override, single app instance; Postgres later (expect transaction, locking and migration work, not only config) |
 | Nightly sync time and time zone | P5: **settled**: 02:00 UTC by default, `ASTRA_SYNC_DAILY_AT` override (named time zones would need `tzdata` on Windows) |
-| Real template doc types and filenames, and who owns `golden.yaml` | P7 |
+| Real template doc types and filenames, and who owns `golden.yaml` (P7 shipped with a guess: file/folder name uppercased unless `doc_types` names it) | P7 (still open; confirm before P8) |
 | ASTRA stage names (the `stages` vocabulary) | P8 |
 | `nomenclature.md` format (for the validator) | P9 |
 | API authentication for deployed use | Before the first deployment |

@@ -59,7 +59,7 @@ class GitHubAdapter(SourceAdapter):
         if not isinstance(data, list):
             raise AppError("That path could not be read as a folder." if clean
                            else "The repository root could not be read as a folder.", 502)
-        return [{"name": e["name"], "type": e["type"]} for e in data]
+        return [_entry(e) for e in data]
 
     def read_file(self, path: str, ref: str | None = None) -> bytes:
         url = self._repo_url(f"/contents/{quote(path.strip('/'))}{self._at(ref)}")
@@ -86,6 +86,13 @@ class GitHubAdapter(SourceAdapter):
     def citation_url(self, path: str, ref: str, lines: tuple[int, int] | None = None) -> str:
         url = f"https://{self.ref.host}/{self.ref.full_name}/blob/{quote(ref)}/{quote(path)}"
         return f"{url}#L{lines[0]}-L{lines[1]}" if lines else url
+
+
+def _entry(item: dict) -> DirEntry:
+    entry: DirEntry = {"name": item["name"], "type": item["type"]}
+    if isinstance(item.get("sha"), str):
+        entry["sha"] = item["sha"]
+    return entry
 
 
 def _field(data, *keys):

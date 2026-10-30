@@ -24,7 +24,7 @@ Pure refactors with no visible change still get a CHANGELOG line.
 - Add dependencies with `uv add <pkg>` (keeps `pyproject.toml` and `uv.lock` in sync).
 
 ## Code conventions
-- Business logic lives in `services/`; `routes.py` stays thin. New features get their own subpackage (`services/ingestion/`, `services/tools/`).
+- Business logic lives in `services/`; `routes.py` stays thin. New features get their own subpackage (`services/ingestion/`, `services/catalog/`, `services/tools/`).
 - Constants and required-structure rules live in `config.py`, not scattered.
 - User-facing failures raise `AppError(message, status)`; messages must be safe to show.
 - Plain `def` for blocking I/O routes (runs in a worker thread); don't block the event loop.
@@ -38,7 +38,7 @@ Pure refactors with no visible change still get a CHANGELOG line.
 ## Domain rules
 - Required root items are case-sensitive and defined only in `config.py` (`REQUIRED_FILES`, `REQUIRED_FOLDERS`).
 - A repeat clone/ingest of the same repo replaces the previous copy.
-- The policies/template tool reads from GitHub directly, not from the local clone.
+- The policies/template tool reads from the host directly (via `services/catalog`), not from the local clone.
 
 ## Git
 - Work on a feature branch (currently `goldan-repo-re-guru`; delivery follows `plan/phases.md`, one phase per PR); `main` is the PR target.

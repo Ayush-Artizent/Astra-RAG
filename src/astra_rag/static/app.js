@@ -5,6 +5,9 @@ const ingestion = document.getElementById("ingestion");
 const reposSection = document.getElementById("repos");
 const repoRows = document.getElementById("repo-rows");
 const scheduleLine = document.getElementById("schedule");
+const catalogSection = document.getElementById("catalog");
+const catalogTitle = document.getElementById("catalog-title");
+const catalogBody = document.getElementById("catalog-body");
 
 const SYNC_LABELS = {
   syncing: "syncing…", queued: "queued", pending: "another sync follows the current one",
@@ -64,6 +67,12 @@ async function loadRepos() {
     button.disabled = r.sync_status === "syncing" || r.sync_status === "queued";
     button.addEventListener("click", () => syncNow(r.slug, button));
     action.append(button);
+    const rules = cell(tr, "");
+    const rulesButton = document.createElement("button");
+    rulesButton.className = "small";
+    rulesButton.textContent = "Rules";
+    rulesButton.addEventListener("click", () => showCatalog(r.slug, rulesButton));
+    rules.append(rulesButton);
     repoRows.append(tr);
   });
   reposSection.hidden = data.repos.length === 0;
@@ -72,6 +81,58 @@ async function loadRepos() {
     ? `Checked automatically every night at ${s.daily_at_utc} UTC (next: ${when(s.next_check_at)}). ` +
       "Changes can take up to a day to appear; use Sync now to pick them up straight away."
     : "Automatic nightly checks are off on this server; use Sync now to pick up changes.";
+}
+
+function line(parent, tag, text, cls) {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  el.textContent = text;
+  parent.append(el);
+  return el;
+}
+
+function list(parent, items) {
+  const ul = document.createElement("ul");
+  items.forEach((text) => line(ul, "li", text));
+  parent.append(ul);
+}
+
+async function showCatalog(slug, button) {
+  button.disabled = true;
+  catalogSection.hidden = false;
+  catalogTitle.textContent = `Rules and templates: ${slug}`;
+  catalogBody.replaceChildren();
+  line(catalogBody, "p", "Reading the repository…", "hint");
+  try {
+    const c = await (await fetch(`/api/repos/${encodeURIComponent(slug)}/catalog`)).json();
+    catalogBody.replaceChildren();
+    if (!c.ok) {
+      line(catalogBody, "div", c.error, "error");
+      return;
+    }
+    line(catalogBody, "p", `${c.branch} @ ${c.head_sha.slice(0, 7)}` +
+      (c.manifest_present ? "" : " (no golden.yaml: using conventions)") +
+      (c.stale ? " (host unreachable: showing the last catalog read)" : ""), "hint");
+    if (c.warnings.length) {
+      const box = line(catalogBody, "div", `${c.warnings.length} warning(s)`, "warn");
+      list(box, c.warnings.map((w) => w.where ? `${w.message} (${w.where})` : w.message));
+    }
+    const counts = { always: 0, scope: 0, relevance: 0 };
+    c.rules.forEach((r) => { counts[r.selection] += 1; });
+    line(catalogBody, "p", `Rule sections: ${c.rules.length} (${counts.always} always, ${counts.scope} scoped, ` +
+      `${counts.relevance} by relevance).`);
+    const byType = {};
+    c.templates.forEach((t) => { (byType[t.doc_type] = byType[t.doc_type] || []).push(t); });
+    const types = Object.keys(byType);
+    line(catalogBody, "p", types.length ? "Templates:" : "No templates found.");
+    list(catalogBody, types.map((t) => `${t}: ` + byType[t].map(
+      (v) => (v.variant || "default file") + (v.default ? " (default)" : "")).join(", ")));
+  } catch {
+    catalogBody.replaceChildren();
+    line(catalogBody, "div", "Could not reach the server.", "error");
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function addBadge(td, text, kind) {

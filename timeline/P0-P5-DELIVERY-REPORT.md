@@ -1,6 +1,7 @@
 # Delivery report: phases P0 to P5
 
 _Written 2026-10-28 against branch `goldan-repo-re-guru`. P0-P4 are commits `f7ed92a` to `36cd57c`; **P5 is in the working tree and not committed yet**._
+_Later work is not covered here: P7 (golden catalog) was delivered 2026-10-30, see `timeline/CHANGELOG.md` and `timeline/CURRENT_STATE.md`._
 _Plan being checked: [plan/phases.md](../plan/phases.md). Test run on the working tree: **177 tests, all pass, 1 skipped** (a symlink test that cannot run on Windows). At `36cd57c` (end of P4) it was 145; at `4607ba9` (end of P3) 105._
 
 This report explains, in plain English, what has been built in phases P0 to P5, how each part works, and

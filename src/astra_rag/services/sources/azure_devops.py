@@ -91,7 +91,10 @@ class AzureDevOpsAdapter(SourceAdapter):
             if not item_path or item_path == clean:  # the first result is the folder itself
                 continue
             kind = _OBJECT_TYPES.get(item.get("gitObjectType"), "dir" if item.get("isFolder") else "file")
-            entries.append({"name": item_path.rsplit("/", 1)[-1], "type": kind})
+            entry: DirEntry = {"name": item_path.rsplit("/", 1)[-1], "type": kind}
+            if isinstance(item.get("objectId"), str):
+                entry["sha"] = item["objectId"]
+            entries.append(entry)
         return entries
 
     def read_file(self, path: str, ref: str | None = None) -> bytes:

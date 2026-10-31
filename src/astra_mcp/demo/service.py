@@ -56,6 +56,11 @@ async def status(config: Config, session: McpSession) -> dict:
 STATUS_TOOL = "code_index_status"
 
 
+def plane_of(name: str) -> str:
+    """Which plane answers this tool, for the page's badge. Status is the code plane's too."""
+    return "code" if name in CODE_TOOLS else "documents"
+
+
 def kind_of(name: str) -> str:
     """Which renderer the page should use. Status is its own shape, not a query result."""
     if name == STATUS_TOOL:

@@ -5,7 +5,7 @@ import unittest
 from fastapi.testclient import TestClient
 
 from astra_mcp.demo import create_app
-from astra_mcp.demo.service import kind_of, split_result
+from astra_mcp.demo.service import kind_of, plane_of, split_result
 
 from ..mcp.fake_plane import a_config
 from .test_routes import StubSession
@@ -40,6 +40,11 @@ class SplitTests(unittest.TestCase):
         out = split_result("find_callers", {})
         self.assertIsNone(out["payload"])
         self.assertEqual(out["text"], "")
+
+    def test_the_status_tool_belongs_to_the_code_plane(self):
+        self.assertEqual(plane_of("code_index_status"), "code")
+        self.assertEqual(plane_of("find_callers"), "code")
+        self.assertEqual(plane_of("search_project_data"), "documents")
 
     def test_the_kind_picks_the_renderer(self):
         self.assertEqual(kind_of("find_callers"), "code")

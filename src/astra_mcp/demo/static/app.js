@@ -6,9 +6,6 @@ const toolsBox = document.getElementById("tools");
 const toolCount = document.getElementById("tool-count");
 const toolsNote = document.getElementById("tools-note");
 
-// Named from the tool list, so the page does not keep its own copy of which plane owns what.
-const CODE_TOOLS = ["find_symbol", "find_callers", "analyze_impact", "trace_flow", "code_index_status"];
-
 function dot(el, up, text) {
   el.replaceChildren();
   const mark = document.createElement("span");
@@ -51,7 +48,7 @@ function toolCard(tool) {
   box.className = "tool";
   const plane = document.createElement("span");
   plane.className = "plane";
-  plane.textContent = CODE_TOOLS.includes(tool.name) ? "code" : "documents";
+  plane.textContent = tool.plane || "";  // the server says which plane answers it
   const title = document.createElement("h3");
   title.textContent = tool.name;
   const description = document.createElement("p");
@@ -81,10 +78,10 @@ async function loadTools() {
   tools.forEach((t) => toolsBox.append(toolCard(t)));
   fillRunner(tools);
   // A plane that is down means fewer tools, not an error: say so rather than leaving a short list.
-  if (!tools.some((t) => CODE_TOOLS.includes(t.name))) {
+  if (!tools.some((t) => t.plane === "code")) {
     toolsNote.hidden = false;
     toolsNote.textContent = "No code tools — the code plane is not answering.";
-  } else if (tools.every((t) => CODE_TOOLS.includes(t.name))) {
+  } else if (tools.every((t) => t.plane === "code")) {
     toolsNote.hidden = false;
     toolsNote.textContent = "No document tools — the document plane is not answering.";
   }

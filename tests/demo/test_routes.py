@@ -74,6 +74,11 @@ class RoutesTests(unittest.TestCase):
         self.assertEqual([t["name"] for t in body["tools"]], ["find_callers", "get_document_context"])
         self.assertEqual(body["tools"][0]["inputSchema"]["required"], ["symbol"])
 
+    def test_each_tool_says_which_plane_answers_it(self):
+        # So the page needs no list of its own to keep in step with the code plane's modes.
+        planes = {t["name"]: t["plane"] for t in a_client().get("/api/tools").json()["tools"]}
+        self.assertEqual(planes, {"find_callers": "code", "get_document_context": "documents"})
+
     def test_a_session_failure_is_reported_not_raised(self):
         body = a_client(StubSession(fails="The MCP server is not running.")).get("/api/tools").json()
         self.assertFalse(body["ok"])

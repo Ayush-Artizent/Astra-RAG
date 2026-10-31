@@ -40,7 +40,8 @@ async def status(request: Request):
 def tools(request: Request):
     _, session = _state(request)
     try:
-        return {"ok": True, "tools": session.list_tools(), "server": session.server_info,
+        tools = [{**tool, "plane": service.plane_of(tool.get("name", ""))} for tool in session.list_tools()]
+        return {"ok": True, "tools": tools, "server": session.server_info,
                 "instructions": session.instructions}
     except SessionError as err:
         return {"ok": False, "error": str(err)}

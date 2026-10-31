@@ -2,7 +2,8 @@
 
 > **Status: draft for team discussion (2026-10-30).** Branch `orch`.
 > **Owner:** RAG team. DevX teams consume the server; their integration is out of scope here.
-> **Depends on:** the doc plane (branch `goldan-repo-re-p9`, P9 tools) and the code plane (branch `master`,
+> **Depends on:** the doc plane (P9 tools; branch `goldan-repo-re-p9`, since merged into
+> `goldan-repo-re` and deleted) and the code plane (branch `master`,
 > `code-adapter/`). Neither plane changes for this work.
 
 ## 1. Goal and scope
@@ -25,7 +26,7 @@ carries is **API drift**, which §3 decisions 5 and 8 are the answer to.
 
 | Plane | Branch | State |
 |---|---|---|
-| Doc | `goldan-repo-re-p9` | Connect, ingest, catalog, selection, `/api/context`, **and an LLM tool layer**: `GET /api/tools?project_id=` returns Claude-format schemas (with a live `doc_type` enum from the project's catalog), `POST /api/tools/invoke` runs one. Tools: `get_document_context`, `search_project_data`. |
+| Doc | `goldan-repo-re` | Connect, ingest, catalog, selection, `/api/context`, **and an LLM tool layer**: `GET /api/tools?project_id=` returns Claude-format schemas (with a live `doc_type` enum from the project's catalog), `POST /api/tools/invoke` runs one. Tools: `get_document_context`, `search_project_data`. |
 | Code | `master` | Fastify adapter on `:8091`: four query modes (`lookup`, `flow`, `callers`, `impact`), symbol resolution with an ambiguity policy, `GET /status`, the job system (bootstrap, sync, reconcile, coalescing, idempotency keys, crash recovery), disk accounting, idle pruning, index-lag tracking, HMAC envelope verification, vitest suite. **No Python client.** |
 
 The two branches share ancestor `2f59c5b`, but `master` deleted the whole Python app. **Never `git merge master`

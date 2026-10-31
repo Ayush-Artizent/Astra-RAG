@@ -1,5 +1,12 @@
 # Changelog (newest first)
 
+## 2026-10-31 (staleness check)
+- Checked what this branch carries from each plane. **The vendored code contract is current**: `code-adapter.openapi.yaml` is unchanged between the commit in `contracts/SOURCE.md` and `master`'s head, so the code tools are built from what the adapter serves today.
+- **Removed a duplicate that would have gone stale:** the demo page kept its own list of the code tools' names, to badge each card by plane. The server already knows, so `/api/tools` now says `plane` for each tool and the page reads it. A mode added or renamed on the code plane no longer needs a matching edit in JavaScript.
+- Corrected references to `goldan-repo-re-p9`, the branch this one was cut from: it has since been merged (PR #16) into `goldan-repo-re` and deleted.
+- **Known and not acted on:** the document plane source here is one commit behind `goldan-repo-re` (`f855ee0`, "pipline modified and retirival quality improved"), which rewrites retrieval, adds `/api/health/models` and lets `connect` bind a project. Our tools API is unaffected — the only change there is an added `below_threshold` field — but the payload the demo's document renderer will meet comes from that newer pipeline. Merging it was deliberately deferred. Also note `main` does **not** contain the document plane work, so `goldan-repo-re` and not `main` looks like the integration branch.
+- Tests: 371 (1 skipped on Windows), 2 new.
+
 ## 2026-10-31 (D2)
 - **D2 done (running a tool from the demo page).** Pick a tool, fill a form built from its own JSON schema, and see the answer in two parts. `POST /api/call` goes through the same MCP session, and `service.split_result` separates the note from the payload the way the server sends them — a result with more than one content block has a note in front; an error result carries a message where JSON would be, so `payload` is null while `text` still holds something worth showing.
 - **The form is generated from the schema**, so it stays right when a plane changes one: an enum becomes a select, a boolean a checkbox, an integer a number input carrying the contract's own minimum and maximum, a long string a textarea, an array a comma-separated field. Defaults appear as placeholders, required fields are marked and sorted first, and each field shows the description the plane wrote. Blank fields are omitted rather than sent empty.

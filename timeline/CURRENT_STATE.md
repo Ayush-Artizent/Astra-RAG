@@ -1,6 +1,7 @@
 # Current state
 
-_Last updated: 2026-10-30 (branch `orch`, cut from `goldan-repo-re-p9`: P0-P5, P7, P8, P9 and the chunking part
+_Last updated: 2026-10-31 (branch `orch`, cut from `goldan-repo-re-p9`, since merged into `goldan-repo-re`
+and deleted: P0-P5, P7, P8, P9 and the chunking part
 of P6 done, see `plan/phases.md`; plus MCP server M0, see `plan/mcp-server-plan.md`)_
 
 ## What the app does today

@@ -1,0 +1,611 @@
+openapi: 3.0.3
+info:
+  title: ASTRA RAGaaS code adapter (internal)
+  version: 0.1.0-draft
+  description: |
+    DRAFT v0 for review. Internal HTTP contract between the query orchestrator (Python) and the
+    code adapter (Node, wraps CodeGraph 1.6.2). Not a public API.
+
+    Design references (ASTRA RAGaaS Architecture Design, Revision 3): F2, F4, F5, D3, D4, D6, A5,
+    section 3 (code plane), section 6 (isolation), section 7 (API).
+
+    Rules that hold for every operation:
+    - Org and project are taken ONLY from the signed envelope. They never appear in a path, query
+      string or body. The adapter builds storage paths from the envelope alone.
+    - Unknown request fields are rejected with 422 (error_code `invalid_field`, body names the field).
+    - A project that is not indexed yet returns 200 with `plane_status: not_ready`, not an error.
+    - Every code result carries `commit_sha` and `index_time`.
+    - Errors are RFC 9457 problem+json.
+
+    Findings from the Phase 0 spikes that shaped this draft are marked "(spike)".
+servers:
+  - url: http://127.0.0.1:8091
+    description: MVP local process
+security:
+  - envelope: []
+
+paths:
+  /internal/v1/code/query:
+    post:
+      operationId: codeQuery
+      summary: Query the project's code graph
+      description: |
+        Modes: `lookup`, `flow`, `callers`, `impact`.
+        Read-only, so retries are safe. A retry may return different results if a sync finished in
+        between; compare `commit_sha`.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CodeQueryRequest' }
+            examples:
+              lookup:
+                value: { mode: lookup, symbols: ["TokenService.issue"], keywords: ["token", "expiry"], path_prefix: "src/auth/", limit: 20 }
+              flow:
+                value: { mode: flow, symbols: ["AuthController.login", "TokenService.issue"] }
+              callers:
+                value: { mode: callers, symbols: ["TokenService.issue"], depth: 2 }
+      responses:
+        '200':
+          description: Query result, possibly empty or not_ready.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeQueryResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Invalid' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /internal/v1/code/status:
+    get:
+      operationId: codeStatus
+      summary: Health and freshness of the project's code index
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Index status.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeStatus' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /internal/v1/code/jobs:
+    post:
+      operationId: codeJobCreate
+      summary: Queue a bootstrap or sync job
+      description: |
+        Job types:
+        - `bootstrap` clones the repo (shallow) and builds the first index. Needs scope `project:admin`.
+          Refused with 409 `job_conflict` when the project is already bootstrapped or a bootstrap is queued
+          or running. Rebuilding an existing project is not done through this call.
+        - `sync` moves the working tree to `commit_sha` and runs an incremental sync (D4). Needs scope
+          `code:sync`. Refused with 409 `job_conflict` when the project has not been bootstrapped.
+        - `reconcile` brings one project back in line with reality. Needs scope `code:sync`; refused with 409
+          `job_conflict` when the project has not been bootstrapped. The adapter also queues one for every
+          project on a schedule, because a push webhook can be missed. It: rebuilds a project whose folder or
+          index is damaged (as a bootstrap job); compares the remote branch head with the commit the index
+          reflects and queues a sync if the index is behind; runs `git gc` when loose git objects pile up;
+          measures disk use; and, only if the deployment sets an idle period, deletes a project nobody has
+          queried for that long. At most one reconcile is active per project: asking again returns the one
+          already queued or running. `detail` on the finished job says what it did.
+
+        A `sync` for a project whose folder was pruned for being idle becomes a reconcile, which rebuilds it
+        from the newest commit, since there are no files to move.
+
+        Idempotent when `Idempotency-Key` is supplied: the same key with the same request returns the
+        same job, the same key with a different request is 409 `job_conflict`. A job that failed is returned
+        as it is, so a retry needs a new key.
+
+        A failed bootstrap leaves no folder and no repo record behind, so it can be retried. A failed sync
+        leaves the project on the last commit it indexed. If the adapter restarts while a job runs, that job
+        is marked failed and cleaned up the same way before anything queued starts.
+
+        Syncs for one project run one at a time and are coalesced: when a newer sync is accepted, older
+        syncs still `queued` finish as `superseded` with `coalesced_into` set to the newer job. A sync that
+        is already `running` is never interrupted (spike: a sync costs about a minute on a 3,000-file repo
+        whatever the number of changed files). Only one bootstrap runs at a time per adapter (spike:
+        Django bootstrap took about 7 minutes and about 2 GB of memory).
+
+        `repo_url` must be `https`, without embedded credentials, and not point at loopback or private
+        addresses. The deployment may also restrict it to an allow list of hosts. Violations are 422
+        `invalid_field` naming `repo_url`.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CodeJobRequest' }
+      responses:
+        '202':
+          description: Accepted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeJobAccepted' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Invalid' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /internal/v1/code/jobs/{job_id}:
+    get:
+      operationId: codeJobGet
+      summary: State of a job
+      description: |
+        Needs any of the scopes `query`, `code:sync` or `project:admin`. A job id from another org or
+        project is 404, never 403.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Job state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeJob' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /internal/v1/health:
+    get:
+      operationId: health
+      summary: Liveness and startup probe results
+      security: []
+      responses:
+        '200':
+          description: Adapter is up. Includes the WAL probe result (A4).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, codegraph_version, node_version, wal_probe]
+                properties:
+                  status: { type: string, enum: [ok, degraded] }
+                  codegraph_version: { type: string, example: "1.6.2" }
+                  node_version: { type: string, example: "v24.20.0" }
+                  wal_probe: { type: string, enum: [ok, failed], description: "Opens a file-backed scratch DB and checks journal_mode = wal. An in-memory DB reports `memory` and must not be used (spike)." }
+                  active_jobs: { type: integer }
+
+components:
+  securitySchemes:
+    envelope:
+      type: apiKey
+      in: header
+      name: X-Astra-Envelope
+      description: |
+        HMAC-signed internal envelope minted by the gateway: `{org_id, project_id, scopes, request_id,
+        iat, exp}`. Re-verified here on every call. Maximum lifetime 5 minutes, clock skew 30 s.
+        Required scopes: `query` for query and status, `code:sync` for jobs, `project:admin` for
+        bootstrap.
+
+  parameters:
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: Client uuid, echoed back in `request_id` and in logs and traces.
+      schema: { type: string, maxLength: 64 }
+
+  schemas:
+    CodeQueryRequest:
+      type: object
+      additionalProperties: false
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: [lookup, flow, callers, impact]
+        symbols:
+          type: array
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 300 }
+          description: |
+            Symbol names. Qualified names may use `.`, `::` or `#` between segments (the adapter normalises
+            them to the library's `::`, spike). Dotted module paths work (`django.db.models.QuerySet.filter`).
+            To pin one symbol, prefix a file: `path/to/file.py::Class.method` (a path with `/` or a file
+            extension, then `::`). Prefer qualified names: about 9 to 11 percent of names are shared by more
+            than one symbol (spike). A bare name means the top-level symbol when one exists.
+        keywords:
+          type: array
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 100 }
+        path_prefix:
+          type: string
+          maxLength: 300
+          description: |
+            Restrict results to files under this relative path. Traversal strings are refused (`path_refused`).
+            For `lookup` it also narrows which symbol a name refers to. For `callers` and `impact` it only
+            filters the results: the query symbol itself may be defined anywhere.
+        depth:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: callers default 1, impact default 3. Ignored for lookup and flow.
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+        include_code:
+          type: boolean
+          default: true
+          description: Include source text per result, truncated to `max_code_chars`.
+        max_code_chars:
+          type: integer
+          minimum: 0
+          maximum: 20000
+          default: 2000
+        fallback_origin:
+          type: string
+          enum: [structured, analyzer]
+          default: structured
+          description: Set to `analyzer` by the orchestrator when symbols or keywords came from the rules-only fallback analyzer. Results are then reported as `degraded`.
+      description: |
+        Validation (error_code on 422):
+        lookup needs symbols or keywords (`no_search_terms`); flow needs at least 2 symbols
+        (`flow_needs_two_symbols`); callers and impact need exactly 1 symbol
+        (`callers_needs_one_symbol`, `impact_needs_one_symbol`); anything else unknown or out of range
+        is `invalid_field`.
+
+    CodeQueryResponse:
+      type: object
+      required: [request_id, plane_status, results, resolved_symbols, snapshot]
+      properties:
+        request_id: { type: string }
+        plane_status:
+          type: string
+          enum: [ok, degraded, not_ready]
+          description: |
+            `not_ready` when the project has no usable index yet. `degraded` when results came only from
+            fallback keywords (`fallback_origin: analyzer`) or when a requested symbol was ambiguous or unresolved.
+            `timeout` is decided by the orchestrator, never by the adapter.
+        snapshot: { $ref: '#/components/schemas/Snapshot' }
+        resolved_symbols:
+          type: array
+          items: { $ref: '#/components/schemas/ResolvedSymbol' }
+        results:
+          type: array
+          items: { $ref: '#/components/schemas/CodeResult' }
+        flow:
+          type: array
+          description: Present for mode flow. Ordered hops across consecutive symbol pairs.
+          items: { $ref: '#/components/schemas/FlowHop' }
+        truncated:
+          type: boolean
+          description: True when results were cut by `limit` or an internal cap.
+
+    Snapshot:
+      type: object
+      required: [commit_sha, index_time, index_state, sync_in_progress]
+      properties:
+        sync_in_progress:
+          type: boolean
+          description: |
+            True while a sync or bootstrap is running for the project. A sync moves the files to the new commit
+            before the index catches up (about a minute on a 3,000-file repo), so for that window source text and
+            line numbers may not agree with `commit_sha`. A query then reports `plane_status` `degraded`.
+        commit_sha: { type: string, nullable: true, example: a1b2c3d }
+        index_time: { type: string, format: date-time, nullable: true }
+        index_state:
+          type: string
+          enum: [not_indexed, indexing, complete, partial, failed]
+          description: |
+            From the library's index state, plus `not_indexed` when the project has no index. A full index
+            run in progress (`indexing`) or a failed one makes the project `not_ready`, because the data is
+            truncated. A sync does not set `indexing`, so queries keep working during syncs.
+
+    ResolvedSymbol:
+      type: object
+      required: [input, status]
+      properties:
+        input: { type: string }
+        status:
+          type: string
+          enum: [exact, fuzzy, ambiguous, not_found]
+          description: |
+            `exact`: one node by qualified name after normalisation.
+            `fuzzy`: matched by search; the best match was used.
+            `ambiguous`: more than one candidate with equal or near-equal score. The best match was used
+            and `alternatives` lists the others.
+            `not_found`: nothing matched; the symbol contributed no results.
+        node_id: { type: string, nullable: true }
+        qualified_name: { type: string, nullable: true }
+        alternatives:
+          description: |
+            Other matches. `exact` can still carry alternatives: a bare name with one top-level symbol and
+            several same-named methods resolves to the top-level symbol and lists the methods here.
+          type: array
+          maxItems: 5
+          items:
+            type: object
+            required: [qualified_name, file_path, line_start]
+            properties:
+              qualified_name: { type: string }
+              file_path: { type: string }
+              line_start: { type: integer }
+              kind: { type: string }
+
+    CodeResult:
+      type: object
+      required: [plane_rank, kind, provenance, citation]
+      properties:
+        plane_rank: { type: integer, minimum: 1 }
+        kind:
+          type: string
+          description: CodeGraph node kind, for example function, method, class, interface, property, constant.
+        score:
+          type: number
+          description: Relative ordering only. Not normalised (library note). Orchestrator fuses by rank, never by this value.
+        depth:
+          type: integer
+          description: Distance from the query symbol for callers and impact. 1 is a direct caller or dependent.
+        relation:
+          type: string
+          example: calls
+          description: |
+            Edge kind linking this result to the query symbol, for callers and impact: `calls`,
+            `instantiates`, `references`, `navigates` or `imports`. An `imports` caller is a file that imports
+            the symbol. When a caller is linked by several edges the strongest is reported.
+        call_line:
+          type: integer
+          description: Line of the call site inside the result, when the index recorded one.
+        text:
+          type: string
+          nullable: true
+          description: Source text, truncated to `max_code_chars`. Null if `include_code` is false.
+        provenance: { $ref: '#/components/schemas/CodeProvenance' }
+        citation:
+          type: string
+          example: "src/auth/token.ts:42-67 (TokenService.issue @a1b2c3d)"
+
+    CodeProvenance:
+      type: object
+      required: [file_path, line_start, line_end, symbol, qualified_name, commit_sha, index_time]
+      properties:
+        file_path: { type: string, description: "Relative to the project root, forward slashes." }
+        line_start: { type: integer }
+        line_end: { type: integer }
+        symbol: { type: string }
+        qualified_name: { type: string, description: "Normalised to the `.` form on output." }
+        node_id: { type: string }
+        language: { type: string }
+        commit_sha: { type: string, nullable: true }
+        index_time: { type: string, format: date-time, nullable: true }
+
+    FlowHop:
+      type: object
+      required: [from, to, via, edge_provenance]
+      properties:
+        from: { type: string, description: Qualified name. }
+        to: { type: string, description: Qualified name. }
+        via: { type: string, example: calls }
+        edge_provenance:
+          type: string
+          enum: [static, heuristic]
+          description: Library `provenance` null maps to `static`. `heuristic` edges are synthesized (spike).
+        synthesized_by: { type: string, nullable: true, example: interface-impl }
+        registered_at: { type: string, nullable: true, example: "db/sqlite-adapter.ts:87" }
+        line: { type: integer, nullable: true, description: Call-site line. }
+        from_citation: { type: string }
+        to_citation: { type: string }
+      description: Flow mode passes edge kinds `[calls]` to the path search. Without that filter the library walks contains and imports edges too (spike).
+
+    CodeStatus:
+      type: object
+      required: [state, snapshot]
+      properties:
+        state:
+          type: string
+          enum: [not_indexed, indexing, ready, error]
+        snapshot: { $ref: '#/components/schemas/Snapshot' }
+        last_synced_sha: { type: string, nullable: true }
+        last_sync: { type: string, format: date-time, nullable: true }
+        index_lag_seconds:
+          type: integer
+          nullable: true
+          description: |
+            How long the index has been behind the remote. 0 when it is up to date. Counts from the first push (a
+            sync request) or reconcile check that found a commit the index did not have yet, and stops when a sync
+            to the newest known commit finishes. Null while the remote has never been checked.
+        disk:
+          type: object
+          nullable: true
+          description: Disk used by the project, measured after each sync and by reconcile. Null until measured.
+          required: [tree_bytes, git_bytes, index_bytes, measured_at]
+          properties:
+            tree_bytes: { type: integer, description: Source files of the working tree. }
+            git_bytes: { type: integer, description: The `.git` folder. }
+            index_bytes: { type: integer, description: The index database and its log. }
+            measured_at: { type: string, format: date-time }
+        pruned_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When idle pruning deleted the project's folder. A query for it queues a rebuild. Null if it was never pruned.
+        files: { type: integer }
+        symbols: { type: integer }
+        edges: { type: integer }
+        error: { type: string, nullable: true }
+        active_job:
+          type: string
+          nullable: true
+          description: The job running for the project, or else the next one queued. While a bootstrap runs and there is no index yet, `state` is `indexing`.
+
+    CodeJobRequest:
+      type: object
+      additionalProperties: false
+      required: [type]
+      description: |
+        Which fields are allowed depends on `type`. bootstrap: `repo_url` (required), `credentials_ref`,
+        `branch`. sync: `commit_sha` (required) only. reconcile: nothing else. Any other field is 422
+        `invalid_field`.
+      properties:
+        type: { type: string, enum: [bootstrap, sync, reconcile] }
+        repo_url:
+          type: string
+          maxLength: 2000
+          description: https URL of the repo. Credentials are never inline; see `credentials_ref`.
+        credentials_ref:
+          type: string
+          pattern: '^[A-Za-z0-9_.-]{1,64}$'
+          description: |
+            Name of a secret the adapter resolves itself (MVP: the environment variable
+            `ASTRA_REPO_TOKEN_<NAME>`, upper-cased, holding either a token or `user:token`). It is stored with
+            the project and reused for every sync. Omit it for a public repo.
+        branch:
+          type: string
+          maxLength: 200
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._/-]*$'
+          description: Branch to track. Defaults to the remote's default branch.
+        commit_sha:
+          type: string
+          pattern: '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$'
+          description: Full commit id, required for sync. Short ids are refused because the adapter fetches by id.
+
+    CodeJobAccepted:
+      type: object
+      required: [job_id, status_url, state]
+      properties:
+        job_id: { type: string }
+        status_url: { type: string }
+        state:
+          type: string
+          enum: [queued, running, done, failed, superseded]
+          description: State at the time of the response. After an idempotent replay it can already be past `queued`.
+
+    CodeJob:
+      type: object
+      required: [job_id, type, state]
+      properties:
+        job_id: { type: string }
+        type: { type: string, enum: [bootstrap, sync, reconcile] }
+        state: { type: string, enum: [queued, running, done, failed, superseded] }
+        commit_sha: { type: string, nullable: true }
+        coalesced_into:
+          type: string
+          nullable: true
+          description: For a `superseded` sync, the newer job that took its place.
+        created_at: { type: string, format: date-time }
+        detail:
+          type: string
+          nullable: true
+          description: What a finished job did, in a sentence. Mostly useful for reconcile, for example "up to date at a1b2c3d" or "behind ... queued sync job_...".
+        phase:
+          type: string
+          nullable: true
+          description: |
+            Where the job is. `clone` means getting the code (a clone for bootstrap, a fetch and reset for sync);
+            `scanning`, `parsing`, `resolving` and `linking` are the indexer's own steps, and `resolving` is where
+            most of the time goes on a large repo; `checking` and `maintenance` belong to reconcile (comparing with
+            the remote, then `git gc` and measuring disk); `finalizing` is the check that the index is complete and
+            stamped with the right commit. `progress` is coarse: it moves by phase, not by work done.
+          # OpenAPI 3.0: a nullable enum must list null itself, or strict validators reject a job with no phase.
+          enum: [clone, checking, scanning, parsing, resolving, linking, maintenance, finalizing, null]
+        progress: { type: number, minimum: 0, maximum: 1, nullable: true }
+        started_at: { type: string, format: date-time, nullable: true }
+        finished_at: { type: string, format: date-time, nullable: true }
+        counts:
+          type: object
+          properties:
+            files: { type: integer }
+            symbols: { type: integer }
+            edges: { type: integer }
+        error: { type: string, nullable: true }
+
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        error_code:
+          type: string
+          enum:
+            - no_search_terms
+            - flow_needs_two_symbols
+            - callers_needs_one_symbol
+            - impact_needs_one_symbol
+            - invalid_field
+            - envelope_invalid
+            - envelope_expired
+            - envelope_lifetime_exceeded
+            - scope_missing
+            - project_unknown
+            - path_refused
+            - job_conflict
+            - rate_limited
+            - dependency_unavailable
+            - not_implemented
+        field: { type: string, description: "Present for invalid_field. Names the offending field." }
+        request_id: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Envelope missing, tampered, expired, or lifetime above 5 minutes.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: The envelope is valid but lacks the scope this operation needs (error_code `scope_missing`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: |
+        The request is valid but not allowed in the current state (error_code `job_conflict`): bootstrapping a
+        project that already exists or is being bootstrapped, syncing one that was never bootstrapped, or reusing
+        an idempotency key for a different request.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotImplemented:
+      description: The operation is part of the contract but not built yet. Today this is `flow` mode.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Unknown project, or one outside the envelope's org. Never 403, so ids do not leak.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Invalid:
+      description: Invalid request shape. `error_code` and `field` say what.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: Org quota or rate limit. Includes Retry-After.
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unavailable:
+      description: A dependency is down. Fail closed, never open. Includes Retry-After.
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }

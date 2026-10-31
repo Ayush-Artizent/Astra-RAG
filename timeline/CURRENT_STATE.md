@@ -1,6 +1,7 @@
 # Current state
 
-_Last updated: 2026-10-30 (branch `goldan-repo-re-p9`: P0-P5, P7, P8, P9 and the chunking part of P6 done; see `plan/phases.md`)_
+_Last updated: 2026-10-30 (branch `orch`, cut from `goldan-repo-re-p9`: P0-P5, P7, P8, P9 and the chunking part
+of P6 done, see `plan/phases.md`; plus MCP server M0, see `plan/mcp-server-plan.md`)_
 
 ## What the app does today
 A FastAPI web app (src layout, managed by `uv`, Python >=3.14). The user enters a GitHub or Azure DevOps repo
@@ -183,6 +184,96 @@ requests are not used (head-sha check + blob-sha body reuse cover it for now).
 - Not built: `validate_document_name` (needs the `nomenclature.md` format), per-heading search, parent-section expansion.
 - Note: the sample repos in `temp_storage/` have no `golden.yaml`, so `rules` is empty for them until one is added.
 
+## MCP server (M0-M4 done, branch `orch`)
+`src/astra_mcp/` exposes this app (the **doc plane**) and the code adapter (branch `master`, `code-adapter/`, a
+CodeGraph wrapper on `:8091`) to DevX as one MCP server over **stdio**. The calling agent decides what to
+retrieve: there is no router, no rank fusion and no budget shared across the planes. See `plan/mcp-server-plan.md`.
+- It is **spawned once per client**, so it holds no database, no lock and no embedding models, and it must not
+  import `astra_rag` (that `__init__` pulls in FastAPI, the routes, the registry and the sync worker). It is an
+  HTTP client of both planes. This is also why it cannot start the doc plane in-process: the instance lock allows
+  one process per data directory.
+- Delivered in the same wheel as a **second top-level module** (`[tool.uv.build-backend] module-name`).
+- `config.py`: everything is read from the environment at spawn and never passed per call — `ASTRA_ORG_ID`,
+  `ASTRA_PROJECT_ID`, `ASTRA_ENVELOPE_KEY` (required), `ASTRA_DOC_URL` (default `http://127.0.0.1:5000`),
+  `ASTRA_CODE_URL` (default `http://127.0.0.1:8091`), `ASTRA_MCP_TIMEOUT_MS` (default 30,000). Startup refuses on
+  the first problem and names the variable, never the key's value. `project_id` will be stripped from the tool
+  schemas and injected server-side, so an agent cannot reach another project.
+- **Ids are checked against the code plane's pattern** `^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`, which is stricter than
+  this app's `PROJECT_ID_PATTERN` (dots are allowed here, not there): one id has to work on both planes, and the
+  code plane turns it into a directory name.
+- `server.py`: `AstraServer` subclasses `MCPServer` (in `mcp` 2.x `FastMCP` was renamed; `mcp.server.fastmcp`
+  raises on import) and overrides the public `list_tools` and `call_tool`, which the SDK's request handlers
+  delegate to. That is what serves schemas fetched at runtime: `add_tool` and `ToolBinding` both derive a schema
+  from a Python signature, which a passthrough has no way to supply. Instructions say the content returned is
+  reference data, not instructions.
+- **Document tools (M1).** `doc_client.py` calls this app's own `GET /api/tools?project_id=` and
+  `POST /api/tools/invoke`; `render.py` turns each Claude-format entry into an MCP tool. Nothing is declared on
+  the MCP side, so `get_document_context`, `search_project_data` and anything added later appear by themselves,
+  with the live `doc_type` enum. The list is re-fetched on every `tools/list`. `project_id` is stripped from
+  `properties` and `required` and injected on invoke, so a caller cannot reach another project (passing one is
+  ignored). The plane's `notice` is returned verbatim in the tool result.
+- Errors by kind: a tool that fails is a `CallToolResult` with `is_error` and the plane's `AppError` message, for
+  the agent to read; a failed **listing** raises `MCPError(INTERNAL_ERROR)` with the reason, because a plain
+  exception showed the client only "Connection closed". Messages never carry the URL or the host's reply.
+- **Code tools (M2).** `envelope.py` signs the adapter's internal envelope (mirrors `code-adapter/src/envelope.ts`:
+  `base64url(JSON).base64url(HMAC-SHA256(body, key))`, unpadded, 60 s, scope `query`); `code_client.py` calls
+  `/internal/v1/code/query` and `/status`. Five tools: `find_symbol`, `find_callers`, `analyze_impact`,
+  `trace_flow`, `code_index_status`.
+- **They are built from the contract, not copied.** `src/astra_mcp/contracts/code-adapter.openapi.yaml` is
+  vendored (source commit in `SOURCE.md`, ships in the wheel) and `tools_code.py` reads `CodeQueryRequest`
+  properties at import, so types and limits cannot drift. `tests/mcp/test_code_contract.py` pins what we rely on:
+  when the code team changes the contract and refreshes our copy, that test names the field. The adapter itself
+  is **not** vendored, being a separate service under its own team.
+- **One tool per mode**, so the adapter's arity rules sit in the schema where the model sees them first:
+  `find_callers` and `analyze_impact` take a single `symbol` string, `trace_flow` needs `minItems: 2`,
+  `find_symbol` needs symbols or keywords (`anyOf`). `mode` and `fallback_origin` are the tool's to set and are
+  stripped from caller arguments, so one tool cannot be made to run another's query.
+- **Listing degrades rather than fails.** Code tools need no call to list, so an unreachable doc plane leaves the
+  code tools working, with a line on stderr for the operator. Only an empty listing raises.
+- **Status reaches the model (M3).** `notes.py` turns each plane's status fields into one plain line, returned as
+  a **separate content block in front of** the payload, which is left exactly as the plane sent it; a healthy
+  answer carries no note at all. It covers an index that is not ready or lagging, a sync in progress (line numbers
+  may not match the commit), symbols that were **ambiguous** — the adapter refuses those, so results are empty for
+  a reason the payload only hints at — or not found, truncation at the limit, stale rules, project data that is
+  unindexed or whose search failed, skipped reranking, and the doc plane's warnings such as `budget_truncated`.
+- Errors and notes are different things: a refusal is an `is_error` result, a failed listing raises, and a note is
+  for an answer that did arrive but is partial.
+- Run: `ASTRA_ORG_ID=... ASTRA_PROJECT_ID=... ASTRA_ENVELOPE_KEY=... uv run astra-mcp`, with both planes already
+  running. A bad configuration exits 2 with the reason on stderr. **`MCP.md`** is the runbook: client
+  configuration, the tools, notes versus errors, troubleshooting, and refreshing the vendored contract.
+- `tests/mcp/test_stdio.py` spawns the real server and speaks MCP over real stdio with both planes on
+  loopback sockets: the only test on the path a client actually takes. Everything else fakes the transport.
+- **Checked against both real planes on 2026-10-31**: the live document plane and the real CodeGraph adapter with
+  a small repo actually indexed. All seven tools listed, `find_callers` returned the real callers, and the
+  envelope was accepted by the real verifier under `project:admin` and `query`. **Document retrieval was not
+  exercised** (it needs a golden repo, a PAT and Qdrant), so that path is proven only as far as the plane's
+  refusal coming back correctly; the ambiguous-symbol and not-ready notes are still covered by fakes only.
+
+## Demo page (D1-D2 done, branch `orch`)
+`src/astra_mcp/demo/` is a **separate FastAPI app** (`astra-mcp-demo`, port 5050, `ASTRA_DEMO_PORT` overrides)
+for showing the connector working. **For demos only**: not deployed, not authenticated, one project, and
+`astra_mcp/__init__.py` never imports it so the MCP server stays import-light. See `plan/console-plan.md`.
+- **The page is a real MCP client.** `session.py` spawns `astra-mcp`, does the handshake and speaks JSON-RPC
+  over its stdin and stdout, so the page shows what an agent sees rather than what the planes hold. One child,
+  started lazily and restartable from the page; replies arrive on a background thread, so a silent server times
+  out and a server that exits reports why.
+- **Status line:** document plane (by listing its tools, which is what the server actually needs), code plane
+  (`/internal/v1/health`, no envelope required), and the session with the server's name and version. A plane
+  that is down leaves the other half working and the page says which tools are missing.
+- **Tool list:** the real `tools/list`, each tool badged by plane, with its description and its schema behind a
+  disclosure — where `project_id` is visibly absent from the document tools.
+- Built like the document plane's UI: Jinja2 shell, one `app.js`, one `style.css` copied from it. No framework,
+  no build step; `templates/` and `static/` ship in the wheel as package data.
+- **Running a tool (D2).** `POST /api/call` goes through the same session; `service.split_result` separates the
+  note from the payload the way the server sends them. The form is **generated from the chosen tool's schema**,
+  so it follows a plane that changes one: enum to select, boolean to checkbox, integer to a number input with
+  the contract's own limits, long string to textarea, array to a comma-separated field; defaults show as
+  placeholders and required fields come first. The answer is rendered for reading — code as
+  `qualified_name file:line` with the snippet, flow as hops, status as facts, documents as rules then template
+  then evidence with source links — with the note above it and raw JSON behind a disclosure.
+- **Not exercised yet: the document renderer.** Nothing is bound on the document plane, so rules, template and
+  evidence have never met a real payload. First thing to check when that data lands.
+
 ## Not built yet
 - P6 remainder: YAML front-matter parsing (`fm.*` payload fields).
 - Webhooks (instant updates; needs a public URL and per-repo setup by the customer) and hash-diff incremental ingest.
@@ -205,12 +296,16 @@ src/astra_rag/  __init__ (app factory + lifespan, main), config, routes
     tools/      base (Tool, schema renderer), document_context, search_project_data, __init__ (table + dispatcher)
     ingestion/  loader, md_chunker, csv_chunker, doc_meta, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
-tests/          unittest suites + helpers (temp registry) + fixtures/repo; tests/sources/ holds the adapter contract suite
+src/astra_mcp/  MCP server over stdio: config, errors, doc_client, render, code_client, envelope,
+                tools_code (+ vendored contracts/), notes, server. Second wheel module; never imports astra_rag
+tests/          unittest suites + helpers (temp registry) + fixtures/repo; tests/sources/ holds the adapter
+                contract suite, tests/mcp/ the MCP server suite
 docker-compose.yml   Qdrant
 data/           registry database + instance lock (git-ignored)
 temp_storage/   cloned repos (git-ignored)
 timeline/       this progress record
-plan/           design plans: golden-repo-rag-plan.md (requirements), phases.md (P0-P11 delivery order)
+plan/           design plans: golden-repo-rag-plan.md (requirements), phases.md (P0-P11 delivery order),
+                mcp-server-plan.md (MCP server, M0-M4)
 ```
 
 ## Commands

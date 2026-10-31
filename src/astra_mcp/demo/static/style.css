@@ -1,0 +1,79 @@
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f3f4f6;
+       font: 16px/1.5 system-ui, sans-serif; color: #111827; }
+.card { width: min(760px, 92vw); background: #fff; padding: 2rem; border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+h1 { margin: 0 0 .5rem; font-size: 1.4rem; }
+.hint { color: #4b5563; font-size: .9rem; }
+code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; }
+label { display: block; margin-top: 1rem; font-weight: 600; font-size: .9rem; }
+input { width: 100%; margin-top: .3rem; padding: .6rem; border: 1px solid #d1d5db; border-radius: 8px; font: inherit; }
+button { width: 100%; margin-top: 1.5rem; padding: .7rem; border: 0; border-radius: 8px;
+         background: #4f46e5; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+button:disabled { opacity: .6; cursor: wait; }
+#result, #ingestion { margin-top: 1.25rem; padding: .8rem 1rem; border-radius: 8px; font-size: .9rem; }
+#result.ok, #ingestion.ok { background: #ecfdf5; color: #065f46; }
+#result.error, #ingestion.error { background: #fef2f2; color: #991b1b; }
+#result ul, #ingestion ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+h2 { margin: 1.75rem 0 .5rem; font-size: 1.05rem; }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+th, td { text-align: left; padding: .35rem .4rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+td.repo { word-break: break-all; }
+.badge { display: inline-block; margin-top: .2rem; padding: 0 6px; border-radius: 4px; font-size: .75rem;
+         background: #fef3c7; color: #92400e; }
+.badge.error { background: #fef2f2; color: #991b1b; }
+.sub { display: block; color: #6b7280; font-size: .75rem; }
+button.small { width: auto; margin: 0; padding: .25rem .6rem; font-size: .8rem; white-space: nowrap; }
+#catalog .warn { margin: .5rem 0; padding: .6rem .9rem; border-radius: 8px; font-size: .85rem; background: #fef3c7; color: #92400e; }
+#catalog ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+#catalog .error { margin: .5rem 0; padding: .6rem .9rem; border-radius: 8px; font-size: .85rem; background: #fef2f2; color: #991b1b; }
+
+/* demo page */
+.card { width: min(900px, 94vw); }
+.status { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1rem; padding: .8rem 1rem;
+          border-radius: 8px; background: #f9fafb; font-size: .85rem; }
+.status div { min-width: 12rem; }
+.status b { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .03em;
+            color: #6b7280; font-weight: 600; }
+.dot { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; margin-right: .4rem;
+       background: #9ca3af; vertical-align: baseline; }
+.dot.up { background: #059669; }
+.dot.down { background: #dc2626; }
+.tool { border: 1px solid #e5e7eb; border-radius: 8px; padding: .6rem .8rem; margin-top: .5rem; }
+.tool h3 { margin: 0; font-size: .95rem; font-family: ui-monospace, monospace; }
+.tool p { margin: .3rem 0 0; color: #4b5563; font-size: .85rem; }
+.tool .plane { float: right; font-size: .7rem; padding: 0 6px; border-radius: 4px;
+               background: #eef2ff; color: #3730a3; font-family: system-ui, sans-serif; }
+details { margin-top: .5rem; }
+summary { cursor: pointer; font-size: .8rem; color: #4b5563; }
+pre { margin: .5rem 0 0; padding: .6rem .8rem; background: #f3f4f6; border-radius: 6px;
+      font-size: .75rem; overflow-x: auto; }
+button.inline { width: auto; margin: 0 0 0 .5rem; padding: .25rem .6rem; font-size: .8rem; }
+
+/* running a tool */
+select { width: 100%; margin-top: .3rem; padding: .6rem; border: 1px solid #d1d5db; border-radius: 8px;
+         font: inherit; background: #fff; }
+#fields label { font-weight: 600; }
+#fields .req { color: #b91c1c; }
+#fields .about { display: block; font-weight: 400; color: #6b7280; font-size: .78rem; margin-top: .15rem; }
+#fields textarea { width: 100%; margin-top: .3rem; padding: .6rem; border: 1px solid #d1d5db;
+                   border-radius: 8px; font: inherit; min-height: 4.5rem; }
+#fields input[type="checkbox"] { width: auto; margin-right: .4rem; }
+.note { margin-top: 1rem; padding: .7rem .9rem; border-radius: 8px; background: #fef3c7; color: #92400e;
+        font-size: .88rem; }
+.hit { border-left: 3px solid #c7d2fe; padding: .1rem 0 .1rem .7rem; margin-top: .8rem; }
+.hit .where { font-family: ui-monospace, monospace; font-size: .8rem; color: #4338ca; }
+.hit .meta { color: #6b7280; font-size: .75rem; }
+.hit pre { max-height: 14rem; overflow: auto; }
+.hit .body { margin: .3rem 0 0; font-size: .85rem; white-space: pre-wrap; max-height: 14rem; overflow: auto; }
+.answer h3 { margin: 1.1rem 0 .2rem; font-size: .9rem; color: #374151; }
+.answer .none { color: #6b7280; font-size: .85rem; }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: .15rem .9rem; font-size: .85rem;
+           margin: .4rem 0 0; }
+dl.facts dt { color: #6b7280; }
+dl.facts dd { margin: 0; font-family: ui-monospace, monospace; }
+
+/* The document plane's .ok/.error rules are scoped to #result and #ingestion, so the answer panel
+   needs its own. */
+.answer .error { margin-top: 1rem; padding: .7rem .9rem; border-radius: 8px; background: #fef2f2;
+                 color: #991b1b; font-size: .88rem; }

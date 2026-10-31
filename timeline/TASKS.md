@@ -19,6 +19,39 @@ Status: `[ ]` todo · `[~]` doing · `[x]` done. Update status and add a CHANGEL
 - [ ] P10 GitLab and Bitbucket adapters
 - [ ] P11 Evaluation set and tuning
 
+## MCP server (from plan/mcp-server-plan.md)
+Exposes this app (the doc plane) and the code adapter (branch `master`, `code-adapter/`) to DevX as one MCP
+server over stdio. The calling agent decides what to retrieve; there is no router, fusion or shared budget.
+- [x] **M0 Skeleton and config** - `src/astra_mcp/` as a second top-level module, env config with fail-fast validation and the cross-plane id pattern, `astra-mcp` entry point, a server that starts over stdio and lists no tools. (2026-10-30)
+- [x] **M1 Doc tools** - `doc_client.py` (`GET /api/tools?project_id=`, `POST /api/tools/invoke`, safe error messages), `render.py` (Claude entry -> MCP tool, `project_id` hidden from `properties` and `required`), `AstraServer` overriding `list_tools`/`call_tool`; the project is injected server-side, the list is re-fetched each listing so the catalog's `doc_type` enum stays live, the plane's data notice is returned verbatim; tool failures are `is_error` results, a failed listing is an `MCPError` with the reason. Checked end to end over real sockets. (2026-10-30)
+- [x] **M2 Code client and tools** - `envelope.py` (HMAC signer, verified cross-language against the adapter's own logic), `code_client.py` (query + status, problem+json to safe messages), `tools_code.py` building the five tools from the vendored contract so limits cannot drift, `test_code_contract.py` pinning what we rely on. One tool per mode, so arity rules sit in the schema. Listing degrades to code-only when the doc plane is down. Checked end to end over real sockets with both planes. (2026-10-31)
+- [x] **M3 Status semantics** - `notes.py` turns each plane's status fields into one line carried in a separate content block in front of the untouched payload: not-ready and lagging indexes, a sync in progress, symbols that were ambiguous (refused by the adapter, so empty results) or not found, truncation, stale rules, unindexed or unavailable project data, skipped reranking and the doc plane's own warnings. A healthy answer still returns one block. (2026-10-31)
+- [x] **M4 Ship** - `MCP.md` (client configuration, the tools, notes vs errors, troubleshooting, refreshing the vendored contract), README pointer, and `tests/mcp/test_stdio.py` spawning the real server and speaking MCP over real stdio with both planes on loopback sockets. (2026-10-31)
+
+## Demo page (from plan/console-plan.md)
+A page for showing the connector working, not an operator tool and not deployed. Separate FastAPI app,
+`astra-mcp-demo`; the page is itself an MCP client.
+- [x] **D1 Shell, status line, live tool list** - `src/astra_mcp/demo/` (session, service, routes, page), real MCP
+  session to a spawned server, both planes' health, the merged tool list with schemas, restart. (2026-10-31)
+- [x] **D2 Run a tool** - `POST /api/call` through the same session, `split_result` separating note from payload,
+  a form generated from the chosen tool's schema (enums, booleans, numbers with the contract's limits, arrays,
+  required first), and the answer rendered per kind with a raw-JSON toggle. Checked by hand in a browser against
+  both live planes. **Open: the document renderer has never seen a real payload** — nothing is bound yet, so it
+  is the first thing to check when the document plane's data lands. (2026-10-31)
+- Before the demo: the ecommerce golden repo pushed to a host and the project bound (document plane team); a
+  code repo in the same domain, with two symbols sharing a bare name for the ambiguity note (code plane team);
+  a dry run on the demo machine.
+
+Scope (2026-10-30): a connector only. Both planes are still being developed by their own teams, who maintain
+this server when their APIs change, so the standing risk is API drift rather than missing features.
+
+Closed 2026-10-31: no doc-plane sync control tool (the surface stays read-only; only `project-data/`
+evidence is nightly, while rules and templates are read live), and `requires-python` is narrowed to
+`>=3.14,<3.15` because `onnxruntime` has no 3.15 wheel. Also closed: the code plane **was** reachable — the adapter was run locally and a `file://` repo indexed, so the
+code tools are verified against the real adapter, not only the contract. Still unverified end to end: document
+retrieval, which needs a golden repo, a PAT and Qdrant. Deferred: one spawn per project stays the default until the DevX team settles how a session maps to
+a project. Closed: code-plane bootstrapping is the plane team's (out of scope), and the surface is tools only.
+
 ## Done
 - [x] **W0 Connector** - URL parse, GitHub root listing, golden-structure validation, clone to `temp_storage/`.
 - [x] **W1 Ingestion pipeline** - see W1 below.

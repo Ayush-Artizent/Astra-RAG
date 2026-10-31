@@ -52,6 +52,9 @@ Nothing to set up on the repository side: the server uses the PAT it already has
 ## Run
 
 Requires [uv](https://docs.astral.sh/uv/) and `git` on PATH. The PAT needs read access to repo contents.
+Python **3.14** specifically — `requires-python` is pinned to `>=3.14,<3.15`, because `onnxruntime` (through
+`fastembed`) publishes `cp314` wheels and no `cp315`. A newer interpreter is refused with that reason rather
+than failing later on a missing wheel. `uv` installs 3.14 for you. Widen the pin once onnxruntime ships 3.15.
 
 ```bash
 docker compose up -d qdrant   # vector DB (Rancher Desktop / Docker); dashboard at :6333/dashboard
@@ -63,6 +66,35 @@ uv run python -m astra_rag   # http://127.0.0.1:5000  (API docs at /docs)
 ("Access is denied"); use the `python -m` form above in that case.
 
 Tests: `uv run python -m unittest discover -s tests -t .`
+
+### MCP server (branch `orch`, M0)
+
+A second entry point, `astra-mcp`, serves this app and the code adapter to an MCP client (DevX) over **stdio**.
+It is spawned per client, holds no state of its own, and talks HTTP to both planes, so start them first. The
+project is fixed at spawn — no tool argument can reach another project.
+
+```bash
+ASTRA_ORG_ID=nous ASTRA_PROJECT_ID=devx-123 ASTRA_ENVELOPE_KEY=<shared with the code adapter> uv run astra-mcp
+```
+
+Optional: `ASTRA_DOC_URL` (default `http://127.0.0.1:5000`), `ASTRA_CODE_URL` (default `http://127.0.0.1:8091`),
+`ASTRA_MCP_TIMEOUT_MS` (default 30000). A missing or malformed setting exits 2 and says which one. Org and
+project ids must match `^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$` — stricter than this app's project ids (no dots),
+because the code plane turns them into directory names.
+
+It serves **this app's own tools** (`get_document_context`, `search_project_data`) by fetching them from
+`GET /api/tools`, so nothing is declared twice: a tool added here appears there, with the project's live
+`doc_type` enum. `project_id` is not part of the MCP schemas — the server fills it in from the environment, so
+a client cannot ask about another project.
+
+It also serves the **code plane** (`find_symbol`, `find_callers`, `analyze_impact`, `trace_flow`,
+`code_index_status`), signing the adapter's envelope with `ASTRA_ENVELOPE_KEY`. Those schemas are built from the
+vendored `src/astra_mcp/contracts/code-adapter.openapi.yaml`, so they cannot drift from the adapter unnoticed.
+Code tools list even when the doc plane is down.
+
+**See [MCP.md](MCP.md)** for the client configuration, what each tool is for, how to read a note versus an
+error, troubleshooting (including the 401 that is really a project-id problem), and what to do when the code
+plane changes its contract. The design is in `plan/mcp-server-plan.md`.
 
 The first ingestion downloads the embedding models (~200 MB) into `.cache/fastembed`.
 Env overrides: `QDRANT_URL`, `QDRANT_API_KEY`, `FASTEMBED_CACHE_DIR`, `ASTRA_DB_PATH`, `ASTRA_SYNC_DAILY_AT`
@@ -92,6 +124,16 @@ API:
 
 A repo's `slug` is host-aware, e.g. `github.com__acme__golden`; the clone response returns it.
 
+### Demo page
+
+```bash
+ASTRA_ORG_ID=nous ASTRA_PROJECT_ID=devx-123 ASTRA_ENVELOPE_KEY=<shared> uv run astra-mcp-demo
+```
+
+`http://127.0.0.1:5050` shows whether both planes are answering and the tools served over one MCP connection,
+each with its schema. The page spawns `astra-mcp` and speaks the protocol, so it shows what an agent sees. It
+is **for demos**: not deployed, not authenticated, one project. See `plan/console-plan.md`.
+
 ## Structure
 
 ```
@@ -118,6 +160,14 @@ src/astra_rag/
     errors.py                user-safe AppError
   templates/index.html       the UI
   static/                    style.css, app.js
+src/astra_mcp/               MCP server over stdio; never imports astra_rag (it is spawned per client)
+  config.py                  environment read at spawn, cross-plane id check
+  doc_client.py              fetches and invokes the document plane's own tools
+  code_client.py / envelope.py   the code adapter, with the signed envelope it requires
+  tools_code.py / contracts/ the five code tools, built from the vendored OpenAPI contract
+  notes.py                   plane status as one line, put in front of a payload
+  server.py                  AstraServer: lists both planes, routes calls
+  demo/                      the demo page (separate FastAPI app, `astra-mcp-demo`); demos only
 tests/                       unit tests + fixtures/
 docker-compose.yml           Qdrant
 data/                        registry database + instance lock (git-ignored)

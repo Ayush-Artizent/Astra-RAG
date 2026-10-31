@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ASTRA MCP – demo</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>ASTRA MCP</h1>
+    <p class="hint">One connection to a project's documents and its code. This page is itself an MCP
+      client: it spawns <code>astra-mcp</code> and speaks the protocol, so what you see here is what an
+      agent sees. Project <code>{{ org_id }}</code> / <code>{{ project_id }}</code>.</p>
+
+    <div class="status" id="status">
+      <div><b>Document plane</b><span id="doc">checking…</span></div>
+      <div><b>Code plane</b><span id="code">checking…</span></div>
+      <div><b>MCP session</b><span id="session">checking…</span>
+        <button class="inline" id="restart" type="button">Restart</button></div>
+    </div>
+
+    <section id="run-section" hidden>
+      <h2>Run a tool</h2>
+      <label for="tool-pick">Tool
+        <select id="tool-pick"></select>
+      </label>
+      <p class="hint" id="tool-about"></p>
+      <div id="fields"></div>
+      <button id="run" type="button">Run</button>
+      <div id="answer" hidden></div>
+    </section>
+
+    <section id="tools-section">
+      <h2>Tools <span class="hint" id="tool-count"></span></h2>
+      <p class="hint" id="tools-note" hidden></p>
+      <div id="tools"></div>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+  <script src="/static/runner.js"></script>
+</body>
+</html>

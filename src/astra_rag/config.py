@@ -63,6 +63,7 @@ MODELS_WAIT_SECONDS = 1800  # how long a queued sync waits for the models before
 KNOWLEDGE_CANDIDATES = 30  # hybrid hits fetched, then reranked
 # Reranked hits scoring below this are dropped (MiniLM-L-12 logits: relevant chunks sit above ~-5, an unrelated query scores below -9).
 RERANK_MIN_SCORE = -5.0
+LOW_CONFIDENCE_MAX = 8  # hits below the floor still returned, flagged `low_confidence` (P11: 8 recovers most evidence; more adds only noise)
 RERANK_TIMEOUT_SECONDS = 8.0  # past this the search order is kept and the response says rerank was skipped
 # Total tokens for one context response, filled in order: always rules, template, scope rules, knowledge.
 CONTEXT_BUDGET_TOKENS = 12_000

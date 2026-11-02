@@ -8,7 +8,7 @@ from qdrant_client import QdrantClient
 
 from astra_rag import create_app
 from astra_rag.services.catalog import CatalogCache, service as catalog_service
-from astra_rag.services.context import rerank, service as context_service
+from astra_rag.services.context import knowledge, rerank, service as context_service
 from astra_rag.services.context.budget import Budget
 from astra_rag.services.errors import AppError
 from astra_rag.services.ingestion import pipeline
@@ -117,22 +117,33 @@ class RerankTests(ContextTestBase):
         self.assertEqual(lengths, sorted(lengths, reverse=True))
         self.assertTrue(all("rerank_score" in i for i in items))
 
-    def test_weak_matches_below_the_floor_are_dropped_and_counted(self):
+    def test_weak_matches_below_the_floor_come_last_and_are_flagged(self):
         class Scores:  # one relevant chunk, two unrelated
             def score(self, query, texts):
                 return [3.0 if "7,500" in t else -9.0 for t in texts]
 
         data = context_service.get_context("proj-1", reranker=Scores(), **REQUEST)["knowledge"]
-        self.assertEqual([i["file"] for i in data["items"]], ["meeting-notes/b.md"])
-        self.assertEqual((data["total_count"], data["below_threshold"]), (1, 2))
+        self.assertEqual(data["items"][0]["file"], "meeting-notes/b.md")
+        self.assertEqual([i["low_confidence"] for i in data["items"]], [False, True, True])
+        self.assertEqual((data["total_count"], data["low_confidence"], data["below_threshold"]), (3, 2, 0))
 
-    def test_nothing_relevant_gives_no_items_and_a_status(self):
+    def test_weak_matches_are_capped_and_the_rest_counted(self):
+        class Unrelated:
+            def score(self, query, texts):
+                return [-9.0] * len(texts)
+
+        with mock.patch.object(knowledge, "LOW_CONFIDENCE_MAX", 1):
+            data = context_service.get_context("proj-1", reranker=Unrelated(), **REQUEST)["knowledge"]
+        self.assertEqual((len(data["items"]), data["below_threshold"]), (1, 2))
+
+    def test_nothing_relevant_gives_only_flagged_items_and_a_status(self):
         class Unrelated:
             def score(self, query, texts):
                 return [-9.0] * len(texts)
 
         data = context_service.get_context("proj-1", reranker=Unrelated(), **REQUEST)
-        self.assertEqual(data["knowledge"]["items"], [])
+        self.assertTrue(data["knowledge"]["items"])
+        self.assertTrue(all(i["low_confidence"] for i in data["knowledge"]["items"]))
         self.assertEqual(data["status"]["knowledge"], "no_relevant_match")
         self.assertTrue(data["rules"] and data["template"])  # rules and template are unaffected
 
@@ -182,7 +193,7 @@ class DegradedModeTests(ContextTestBase):
             data = self.post().json()
         self.assertEqual(data["status"]["knowledge"], "unavailable: Could not reach Qdrant.")
         self.assertEqual(data["status"]["rerank"], "not_run")
-        self.assertEqual(data["knowledge"], {"items": [], "total_count": 0, "truncated": False, "below_threshold": 0})
+        self.assertEqual(data["knowledge"], {"items": [], "total_count": 0, "truncated": False, "below_threshold": 0, "low_confidence": 0})
         self.assertEqual(len(data["rules"]), 4)
         self.assertTrue(data["template"]["text"])
 

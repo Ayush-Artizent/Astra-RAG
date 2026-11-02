@@ -1,0 +1,908 @@
+{
+  "config": {
+    "slug": "github.com__manojb-nous__ecommerce-example-repo",
+    "candidates": 30,
+    "min_score": -4.0,
+    "budget": 12000,
+    "rerank_timeout": 8.0,
+    "index_commit": "0417891ed0574c668e167efa036ed738f671cda5"
+  },
+  "questions": [
+    {
+      "id": "E01",
+      "type": "exact ID",
+      "difficulty": "easy",
+      "negative": false,
+      "seconds": 12.33,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 22,
+      "tokens_used": 6801,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E02",
+      "type": "exact ID",
+      "difficulty": "easy",
+      "negative": false,
+      "seconds": 1.28,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 8,
+      "tokens_used": 5650,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E03",
+      "type": "tie",
+      "difficulty": "easy",
+      "negative": false,
+      "seconds": 2.38,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 20,
+      "tokens_used": 6706,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 0.041666666666666664,
+      "recall_5": 0.0,
+      "dropped": [
+        1,
+        1
+      ],
+      "recall_kept": 0.0,
+      "recall_budget": 0.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          2
+        ],
+        "reranked": [
+          24
+        ],
+        "final": [
+          null
+        ]
+      },
+      "evidence": 0.5
+    },
+    {
+      "id": "E04",
+      "type": "lookup",
+      "difficulty": "easy",
+      "negative": false,
+      "seconds": 2.28,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 3,
+      "tokens_used": 5562,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E05",
+      "type": "table",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 2.65,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 2,
+      "tokens_used": 5496,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E06",
+      "type": "lookup",
+      "difficulty": "easy",
+      "negative": false,
+      "seconds": 2.39,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 4,
+      "tokens_used": 5459,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          3
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E07",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 2.68,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 9,
+      "tokens_used": 6470,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 0.3333333333333333,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          null
+        ],
+        "reranked": [
+          3,
+          null
+        ],
+        "final": [
+          3,
+          null
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E08",
+      "type": "lookup",
+      "difficulty": "easy",
+      "negative": false,
+      "seconds": 3.04,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 9,
+      "tokens_used": 6312,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E09",
+      "type": "conflict",
+      "difficulty": "hard",
+      "negative": false,
+      "seconds": 2.66,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 11,
+      "tokens_used": 6384,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 0.6666666666666666,
+      "recall_all": 1.0,
+      "rr": 0.3333333333333333,
+      "recall_5": 0.3333333333333333,
+      "dropped": [
+        1,
+        6
+      ],
+      "recall_kept": 0.8333333333333334,
+      "recall_budget": 0.8333333333333334,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          2,
+          7,
+          12,
+          4,
+          21,
+          9
+        ],
+        "reranked": [
+          3,
+          6,
+          4,
+          7,
+          16,
+          10
+        ],
+        "final": [
+          3,
+          6,
+          4,
+          7,
+          null,
+          10
+        ]
+      },
+      "evidence": 0.9166666666666667
+    },
+    {
+      "id": "E10",
+      "type": "lookup",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 2.64,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 6,
+      "tokens_used": 5792,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E11",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 1.85,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 7,
+      "tokens_used": 6001,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          2
+        ],
+        "reranked": [
+          1,
+          4
+        ],
+        "final": [
+          1,
+          4
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E12",
+      "type": "table",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 2.77,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 6,
+      "tokens_used": 6482,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        1,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          20
+        ],
+        "reranked": [
+          1,
+          22
+        ],
+        "final": [
+          1,
+          null
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E13",
+      "type": "multi-source",
+      "difficulty": "hard",
+      "negative": false,
+      "seconds": 2.79,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 8,
+      "tokens_used": 6056,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 0.6666666666666666,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 0.6666666666666666,
+      "dropped": [
+        1,
+        3
+      ],
+      "recall_kept": 0.6666666666666666,
+      "recall_budget": 0.6666666666666666,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          16,
+          3,
+          6
+        ],
+        "reranked": [
+          11,
+          1,
+          5
+        ],
+        "final": [
+          null,
+          1,
+          5
+        ]
+      },
+      "evidence": 0.8333333333333333
+    },
+    {
+      "id": "E14",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 2.74,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 6,
+      "tokens_used": 5721,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 0.3333333333333333,
+      "recall_all": 0.6666666666666666,
+      "rr": 0.2,
+      "recall_5": 0.3333333333333333,
+      "dropped": [
+        1,
+        2
+      ],
+      "recall_kept": 0.3333333333333333,
+      "recall_budget": 0.3333333333333333,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          14,
+          null,
+          3
+        ],
+        "reranked": [
+          5,
+          null,
+          12
+        ],
+        "final": [
+          5,
+          null,
+          null
+        ]
+      },
+      "evidence": 0.6666666666666666
+    },
+    {
+      "id": "E15",
+      "type": "lookup",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 1.46,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 2,
+      "tokens_used": 5261,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        1,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 0.0,
+      "ranks": {
+        "candidates": [
+          1,
+          2
+        ],
+        "reranked": [
+          1,
+          3
+        ],
+        "final": [
+          1,
+          null
+        ]
+      },
+      "evidence": 0.5
+    },
+    {
+      "id": "E16",
+      "type": "table",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 2.29,
+      "knowledge_status": "no_relevant_match",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 0,
+      "tokens_used": 5205,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        1,
+        1
+      ],
+      "recall_kept": 0.0,
+      "recall_budget": 0.0,
+      "facts_budget": 0.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          null
+        ]
+      },
+      "evidence": 0.0
+    },
+    {
+      "id": "E17",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 1.78,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 5,
+      "tokens_used": 5799,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          5
+        ],
+        "reranked": [
+          1,
+          4
+        ],
+        "final": [
+          1,
+          4
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E18",
+      "type": "lookup",
+      "difficulty": "easy",
+      "negative": false,
+      "seconds": 2.69,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 6,
+      "tokens_used": 5570,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E19",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "seconds": 2.37,
+      "knowledge_status": "no_relevant_match",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 0,
+      "tokens_used": 5205,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 0.5,
+      "recall_5": 0.6666666666666666,
+      "dropped": [
+        3,
+        3
+      ],
+      "recall_kept": 0.0,
+      "recall_budget": 0.0,
+      "facts_budget": 0.0,
+      "ranks": {
+        "candidates": [
+          8,
+          9,
+          3
+        ],
+        "reranked": [
+          5,
+          2,
+          8
+        ],
+        "final": [
+          null,
+          null,
+          null
+        ]
+      },
+      "evidence": 0.0
+    },
+    {
+      "id": "E20",
+      "type": "open item",
+      "difficulty": "hard",
+      "negative": false,
+      "seconds": 1.45,
+      "knowledge_status": "no_relevant_match",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 0,
+      "tokens_used": 5205,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 0.25,
+      "recall_all": 0.75,
+      "rr": 0.06666666666666667,
+      "recall_5": 0.0,
+      "dropped": [
+        3,
+        3
+      ],
+      "recall_kept": 0.0,
+      "recall_budget": 0.0,
+      "facts_budget": 0.0,
+      "ranks": {
+        "candidates": [
+          null,
+          19,
+          9,
+          20
+        ],
+        "reranked": [
+          null,
+          18,
+          15,
+          22
+        ],
+        "final": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "evidence": 0.0
+    },
+    {
+      "id": "E21",
+      "type": "multi-source",
+      "difficulty": "easy",
+      "negative": false,
+      "seconds": 2.53,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 4,
+      "tokens_used": 5612,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 0.5,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          3,
+          2
+        ],
+        "reranked": [
+          2,
+          3
+        ],
+        "final": [
+          2,
+          3
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E22",
+      "type": "no answer",
+      "difficulty": "hard",
+      "negative": true,
+      "seconds": 2.87,
+      "knowledge_status": "no_relevant_match",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 0,
+      "tokens_used": 5205,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "evidence": 1.0
+    }
+  ],
+  "rule_cases": [],
+  "summary": {
+    "retrieval": {
+      "recall@10": 0.9007936507936508,
+      "recall@30": 0.9722222222222223
+    },
+    "rerank": {
+      "mrr": 0.7607142857142857,
+      "recall@5": 0.8095238095238095,
+      "dropped_relevant_rate": 0.34210526315789475,
+      "recall_after_threshold": 0.753968253968254
+    },
+    "budget": {
+      "recall@budget": 0.753968253968254,
+      "fact_recall@budget": 0.8095238095238095,
+      "knowledge_truncated_rate": 0.0
+    },
+    "rules": {
+      "precision": null,
+      "recall": null,
+      "f1": null,
+      "template_accuracy": null
+    },
+    "degraded": {
+      "degraded_rate": 0.0,
+      "rerank_skipped_rate": 0.0,
+      "no_relevant_match_rate": 0.14285714285714285,
+      "no_answer_correct_rate": 1.0,
+      "errors": 0
+    },
+    "latency_seconds": {
+      "median": 2.585,
+      "max": 12.33
+    },
+    "evidence_by_difficulty": {
+      "easy": 0.9375,
+      "medium": 0.7166666666666667,
+      "hard": 0.6875
+    },
+    "evidence": 0.7916666666666667,
+    "rules_f1": null,
+    "combined": 0.8214285714285716
+  },
+  "spec_warnings": []
+}

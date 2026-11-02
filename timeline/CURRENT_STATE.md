@@ -173,7 +173,7 @@ requests are not used (head-sha check + blob-sha body reuse cover it for now).
 `POST /api/context` (`project_id`, `doc_type`, `text`, optional `stage`, `tags`, `budget`) = P8 selection + knowledge, in `services/context/`.
 - `knowledge.py`: **one** `pipeline.search` on `text` (the caller must send a short, clean topic request as `text`, not a long instruction: "Write a BRD for ..." wording made the reranker bury key chunks in the 2026-10-30 manual run) (`KNOWLEDGE_CANDIDATES` = 30, through the repo's alias), then `rerank.py`.
   Items: `text`, `file`, `heading_path`, `doc_type`, `doc_date`, `doc_meta`, `source_url`, `score` (+ `rerank_score`). No date, type or
-  folder preference; template headings are not used to search. After a successful rerank, hits scoring below `RERANK_MIN_SCORE` (-5.0, MiniLM logits) are dropped and counted in `knowledge.below_threshold`; if none is left `status.knowledge` is `no_relevant_match` (rules and template still returned). A skipped rerank drops nothing. Failures become `status.knowledge`: `empty`, `no_index`,
+  folder preference; template headings are not used to search. After a successful rerank, hits scoring below `RERANK_MIN_SCORE` (-5.0, MiniLM logits) are no longer trusted: the best `LOW_CONFIDENCE_MAX` (8) of them are still returned after the confident ones with `low_confidence: true`, the rest are counted in `knowledge.below_threshold`. If no hit is above the floor `status.knowledge` is `no_relevant_match` and every item is `low_confidence` (rules and template still returned). A skipped rerank flags nothing. Why: a single global floor cannot separate weak evidence from none (P11), so the LLM judges. Failures become `status.knowledge`: `empty`, `no_index`,
   `unavailable: <safe reason>`; they never fail the request.
 - `rerank.py`: `Xenova/ms-marco-MiniLM-L-12-v2` (~120 MB, ~3 s for 30 chunks on CPU) via fastembed `TextCrossEncoder`, on a single worker thread, prepared at startup by `local_models` (`get_reranker()` fails fast with `ModelsNotReady` until then, giving `status.rerank` = `skipped: models_not_ready`), limited to
   `RERANK_TIMEOUT_SECONDS` (8). Timeout or error keeps the search order: `status.rerank` = `skipped: timeout` / `skipped: <ErrorType>`
@@ -183,7 +183,7 @@ requests are not used (head-sha check + blob-sha body reuse cover it for now).
   and in order (the first that does not fit ends that list); the template keeps whole leading lines. Left-out sections are named in
   `budget.truncated`, `knowledge.truncated` / `template.truncated` are set, and a `budget_truncated` warning is added.
 - Response: `request`, `snapshot {rules_commit, index_commit}` (index commit = registry `indexed.commit_sha`, `null` before the first
-  build), `rules[]`, `template`, `knowledge {items, total_count, truncated, below_threshold}`, `budget`, `status {rules: ok|stale, knowledge, rerank}`,
+  build), `rules[]`, `template`, `knowledge {items, total_count, truncated, below_threshold, low_confidence}` (each item has `low_confidence`), `budget`, `status {rules: ok|stale, knowledge, rerank}`,
   `warnings[]`, `stale`. Blank `text` and an out-of-range `budget` give 422.
 - `services/tools/`: `Tool` (pydantic args -> Claude schema), `get_document_context` (the same call as `/api/context`; `doc_type` gets an
   enum from the project's catalog when `GET /api/tools?project_id=` is used) and `search_project_data` (`query`, `limit` <= 20,
@@ -191,6 +191,9 @@ requests are not used (head-sha check + blob-sha body reuse cover it for now).
   reference content, not instructions. Bad arguments name the fields only, never echo values. Ported from the `guru-workitem-w2` design.
 - Not built: `validate_document_name` (needs the `nomenclature.md` format), per-heading search, parent-section expansion.
 - Note: the sample repos in `temp_storage/` have no `golden.yaml`, so `rules` is empty for them until one is added.
+
+## Evaluation harness (P11, started)
+`p11/` (outside the app package): `uv run python -m p11.run_eval`. Runs `questions.yaml` (22 knowledge questions with expected sources and facts, 8 rule/template cases) through the live pipeline; needs Qdrant, an indexed repo with a bound project, the saved PAT (rules are read live) and the local models. Metrics: retrieval recall@10 / @candidates, rerank MRR / recall@5 / dropped-relevant rate, recall@budget and fact recall on the final response, rule precision / recall / F1 (scope-selected rules only) and template accuracy, degraded-mode rates, latency, combined score. `--json`, `--baseline`, `--skip-rules`, `--only`, and overrides for candidates, min score, budget and rerank timeout. Pure functions in `p11/metrics.py` (tests in `tests/test_p11_metrics.py`). Saved runs go to `p11/out/`; `p11/policies.py` replays cut-off policies on a saved run (needs the per-hit trace `run_eval --json` stores). Latest full run (2026-11-02, with the low-confidence flag): combined 0.97, recall@budget 0.94, rules F1 0.97, no-answer correct.
 
 ## Not built yet
 - P6 remainder: YAML front-matter parsing (`fm.*` payload fields).
@@ -215,6 +218,7 @@ src/astra_rag/  __init__ (app factory + lifespan, main), config, routes
     tools/      base (Tool, schema renderer), document_context, search_project_data, __init__ (table + dispatcher)
     ingestion/  loader, md_chunker, csv_chunker, doc_meta, chunker, embedder, store, pipeline, models, tokens
   templates/ static/   UI
+p11/            evaluation harness: run_eval.py, metrics.py, questions.yaml (out/ holds saved runs)
 tests/          unittest suites + helpers (temp registry) + fixtures/repo; tests/sources/ holds the adapter contract suite
 docker-compose.yml   Qdrant
 data/           registry database + instance lock (git-ignored)

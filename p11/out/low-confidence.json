@@ -1,0 +1,5495 @@
+{
+  "config": {
+    "slug": "github.com__manojb-nous__ecommerce-example-repo",
+    "candidates": 30,
+    "min_score": -5.0,
+    "budget": 12000,
+    "rerank_timeout": 8.0,
+    "index_commit": "0417891ed0574c668e167efa036ed738f671cda5"
+  },
+  "questions": [
+    {
+      "id": "E01",
+      "type": "exact ID",
+      "difficulty": "easy",
+      "negative": false,
+      "text": "What does CHK-104 cover?",
+      "seconds": 13.17,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 30,
+      "confident_items": 24,
+      "tokens_used": 7281,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 1.719,
+          "tokens": 52,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -0.533,
+          "tokens": 119,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -0.599,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.339,
+          "tokens": 57,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.473,
+          "tokens": 151,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -2.108,
+          "tokens": 59,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.115,
+          "tokens": 60,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.166,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.193,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.342,
+          "tokens": 73,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.561,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.604,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.62,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.688,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.848,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.886,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.217,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.29,
+          "tokens": 57,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.299,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.461,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.544,
+          "tokens": 99,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.802,
+          "tokens": 30,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.388,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.731,
+          "tokens": 31,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.168,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.098,
+          "tokens": 31,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.25,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.254,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.257,
+          "tokens": 98,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.276,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E02",
+      "type": "exact ID",
+      "difficulty": "easy",
+      "negative": false,
+      "text": "Who owns RSK-002 and what is its impact?",
+      "seconds": 1.21,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 17,
+      "confident_items": 9,
+      "tokens_used": 6315,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 4.246,
+          "tokens": 49,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 2.509,
+          "tokens": 46,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": 2.042,
+          "tokens": 47,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -0.499,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.458,
+          "tokens": 47,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -2.559,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.388,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.699,
+          "tokens": 65,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -4.957,
+          "tokens": 99,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.694,
+          "tokens": 50,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.469,
+          "tokens": 30,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.527,
+          "tokens": 43,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.704,
+          "tokens": 135,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.315,
+          "tokens": 98,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.693,
+          "tokens": 61,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -9.389,
+          "tokens": 42,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -9.629,
+          "tokens": 107,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.96,
+          "tokens": 23,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.432,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.582,
+          "tokens": 76,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.609,
+          "tokens": 29,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.663,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.678,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.782,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.06,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.068,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.071,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.211,
+          "tokens": 84,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.289,
+          "tokens": 24,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.313,
+          "tokens": 26,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E03",
+      "type": "tie",
+      "difficulty": "easy",
+      "negative": false,
+      "text": "What is out of scope for the checkout epic?",
+      "seconds": 2.31,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 29,
+      "confident_items": 21,
+      "tokens_used": 7740,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 0.044,
+          "tokens": 112,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -0.538,
+          "tokens": 179,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -0.82,
+          "tokens": 65,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -0.827,
+          "tokens": 176,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -0.928,
+          "tokens": 60,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.08,
+          "tokens": 67,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.346,
+          "tokens": 57,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.544,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.557,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.664,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.838,
+          "tokens": 57,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.871,
+          "tokens": 73,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.942,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.959,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.998,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.039,
+          "tokens": 59,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.073,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.107,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.225,
+          "tokens": 106,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.281,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.852,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.474,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.536,
+          "tokens": 294,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.319,
+          "tokens": 22,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -9.508,
+          "tokens": 33,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.998,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.15,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.26,
+          "tokens": 95,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.683,
+          "tokens": 107,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.319,
+          "tokens": 33,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 0.041666666666666664,
+      "recall_5": 0.0,
+      "dropped": [
+        1,
+        1
+      ],
+      "recall_kept": 0.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          24
+        ],
+        "final": [
+          24
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E04",
+      "type": "lookup",
+      "difficulty": "easy",
+      "negative": false,
+      "text": "What are the SOW exclusions?",
+      "seconds": 2.15,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 11,
+      "confident_items": 3,
+      "tokens_used": 6365,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 4.9,
+          "tokens": 125,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 2.357,
+          "tokens": 176,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 1.939,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.766,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.869,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.992,
+          "tokens": 107,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.311,
+          "tokens": 112,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -7.427,
+          "tokens": 31,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -9.692,
+          "tokens": 189,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.264,
+          "tokens": 134,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.274,
+          "tokens": 44,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.305,
+          "tokens": 25,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.318,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.319,
+          "tokens": 59,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.321,
+          "tokens": 42,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.321,
+          "tokens": 217,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.322,
+          "tokens": 245,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.323,
+          "tokens": 32,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.323,
+          "tokens": 84,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.323,
+          "tokens": 43,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.323,
+          "tokens": 294,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.325,
+          "tokens": 98,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.326,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.327,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.33,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.332,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.332,
+          "tokens": 95,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.332,
+          "tokens": 149,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.333,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.335,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E05",
+      "type": "table",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "What are the project KPIs and their targets?",
+      "seconds": 2.56,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 10,
+      "confident_items": 2,
+      "tokens_used": 6188,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": -1.107,
+          "tokens": 115,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "score": -2.807,
+          "tokens": 176,
+          "sources": [],
+          "facts": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "score": -7.872,
+          "tokens": 294,
+          "sources": [],
+          "facts": [
+            2,
+            3
+          ]
+        },
+        {
+          "score": -8.786,
+          "tokens": 75,
+          "sources": [],
+          "facts": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "score": -9.73,
+          "tokens": 33,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -10.011,
+          "tokens": 50,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.213,
+          "tokens": 25,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.256,
+          "tokens": 95,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.871,
+          "tokens": 37,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.988,
+          "tokens": 83,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.066,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.082,
+          "tokens": 32,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -11.096,
+          "tokens": 72,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.102,
+          "tokens": 36,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.114,
+          "tokens": 92,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.122,
+          "tokens": 65,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.2,
+          "tokens": 23,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.219,
+          "tokens": 203,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.227,
+          "tokens": 146,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.244,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.252,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.254,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.291,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.3,
+          "tokens": 107,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.313,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.314,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.316,
+          "tokens": 38,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.317,
+          "tokens": 112,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.326,
+          "tokens": 164,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.327,
+          "tokens": 135,
+          "sources": [
+            0
+          ],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E06",
+      "type": "lookup",
+      "difficulty": "easy",
+      "negative": false,
+      "text": "When is design freeze and when does 100% rollout happen?",
+      "seconds": 2.39,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 12,
+      "confident_items": 4,
+      "tokens_used": 6129,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 4.325,
+          "tokens": 38,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 1.835,
+          "tokens": 57,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": 0.305,
+          "tokens": 135,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -3.281,
+          "tokens": 24,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.89,
+          "tokens": 32,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.057,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.73,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.849,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.795,
+          "tokens": 119,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.499,
+          "tokens": 176,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.895,
+          "tokens": 84,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.903,
+          "tokens": 36,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.968,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.976,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.077,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.088,
+          "tokens": 23,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.139,
+          "tokens": 143,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.155,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.189,
+          "tokens": 294,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.211,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.235,
+          "tokens": 50,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.283,
+          "tokens": 166,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.288,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.315,
+          "tokens": 107,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.316,
+          "tokens": 146,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.323,
+          "tokens": 164,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.323,
+          "tokens": 24,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.323,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.329,
+          "tokens": 110,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.331,
+          "tokens": 134,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          3
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E07",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "What are the gateway failover thresholds?",
+      "seconds": 2.71,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 17,
+      "confident_items": 9,
+      "tokens_used": 7425,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 5.915,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 5.58,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 5.395,
+          "tokens": 102,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "score": 2.868,
+          "tokens": 72,
+          "sources": [],
+          "facts": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "score": 1.203,
+          "tokens": 50,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 0.497,
+          "tokens": 179,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -0.639,
+          "tokens": 151,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.235,
+          "tokens": 373,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -3.524,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.749,
+          "tokens": 245,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.907,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.696,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.263,
+          "tokens": 166,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.482,
+          "tokens": 83,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -7.781,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.015,
+          "tokens": 41,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.786,
+          "tokens": 63,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.976,
+          "tokens": 47,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.002,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.732,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.774,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.91,
+          "tokens": 24,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.968,
+          "tokens": 141,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.369,
+          "tokens": 65,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.459,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.938,
+          "tokens": 164,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.168,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.277,
+          "tokens": 123,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.325,
+          "tokens": 146,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.326,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 0.3333333333333333,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          null
+        ],
+        "reranked": [
+          3,
+          null
+        ],
+        "final": [
+          3,
+          null
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E08",
+      "type": "lookup",
+      "difficulty": "easy",
+      "negative": false,
+      "text": "Which gateway is primary and which is the fallback?",
+      "seconds": 2.57,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 17,
+      "confident_items": 9,
+      "tokens_used": 6839,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 5.836,
+          "tokens": 102,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 5.788,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 4.301,
+          "tokens": 41,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 4.073,
+          "tokens": 143,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 2.013,
+          "tokens": 92,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": 1.482,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 1.178,
+          "tokens": 164,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -1.501,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.338,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.065,
+          "tokens": 34,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -9.491,
+          "tokens": 24,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.503,
+          "tokens": 72,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -9.673,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.183,
+          "tokens": 50,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.355,
+          "tokens": 47,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.841,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.92,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.99,
+          "tokens": 129,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.085,
+          "tokens": 75,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.109,
+          "tokens": 63,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.115,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.133,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.144,
+          "tokens": 166,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.148,
+          "tokens": 110,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.152,
+          "tokens": 141,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.184,
+          "tokens": 245,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.258,
+          "tokens": 203,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.319,
+          "tokens": 23,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.321,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.323,
+          "tokens": 18,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E09",
+      "type": "conflict",
+      "difficulty": "hard",
+      "negative": false,
+      "text": "What is the COD limit for new customers?",
+      "seconds": 2.69,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 21,
+      "confident_items": 13,
+      "tokens_used": 7841,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 8.225,
+          "tokens": 33,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 7.183,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 6.766,
+          "tokens": 88,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 5.682,
+          "tokens": 143,
+          "sources": [
+            2
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 5.099,
+          "tokens": 107,
+          "sources": [],
+          "facts": [
+            2,
+            3
+          ]
+        },
+        {
+          "score": 4.519,
+          "tokens": 113,
+          "sources": [
+            1
+          ],
+          "facts": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "score": 4.43,
+          "tokens": 42,
+          "sources": [
+            3
+          ],
+          "facts": []
+        },
+        {
+          "score": 3.891,
+          "tokens": 151,
+          "sources": [],
+          "facts": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "score": 2.949,
+          "tokens": 179,
+          "sources": [],
+          "facts": [
+            2
+          ]
+        },
+        {
+          "score": -3.061,
+          "tokens": 52,
+          "sources": [
+            5
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -3.442,
+          "tokens": 217,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -4.574,
+          "tokens": 203,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.715,
+          "tokens": 123,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.533,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.031,
+          "tokens": 11,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.117,
+          "tokens": 106,
+          "sources": [
+            4
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -8.215,
+          "tokens": 112,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.405,
+          "tokens": 95,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.423,
+          "tokens": 86,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.031,
+          "tokens": 136,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.342,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.596,
+          "tokens": 98,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.75,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.81,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.866,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.028,
+          "tokens": 33,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.087,
+          "tokens": 59,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.105,
+          "tokens": 106,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.236,
+          "tokens": 29,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.293,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 0.6666666666666666,
+      "recall_all": 1.0,
+      "rr": 0.3333333333333333,
+      "recall_5": 0.3333333333333333,
+      "dropped": [
+        1,
+        6
+      ],
+      "recall_kept": 0.8333333333333334,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          2,
+          7,
+          12,
+          4,
+          21,
+          9
+        ],
+        "reranked": [
+          3,
+          6,
+          4,
+          7,
+          16,
+          10
+        ],
+        "final": [
+          3,
+          6,
+          4,
+          7,
+          16,
+          10
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E10",
+      "type": "lookup",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "What is the COD fee and what can't be COD?",
+      "seconds": 2.62,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 14,
+      "confident_items": 6,
+      "tokens_used": 6623,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 4.919,
+          "tokens": 88,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "score": 1.823,
+          "tokens": 54,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -1.124,
+          "tokens": 33,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.348,
+          "tokens": 143,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.554,
+          "tokens": 217,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.739,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.942,
+          "tokens": 95,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.17,
+          "tokens": 189,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.689,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.699,
+          "tokens": 11,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.421,
+          "tokens": 107,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.5,
+          "tokens": 123,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.5,
+          "tokens": 113,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.58,
+          "tokens": 151,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.91,
+          "tokens": 106,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.096,
+          "tokens": 86,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.297,
+          "tokens": 146,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.637,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.173,
+          "tokens": 112,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.403,
+          "tokens": 136,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.74,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.852,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.888,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.088,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.093,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.099,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.136,
+          "tokens": 245,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.182,
+          "tokens": 166,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.201,
+          "tokens": 294,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.203,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          2
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E11",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "Which reasons does the user see for an invalid coupon?",
+      "seconds": 1.82,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 16,
+      "confident_items": 8,
+      "tokens_used": 6915,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 5.323,
+          "tokens": 125,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "score": 2.036,
+          "tokens": 86,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 1.058,
+          "tokens": 136,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 0.782,
+          "tokens": 59,
+          "sources": [
+            1
+          ],
+          "facts": [
+            0,
+            2
+          ]
+        },
+        {
+          "score": 0.102,
+          "tokens": 129,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -0.783,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -3.439,
+          "tokens": 217,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -4.152,
+          "tokens": 134,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -6.436,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.833,
+          "tokens": 106,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.064,
+          "tokens": 95,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.358,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.861,
+          "tokens": 29,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.051,
+          "tokens": 112,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.541,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.882,
+          "tokens": 73,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.013,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.18,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.232,
+          "tokens": 57,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.264,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.269,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.284,
+          "tokens": 119,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.285,
+          "tokens": 25,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.312,
+          "tokens": 84,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.317,
+          "tokens": 88,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.322,
+          "tokens": 33,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.328,
+          "tokens": 107,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.333,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.334,
+          "tokens": 62,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.335,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          2
+        ],
+        "reranked": [
+          1,
+          4
+        ],
+        "final": [
+          1,
+          4
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E12",
+      "type": "table",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "Which PCI and compliance constraints apply to card data?",
+      "seconds": 2.53,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 15,
+      "confident_items": 7,
+      "tokens_used": 7443,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 5.85,
+          "tokens": 245,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 0.827,
+          "tokens": 84,
+          "sources": [
+            0
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -0.332,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -0.884,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.464,
+          "tokens": 189,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -3.859,
+          "tokens": 294,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -4.786,
+          "tokens": 32,
+          "sources": [
+            0
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -5.06,
+          "tokens": 17,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.069,
+          "tokens": 179,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.732,
+          "tokens": 149,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -9.465,
+          "tokens": 166,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.888,
+          "tokens": 86,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.001,
+          "tokens": 203,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.007,
+          "tokens": 102,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.214,
+          "tokens": 27,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.27,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.324,
+          "tokens": 76,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.433,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.498,
+          "tokens": 63,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.535,
+          "tokens": 141,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -10.568,
+          "tokens": 164,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.635,
+          "tokens": 143,
+          "sources": [
+            1
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -10.85,
+          "tokens": 88,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.065,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.194,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.224,
+          "tokens": 110,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.253,
+          "tokens": 217,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.256,
+          "tokens": 151,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.302,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.32,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        1,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          20
+        ],
+        "reranked": [
+          1,
+          22
+        ],
+        "final": [
+          1,
+          null
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E13",
+      "type": "multi-source",
+      "difficulty": "hard",
+      "negative": false,
+      "text": "How fast must failed-but-debited payments be refunded?",
+      "seconds": 2.61,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 19,
+      "confident_items": 11,
+      "tokens_used": 7617,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 6.954,
+          "tokens": 143,
+          "sources": [
+            1
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": 6.097,
+          "tokens": 59,
+          "sources": [],
+          "facts": [
+            0,
+            2
+          ]
+        },
+        {
+          "score": 3.374,
+          "tokens": 106,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": 3.084,
+          "tokens": 73,
+          "sources": [],
+          "facts": [
+            0,
+            2
+          ]
+        },
+        {
+          "score": 2.876,
+          "tokens": 113,
+          "sources": [
+            2
+          ],
+          "facts": [
+            2
+          ]
+        },
+        {
+          "score": 0.053,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -1.385,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.667,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.06,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.556,
+          "tokens": 102,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.967,
+          "tokens": 245,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -6.099,
+          "tokens": 57,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.645,
+          "tokens": 22,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.606,
+          "tokens": 151,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.784,
+          "tokens": 134,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.19,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.335,
+          "tokens": 83,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.474,
+          "tokens": 203,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.911,
+          "tokens": 119,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.182,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.231,
+          "tokens": 110,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.277,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.321,
+          "tokens": 166,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.379,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.413,
+          "tokens": 16,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.815,
+          "tokens": 25,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.835,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.925,
+          "tokens": 164,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.314,
+          "tokens": 29,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.332,
+          "tokens": 41,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 0.6666666666666666,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 0.6666666666666666,
+      "dropped": [
+        0,
+        3
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          16,
+          3,
+          6
+        ],
+        "reranked": [
+          11,
+          1,
+          5
+        ],
+        "final": [
+          11,
+          1,
+          5
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E14",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "What are the steps of the new checkout versus the old one?",
+      "seconds": 2.67,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 15,
+      "confident_items": 7,
+      "tokens_used": 6734,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 2.017,
+          "tokens": 123,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 0.119,
+          "tokens": 46,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -0.803,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -2.082,
+          "tokens": 33,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -2.288,
+          "tokens": 165,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -2.507,
+          "tokens": 57,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.499,
+          "tokens": 119,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.262,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.128,
+          "tokens": 115,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.365,
+          "tokens": 112,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.677,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.859,
+          "tokens": 129,
+          "sources": [
+            2
+          ],
+          "facts": []
+        },
+        {
+          "score": -7.916,
+          "tokens": 36,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.949,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.941,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.998,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.327,
+          "tokens": 59,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.375,
+          "tokens": 62,
+          "sources": [
+            2
+          ],
+          "facts": []
+        },
+        {
+          "score": -9.801,
+          "tokens": 63,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.877,
+          "tokens": 106,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.315,
+          "tokens": 186,
+          "sources": [
+            2
+          ],
+          "facts": []
+        },
+        {
+          "score": -10.564,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.588,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.709,
+          "tokens": 135,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.925,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.985,
+          "tokens": 32,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.029,
+          "tokens": 33,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.123,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.175,
+          "tokens": 107,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.2,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 0.3333333333333333,
+      "recall_all": 0.6666666666666666,
+      "rr": 0.2,
+      "recall_5": 0.3333333333333333,
+      "dropped": [
+        1,
+        2
+      ],
+      "recall_kept": 0.3333333333333333,
+      "recall_budget": 0.6666666666666666,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          14,
+          null,
+          3
+        ],
+        "reranked": [
+          5,
+          null,
+          12
+        ],
+        "final": [
+          5,
+          null,
+          12
+        ]
+      },
+      "evidence": 0.8333333333333333
+    },
+    {
+      "id": "E15",
+      "type": "lookup",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "Where do customers drop off most in the funnel?",
+      "seconds": 1.39,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 11,
+      "confident_items": 3,
+      "tokens_used": 5469,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": -3.313,
+          "tokens": 24,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -3.728,
+          "tokens": 32,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.461,
+          "tokens": 62,
+          "sources": [
+            1
+          ],
+          "facts": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "score": -8.541,
+          "tokens": 15,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -8.733,
+          "tokens": 16,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -8.888,
+          "tokens": 18,
+          "sources": [
+            0
+          ],
+          "facts": [
+            2
+          ]
+        },
+        {
+          "score": -9.119,
+          "tokens": 16,
+          "sources": [
+            0
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -9.236,
+          "tokens": 17,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -9.454,
+          "tokens": 20,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.605,
+          "tokens": 23,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.654,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.681,
+          "tokens": 23,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.701,
+          "tokens": 20,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.759,
+          "tokens": 21,
+          "sources": [],
+          "facts": [
+            2
+          ]
+        },
+        {
+          "score": -9.767,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.784,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.809,
+          "tokens": 22,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.105,
+          "tokens": 22,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.295,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.452,
+          "tokens": 43,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.954,
+          "tokens": 33,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.019,
+          "tokens": 186,
+          "sources": [
+            1
+          ],
+          "facts": [
+            2
+          ]
+        },
+        {
+          "score": -11.147,
+          "tokens": 129,
+          "sources": [
+            1
+          ],
+          "facts": [
+            2
+          ]
+        },
+        {
+          "score": -11.161,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.165,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.203,
+          "tokens": 29,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.205,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.22,
+          "tokens": 166,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.261,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.316,
+          "tokens": 57,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          2
+        ],
+        "reranked": [
+          1,
+          3
+        ],
+        "final": [
+          1,
+          3
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E16",
+      "type": "table",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "Who approves the BRD and who is responsible?",
+      "seconds": 2.3,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 10,
+      "confident_items": 2,
+      "tokens_used": 6259,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": -4.795,
+          "tokens": 203,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -4.991,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.525,
+          "tokens": 107,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -9.7,
+          "tokens": 98,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -9.966,
+          "tokens": 30,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -10.519,
+          "tokens": 133,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -10.702,
+          "tokens": 50,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -10.707,
+          "tokens": 36,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -10.799,
+          "tokens": 189,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.02,
+          "tokens": 83,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -11.096,
+          "tokens": 164,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.132,
+          "tokens": 52,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -11.146,
+          "tokens": 135,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -11.174,
+          "tokens": 22,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.189,
+          "tokens": 72,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -11.194,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.246,
+          "tokens": 61,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.265,
+          "tokens": 245,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.288,
+          "tokens": 149,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.29,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.294,
+          "tokens": 179,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -11.298,
+          "tokens": 59,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.299,
+          "tokens": 82,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -11.31,
+          "tokens": 141,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.311,
+          "tokens": 294,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.316,
+          "tokens": 32,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.319,
+          "tokens": 112,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.325,
+          "tokens": 76,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.326,
+          "tokens": 115,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.329,
+          "tokens": 38,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E17",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "Which events does the payment service publish?",
+      "seconds": 1.72,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 15,
+      "confident_items": 7,
+      "tokens_used": 6882,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 3.935,
+          "tokens": 166,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 3.928,
+          "tokens": 125,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 3.709,
+          "tokens": 164,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": 3.041,
+          "tokens": 67,
+          "sources": [
+            1
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -3.563,
+          "tokens": 72,
+          "sources": [
+            0
+          ],
+          "facts": []
+        },
+        {
+          "score": -4.469,
+          "tokens": 125,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.837,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.529,
+          "tokens": 112,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.926,
+          "tokens": 113,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.025,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.172,
+          "tokens": 151,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.393,
+          "tokens": 106,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.458,
+          "tokens": 22,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.507,
+          "tokens": 212,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.578,
+          "tokens": 86,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.587,
+          "tokens": 176,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.821,
+          "tokens": 16,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.908,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.978,
+          "tokens": 143,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.298,
+          "tokens": 83,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.821,
+          "tokens": 165,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.007,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.148,
+          "tokens": 141,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.286,
+          "tokens": 203,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.638,
+          "tokens": 189,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.054,
+          "tokens": 134,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.152,
+          "tokens": 18,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.182,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.241,
+          "tokens": 146,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.28,
+          "tokens": 41,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1,
+          5
+        ],
+        "reranked": [
+          1,
+          4
+        ],
+        "final": [
+          1,
+          4
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E18",
+      "type": "lookup",
+      "difficulty": "easy",
+      "negative": false,
+      "text": "What is the status of CR-003?",
+      "seconds": 2.55,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 15,
+      "confident_items": 7,
+      "tokens_used": 6003,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 6.075,
+          "tokens": 53,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": 3.632,
+          "tokens": 50,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 2.488,
+          "tokens": 56,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": 1.922,
+          "tokens": 61,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -0.153,
+          "tokens": 98,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -2.314,
+          "tokens": 47,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -4.714,
+          "tokens": 47,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.682,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -5.75,
+          "tokens": 43,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.463,
+          "tokens": 65,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -6.758,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.595,
+          "tokens": 37,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.943,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.091,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.174,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.278,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.424,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.901,
+          "tokens": 34,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.153,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.263,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.344,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.037,
+          "tokens": 30,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.178,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.256,
+          "tokens": 22,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.27,
+          "tokens": 26,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.277,
+          "tokens": 24,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -11.306,
+          "tokens": 76,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.308,
+          "tokens": 27,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.326,
+          "tokens": 133,
+          "sources": [
+            0
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -11.333,
+          "tokens": 43,
+          "sources": [
+            0
+          ],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 1.0,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        1
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          1
+        ],
+        "reranked": [
+          1
+        ],
+        "final": [
+          1
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E19",
+      "type": "multi-source",
+      "difficulty": "medium",
+      "negative": false,
+      "text": "Which risks and dependencies are still open?",
+      "seconds": 2.15,
+      "knowledge_status": "no_relevant_match",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 8,
+      "confident_items": 0,
+      "tokens_used": 5589,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": -5.933,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.175,
+          "tokens": 49,
+          "sources": [
+            1
+          ],
+          "facts": []
+        },
+        {
+          "score": -7.594,
+          "tokens": 47,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.683,
+          "tokens": 92,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -8.152,
+          "tokens": 44,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -8.967,
+          "tokens": 41,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.3,
+          "tokens": 31,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.42,
+          "tokens": 34,
+          "sources": [
+            2
+          ],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -9.858,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.957,
+          "tokens": 84,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.967,
+          "tokens": 47,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.994,
+          "tokens": 25,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.19,
+          "tokens": 33,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.201,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.368,
+          "tokens": 32,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.666,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.825,
+          "tokens": 151,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.015,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.077,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.213,
+          "tokens": 141,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.226,
+          "tokens": 146,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.256,
+          "tokens": 135,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -11.266,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.283,
+          "tokens": 106,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.284,
+          "tokens": 119,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.303,
+          "tokens": 294,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.304,
+          "tokens": 51,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.31,
+          "tokens": 134,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.326,
+          "tokens": 72,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -11.331,
+          "tokens": 43,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 0.5,
+      "recall_5": 0.6666666666666666,
+      "dropped": [
+        3,
+        3
+      ],
+      "recall_kept": 0.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          8,
+          9,
+          3
+        ],
+        "reranked": [
+          5,
+          2,
+          8
+        ],
+        "final": [
+          5,
+          2,
+          8
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E20",
+      "type": "open item",
+      "difficulty": "hard",
+      "negative": false,
+      "text": "Which decisions are still open?",
+      "seconds": 1.36,
+      "knowledge_status": "no_relevant_match",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 8,
+      "confident_items": 0,
+      "tokens_used": 5593,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": -7.051,
+          "tokens": 52,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.174,
+          "tokens": 82,
+          "sources": [],
+          "facts": [
+            1
+          ]
+        },
+        {
+          "score": -7.589,
+          "tokens": 24,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.594,
+          "tokens": 30,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.794,
+          "tokens": 31,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.232,
+          "tokens": 107,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -8.363,
+          "tokens": 41,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.526,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.217,
+          "tokens": 33,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -9.271,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.368,
+          "tokens": 25,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.509,
+          "tokens": 84,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.599,
+          "tokens": 151,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -9.676,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.716,
+          "tokens": 54,
+          "sources": [
+            2
+          ],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -9.77,
+          "tokens": 179,
+          "sources": [],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -9.804,
+          "tokens": 32,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.456,
+          "tokens": 113,
+          "sources": [
+            1
+          ],
+          "facts": [
+            0,
+            1
+          ]
+        },
+        {
+          "score": -10.462,
+          "tokens": 146,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -10.753,
+          "tokens": 165,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.77,
+          "tokens": 44,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -10.819,
+          "tokens": 42,
+          "sources": [
+            3
+          ],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -10.904,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.991,
+          "tokens": 34,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.125,
+          "tokens": 106,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.145,
+          "tokens": 92,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.183,
+          "tokens": 119,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.288,
+          "tokens": 134,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -11.319,
+          "tokens": 38,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.324,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 0.25,
+      "recall_all": 0.75,
+      "rr": 0.06666666666666667,
+      "recall_5": 0.0,
+      "dropped": [
+        3,
+        3
+      ],
+      "recall_kept": 0.0,
+      "recall_budget": 0.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          null,
+          19,
+          9,
+          20
+        ],
+        "reranked": [
+          null,
+          18,
+          15,
+          22
+        ],
+        "final": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "evidence": 0.5
+    },
+    {
+      "id": "E21",
+      "type": "multi-source",
+      "difficulty": "easy",
+      "negative": false,
+      "text": "How many WCAG failures did the accessibility audit find?",
+      "seconds": 2.44,
+      "knowledge_status": "ok",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 12,
+      "confident_items": 4,
+      "tokens_used": 6673,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": 7.762,
+          "tokens": 119,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": 7.464,
+          "tokens": 165,
+          "sources": [
+            0
+          ],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": 5.282,
+          "tokens": 51,
+          "sources": [
+            1
+          ],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": 1.364,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -7.664,
+          "tokens": 189,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -8.849,
+          "tokens": 294,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.938,
+          "tokens": 46,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.518,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.556,
+          "tokens": 22,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.702,
+          "tokens": 72,
+          "sources": [],
+          "facts": [
+            0
+          ]
+        },
+        {
+          "score": -10.709,
+          "tokens": 102,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.739,
+          "tokens": 203,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.758,
+          "tokens": 50,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.883,
+          "tokens": 57,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.893,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.9,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.916,
+          "tokens": 129,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.024,
+          "tokens": 72,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.058,
+          "tokens": 54,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.076,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.082,
+          "tokens": 59,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.156,
+          "tokens": 44,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.159,
+          "tokens": 95,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.271,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.303,
+          "tokens": 47,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.308,
+          "tokens": 29,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.313,
+          "tokens": 84,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.318,
+          "tokens": 134,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.331,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.333,
+          "tokens": 41,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "recall_10": 1.0,
+      "recall_all": 1.0,
+      "rr": 0.5,
+      "recall_5": 1.0,
+      "dropped": [
+        0,
+        2
+      ],
+      "recall_kept": 1.0,
+      "recall_budget": 1.0,
+      "facts_budget": 1.0,
+      "ranks": {
+        "candidates": [
+          3,
+          2
+        ],
+        "reranked": [
+          2,
+          3
+        ],
+        "final": [
+          2,
+          3
+        ]
+      },
+      "evidence": 1.0
+    },
+    {
+      "id": "E22",
+      "type": "no answer",
+      "difficulty": "hard",
+      "negative": true,
+      "text": "What is the data retention period for customer addresses?",
+      "seconds": 2.62,
+      "knowledge_status": "no_relevant_match",
+      "rerank_status": "ok",
+      "candidates": 30,
+      "final_items": 8,
+      "confident_items": 0,
+      "tokens_used": 6202,
+      "knowledge_truncated": false,
+      "degraded": false,
+      "trace": [
+        {
+          "score": -6.301,
+          "tokens": 101,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.604,
+          "tokens": 62,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.762,
+          "tokens": 16,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -9.982,
+          "tokens": 29,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.005,
+          "tokens": 149,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.082,
+          "tokens": 22,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.597,
+          "tokens": 245,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.627,
+          "tokens": 373,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.641,
+          "tokens": 186,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.65,
+          "tokens": 166,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.741,
+          "tokens": 76,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.744,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.754,
+          "tokens": 21,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.764,
+          "tokens": 151,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.769,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.801,
+          "tokens": 59,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.815,
+          "tokens": 31,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.849,
+          "tokens": 99,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -10.862,
+          "tokens": 79,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.051,
+          "tokens": 133,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.065,
+          "tokens": 189,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.099,
+          "tokens": 53,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.115,
+          "tokens": 47,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.124,
+          "tokens": 110,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.202,
+          "tokens": 294,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.231,
+          "tokens": 18,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.235,
+          "tokens": 42,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.238,
+          "tokens": 16,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.254,
+          "tokens": 55,
+          "sources": [],
+          "facts": []
+        },
+        {
+          "score": -11.269,
+          "tokens": 17,
+          "sources": [],
+          "facts": []
+        }
+      ],
+      "overhead_tokens": 5205,
+      "evidence": 1.0
+    }
+  ],
+  "rule_cases": [
+    {
+      "id": "C01",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "missing": [],
+      "unexpected": [],
+      "selected": 11,
+      "template": true
+    },
+    {
+      "id": "C02",
+      "precision": 0.8,
+      "recall": 1.0,
+      "f1": 0.888888888888889,
+      "missing": [],
+      "unexpected": [
+        "rules/security.md#R-SEC-01 Card data stays in gateway-hosted fields"
+      ],
+      "selected": 5,
+      "template": true
+    },
+    {
+      "id": "C03",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "missing": [],
+      "unexpected": [],
+      "selected": 9,
+      "template": true
+    },
+    {
+      "id": "C04",
+      "precision": 0.8571428571428571,
+      "recall": 1.0,
+      "f1": 0.923076923076923,
+      "missing": [],
+      "unexpected": [
+        "nomenclature.md#10. Jira Keys, Feature Flags and Release Names"
+      ],
+      "selected": 7,
+      "template": true
+    },
+    {
+      "id": "C05",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "missing": [],
+      "unexpected": [],
+      "selected": 6,
+      "template": true
+    },
+    {
+      "id": "C06",
+      "precision": 0.9,
+      "recall": 1.0,
+      "f1": 0.9473684210526316,
+      "missing": [],
+      "unexpected": [
+        "rules/payments.md#R-PAY-04 Failed-but-debited payments are refunded automatically",
+        "rules/payments.md#R-PAY-03 Payment retry keeps the cart"
+      ],
+      "selected": 20,
+      "template": true
+    },
+    {
+      "id": "C07",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "missing": [],
+      "unexpected": [],
+      "selected": 10,
+      "template": true
+    },
+    {
+      "id": "C08",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "missing": [],
+      "unexpected": [],
+      "selected": 9,
+      "template": true
+    }
+  ],
+  "summary": {
+    "retrieval": {
+      "recall@10": 0.9007936507936508,
+      "recall@30": 0.9722222222222223
+    },
+    "rerank": {
+      "mrr": 0.7607142857142857,
+      "recall@5": 0.8095238095238095,
+      "dropped_relevant_rate": 0.2631578947368421,
+      "recall_after_threshold": 0.8174603174603176
+    },
+    "budget": {
+      "recall@budget": 0.9365079365079365,
+      "fact_recall@budget": 1.0,
+      "knowledge_truncated_rate": 0.0
+    },
+    "rules": {
+      "precision": 0.9446428571428571,
+      "recall": 1.0,
+      "f1": 0.9699167791273055,
+      "template_accuracy": 1.0
+    },
+    "degraded": {
+      "degraded_rate": 0.0,
+      "rerank_skipped_rate": 0.0,
+      "no_relevant_match_rate": 0.09523809523809523,
+      "no_answer_correct_rate": 1.0,
+      "errors": 0
+    },
+    "latency_seconds": {
+      "median": 2.485,
+      "max": 13.17
+    },
+    "evidence_by_difficulty": {
+      "easy": 1.0,
+      "medium": 0.9833333333333334,
+      "hard": 0.875
+    },
+    "evidence": 0.9696969696969696,
+    "rules_f1": 0.9699167791273055,
+    "combined": 0.9727932155563734
+  },
+  "spec_warnings": []
+}

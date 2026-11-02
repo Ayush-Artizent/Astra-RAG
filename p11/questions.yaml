@@ -1,0 +1,89 @@
+# P11 evaluation set for the ecommerce example repo.
+# Source: tests/manual/eval-questions-ecommerce.md (E01-E22) and tests/manual/retrieval-expected.md (C-cases).
+#
+# sources: what must come back. `file` = path or trailing path part; `heading` = one heading segment;
+#          `row` = text that must be in the chunk (CSV row id).
+# match:   all = every source must be returned (default); any = one is enough.
+# facts:   strings the returned text must contain (case, spaces and thousands commas ignored).
+# negative: nothing in the repo answers it; the right result is no knowledge items.
+
+slug: github.com__manojb-nous__ecommerce-example-repo
+
+# What the knowledge questions send besides the text (only the rules and template depend on them).
+defaults: {doc_type: BRD, stage: requirements, tags: []}
+
+questions:
+  - {id: E01, text: "What does CHK-104 cover?", type: exact ID, difficulty: easy,
+     sources: [{file: stories.csv, row: CHK-104}], facts: ["10000", COD-enabled]}
+  - {id: E02, text: "Who owns RSK-002 and what is its impact?", type: exact ID, difficulty: easy,
+     sources: [{file: raid-log.csv, row: RSK-002}], facts: [Logistics Integration Manager, Medium]}
+  - {id: E03, text: "What is out of scope for the checkout epic?", type: tie, difficulty: easy,
+     sources: [{file: checkout-epic.md, heading: Not in scope}], facts: [Buy-now-pay-later, International shipping]}
+  - {id: E04, text: "What are the SOW exclusions?", type: lookup, difficulty: easy,
+     sources: [{file: sow-summary.md}], facts: [loyalty-points redemption, BNPL]}
+  - {id: E05, text: "What are the project KPIs and their targets?", type: table, difficulty: medium,
+     sources: [{file: project-charter.md}], facts: [41%, 52%, 94%, 2.5 s]}
+  - {id: E06, text: "When is design freeze and when does 100% rollout happen?", type: lookup, difficulty: easy,
+     sources: [{file: project-charter.md, heading: Timeline}], facts: [2026-11-15, 2027-03]}
+  - {id: E07, text: "What are the gateway failover thresholds?", type: multi-source, difficulty: medium, match: any,
+     sources: [{file: 2026-10-02-gateway-failover.md}, {file: 2026-09-05-payments-sync.md}], facts: [5%, 4 s, 15 minutes]}
+  - {id: E08, text: "Which gateway is primary and which is the fallback?", type: lookup, difficulty: easy,
+     sources: [{file: 2026-10-02-gateway-failover.md}], facts: [Razorpay, PayU]}
+  - {id: E09, text: "What is the COD limit for new customers?", type: conflict, difficulty: hard, match: all,
+     sources: [{file: coupon-and-cod-rules.md, heading: COD}, {file: 2026-10-10-finance-sync.md},
+               {file: 2026-09-05-payments-sync.md}, {file: raid-log.csv, row: ISS-001},
+               {file: checkout-epic.md, heading: Scope}, {file: stories.csv, row: CHK-104}],
+     facts: ["7,500", "10,000", steering, 2026-10-28]}
+  - {id: E10, text: "What is the COD fee and what can't be COD?", type: lookup, difficulty: medium,
+     sources: [{file: coupon-and-cod-rules.md, heading: COD}], facts: ["49", gift cards, "5,000"]}
+  - {id: E11, text: "Which reasons does the user see for an invalid coupon?", type: multi-source, difficulty: medium, match: any,
+     sources: [{file: coupon-and-cod-rules.md, heading: Coupons}, {file: stories.csv, row: CHK-105}],
+     facts: [expired, minimum order value, category]}
+  - {id: E12, text: "Which PCI and compliance constraints apply to card data?", type: table, difficulty: medium, match: any,
+     sources: [{file: pci-and-consumer-rules.md}, {file: 2026-09-05-payments-sync.md}], facts: [CMP-01, SAQ A]}
+  - {id: E13, text: "How fast must failed-but-debited payments be refunded?", type: multi-source, difficulty: hard, match: all,
+     sources: [{file: pci-and-consumer-rules.md}, {file: 2026-09-05-payments-sync.md}, {file: 2026-10-10-finance-sync.md}],
+     facts: [T+1, 24 h, "23:00"]}
+  - {id: E14, text: "What are the steps of the new checkout versus the old one?", type: multi-source, difficulty: medium, match: all,
+     sources: [{file: 2026-09-19-ux-review.md}, {file: screen-inventory.md}, {file: current-checkout-flow.md}],
+     facts: [3 steps, 6 steps]}
+  - {id: E15, text: "Where do customers drop off most in the funnel?", type: lookup, difficulty: medium, match: any,
+     sources: [{file: funnel-aug-2026.csv}, {file: current-checkout-flow.md}], facts: ["27", "23", "19"]}
+  - {id: E16, text: "Who approves the BRD and who is responsible?", type: table, difficulty: medium,
+     sources: [{file: stakeholder-register.md}], facts: [Chief Digital Officer, Product Owner]}
+  - {id: E17, text: "Which events does the payment service publish?", type: multi-source, difficulty: medium, match: any,
+     sources: [{file: payment-integration.md}, {file: stories.csv, row: CHK-107}], facts: [order.created, order.failed]}
+  - {id: E18, text: "What is the status of CR-003?", type: lookup, difficulty: easy,
+     sources: [{file: CR-003-save-for-later.md}], facts: [Deferred, 7 person-days]}
+  - {id: E19, text: "Which risks and dependencies are still open?", type: multi-source, difficulty: medium, match: all,
+     sources: [{file: raid-log.csv, row: RSK-001}, {file: raid-log.csv, row: RSK-002}, {file: raid-log.csv, row: DEP-001}],
+     facts: [Spring sale, PayU]}
+  - {id: E20, text: "Which decisions are still open?", type: open item, difficulty: hard, match: all,
+     sources: [{file: 2026-09-05-payments-sync.md}, {file: 2026-10-10-finance-sync.md},
+               {file: coupon-and-cod-rules.md}, {file: raid-log.csv, row: ISS-001}],
+     facts: [COD, steering]}
+  - {id: E21, text: "How many WCAG failures did the accessibility audit find?", type: multi-source, difficulty: easy, match: any,
+     sources: [{file: 2026-09-19-ux-review.md}, {file: stories.csv, row: CHK-110}], facts: ["14"]}
+  - {id: E22, text: "What is the data retention period for customer addresses?", type: no answer, difficulty: hard,
+     negative: true, sources: [], facts: []}
+
+# Rule and template cases (retrieval-expected.md, C01-C08). `rules` lists only the rules chosen by scope, i.e. on top of the
+# always-on set. A token is `FILE#N` (rule in FILE whose heading starts with N) or text found in the rule heading (R-PAY-01).
+rule_cases:
+  - {id: C01, doc_type: BRD, stage: requirements, tags: [payments], template: brd-payments-template,
+     rules: ["policies.md#7", "nomenclature.md#4", R-SEC-01, R-SEC-03, R-PAY-01, R-PAY-03, R-PAY-04, R-PAY-07, R-UX-03, R-GOV-02, R-GOV-05]}
+  - {id: C02, doc_type: BRD, stage: draft, tags: [security], template: brd-template,
+     rules: ["nomenclature.md#4", R-SEC-06, R-GOV-02, R-GOV-05]}
+  - {id: C03, doc_type: TESTCASES, stage: test, tags: [coupons], template: test-case-template,
+     rules: ["nomenclature.md#7", R-CPN-01, R-CPN-02, R-CPN-03, R-SEC-04, R-QA-01, R-QA-02, R-QA-04, R-QA-05]}
+  - {id: C04, doc_type: USER-STORIES, stage: requirements, tags: [cod], template: user-story-template,
+     rules: ["nomenclature.md#6", R-COD-01, R-COD-02, R-COD-03, R-GOV-02, R-GOV-05]}
+  - {id: C05, doc_type: change request, stage: requirements, tags: [governance], template: cr-impact-template,
+     rules: ["nomenclature.md#10", "nomenclature.md#12", R-GOV-01, R-GOV-02, R-GOV-03, R-GOV-05]}
+  - {id: C06, doc_type: SPEC, stage: design, tags: [api, payments], template: api-spec-template,
+     rules: ["policies.md#7", "nomenclature.md#5", R-SEC-01, R-SEC-02, R-SEC-03, R-SEC-04, R-SEC-05, R-PAY-01, R-PAY-02,
+             R-PAY-05, R-PAY-06, R-PAY-07, R-UX-03, R-GOV-02, R-API-01, R-API-02, R-API-03, R-API-04]}
+  - {id: C07, doc_type: BRD, tags: [payments], template: brd-payments-template,
+     rules: ["nomenclature.md#4", R-SEC-01, R-SEC-03, R-PAY-01, R-PAY-03, R-PAY-04, R-PAY-07, R-UX-03, R-GOV-02, R-GOV-05]}
+  - {id: C08, doc_type: TEST-PLAN, stage: test, tags: [performance, payments], template: test-plan-template,
+     rules: ["nomenclature.md#7", "nomenclature.md#10", "nomenclature.md#11", R-SEC-01, R-PAY-01, R-QA-01, R-QA-02, R-QA-03, R-QA-04]}

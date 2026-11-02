@@ -64,6 +64,10 @@ uv run python -m astra_rag   # http://127.0.0.1:5000  (API docs at /docs)
 
 Tests: `uv run python -m unittest discover -s tests -t .`
 
+Retrieval evaluation (P11; needs Qdrant, an indexed and bound repo, the saved PAT): `uv run python -m p11.run_eval`
+prints recall, rerank, budget and rule metrics plus a combined score; `--json p11/out/run.json` saves a run and
+`--baseline p11/out/run.json` fails on a regression. Questions live in `p11/questions.yaml`.
+
 The first ingestion downloads the embedding models (~200 MB) into `.cache/fastembed`.
 Env overrides: `QDRANT_URL`, `QDRANT_API_KEY`, `FASTEMBED_CACHE_DIR`, `ASTRA_DB_PATH`, `ASTRA_SYNC_DAILY_AT`
 (`HH:MM`, UTC), `ASTRA_SYNC_SCHEDULER=0` (turns off the nightly check, the startup catch-up and the startup index
@@ -121,6 +125,7 @@ src/astra_rag/
   templates/index.html       the UI
   static/                    style.css, app.js
 tests/                       unit tests + fixtures/
+p11/                         evaluation harness (run_eval.py, metrics.py, questions.yaml)
 docker-compose.yml           Qdrant
 data/                        registry database + instance lock (git-ignored)
 temp_storage/                cloned repos (git-ignored)

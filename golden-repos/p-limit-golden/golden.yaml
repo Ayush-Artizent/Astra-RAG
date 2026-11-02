@@ -22,7 +22,7 @@ rules:
       tags: [dependencies]
     priority: 20
   - file: policies.md
-    section: change-control
+    section: Change control
     applies_to:
       stages: [design, build]
     priority: 30
@@ -45,8 +45,9 @@ rules:
       stages: [release]
     priority: 60
 templates:
-  RELEASE-NOTES:
-    default: standard
+  - type: RELEASE-NOTES
+    variant: standard
+    default: true
 project_data:
   folders:
     emails: email

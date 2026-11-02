@@ -23,23 +23,23 @@ rules:
     always: true
     priority: 10
   - file: policies.md
-    section: data-handling
+    section: Data handling
     applies_to:
       doc_types: [BRD, ADR, DESIGN-SPEC, CHANGE-REQUEST]
       tags: [cache, security]
     priority: 20
   - file: policies.md
-    section: hashing-and-integrity
+    section: Hashing and integrity
     applies_to:
       tags: [hash, security]
     priority: 20
   - file: policies.md
-    section: deprecation-and-support
+    section: Deprecation and support
     applies_to:
       doc_types: [CHANGE-REQUEST, RELEASE-NOTES, ADR]
     priority: 30
   - file: policies.md
-    section: access-and-ownership
+    section: Access and ownership
     applies_to:
       stages: [review, approved]
     priority: 40
@@ -76,9 +76,11 @@ rules:
       doc_types: [BRD, TEST-PLAN, DESIGN-SPEC]
     priority: 80
 templates:
-  runbook:
-    default: standard
-  design-spec:
-    default: short
+  - type: runbook
+    variant: standard
+    default: true
+  - type: design-spec
+    variant: short
+    default: true
 project_data:
   exclude: []

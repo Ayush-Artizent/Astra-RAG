@@ -1,0 +1,7 @@
+key,service,month,limiter_calls_millions,avg_concurrency,errors_per_million
+billing-2026-03,billing,2026-03,42.5,8,0.4
+billing-2026-04,billing,2026-04,47.1,8,0.3
+search-2026-03,search,2026-03,120.8,32,1.1
+search-2026-04,search,2026-04,131.2,32,0.9
+settlement-2026-03,settlement,2026-03,9.4,4,0.2
+settlement-2026-04,settlement,2026-04,10.6,4,0.1

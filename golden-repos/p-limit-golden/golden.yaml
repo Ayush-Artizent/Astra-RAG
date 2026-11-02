@@ -1,0 +1,55 @@
+version: 1
+doc_types:
+  BRD:
+    aliases: [business-requirements]
+  TEST-PLAN:
+    aliases: [test-plan, testplan]
+  ADR:
+    aliases: [decision-record]
+  RELEASE-NOTES:
+    aliases: [release-notes, changelog]
+stages: [discovery, design, build, test, release]
+tags: [api, validation, dependencies, release, quality]
+rules:
+  - file: policies.md
+    section: versioning
+    always: true
+    priority: 10
+  - file: policies.md
+    section: dependencies
+    applies_to:
+      doc_types: [ADR, BRD]
+      tags: [dependencies]
+    priority: 20
+  - file: policies.md
+    section: change-control
+    applies_to:
+      stages: [design, build]
+    priority: 30
+  - file: nomenclature.md
+    always: true
+    priority: 5
+  - file: rules/coding-standards.md
+    applies_to:
+      stages: [build]
+      tags: [api, validation]
+    priority: 40
+  - file: rules/testing.md
+    applies_to:
+      doc_types: [TEST-PLAN]
+      stages: [test]
+    priority: 50
+  - file: rules/release-and-versioning.md
+    applies_to:
+      doc_types: [RELEASE-NOTES]
+      stages: [release]
+    priority: 60
+templates:
+  RELEASE-NOTES:
+    default: standard
+project_data:
+  folders:
+    emails: email
+    meeting-notes: meeting-note
+    change-requests: change-request
+    raid: raid-log

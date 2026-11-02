@@ -1,0 +1,201 @@
+adoption_id,team,service,quarter,flavor,gpl_version,migration_status
+ADOPT-0001,Mobile Platform,mobile-platform-svc-9,2026-Q3,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0002,Mobile Platform,mobile-platform-svc-8,2026-Q1,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0003,Data Platform,data-platform-svc-9,2026-Q1,android,33.7.2-jre-acme.2,In Progress
+ADOPT-0004,Mobile Platform,mobile-platform-svc-12,2026-Q2,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0005,Inventory,inventory-svc-2,2026-Q2,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0006,Catalog,catalog-svc-1,2026-Q3,android,33.7.2-jre-acme.1,Not Started
+ADOPT-0007,Shipping,shipping-svc-5,2026-Q2,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0008,Order Services,order-services-svc-4,2026-Q2,jre,LUL-4.x,In Progress
+ADOPT-0009,Fraud,fraud-svc-4,2026-Q3,android,33.7.2-jre-acme.3,Not Started
+ADOPT-0010,Catalog,catalog-svc-12,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0011,Analytics Platform,analytics-platform-svc-1,2026-Q2,jre,LUL-4.x,In Progress
+ADOPT-0012,Reporting,reporting-svc-1,2026-Q3,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0013,Shipping,shipping-svc-12,2026-Q3,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0014,Billing,billing-svc-7,2026-Q1,android,33.7.2-jre-acme.1,Migrated
+ADOPT-0015,Fraud,fraud-svc-2,2026-Q2,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0016,Fraud,fraud-svc-8,2026-Q2,jre,LUL-4.x,Migrated
+ADOPT-0017,Billing,billing-svc-11,2026-Q1,android,33.7.2-jre-acme.1,Migrated
+ADOPT-0018,Search,search-svc-3,2026-Q3,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0019,Shipping,shipping-svc-7,2026-Q2,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0020,Gateway,gateway-svc-2,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0021,Data Platform,data-platform-svc-3,2026-Q1,android,32.1.3-jre-acme.2,In Progress
+ADOPT-0022,Search,search-svc-9,2026-Q1,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0023,Gateway,gateway-svc-5,2026-Q2,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0024,Catalog,catalog-svc-5,2026-Q3,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0025,Data Platform,data-platform-svc-12,2026-Q1,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0026,Billing,billing-svc-11,2026-Q1,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0027,Order Services,order-services-svc-8,2026-Q2,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0028,Payments,payments-svc-2,2026-Q1,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0029,Data Platform,data-platform-svc-7,2026-Q1,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0030,Analytics Platform,analytics-platform-svc-1,2026-Q1,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0031,Catalog,catalog-svc-2,2026-Q1,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0032,Notifications,notifications-svc-3,2026-Q1,android,32.1.3-jre-acme.2,Not Started
+ADOPT-0033,Order Services,order-services-svc-11,2026-Q2,android,33.7.2-jre-acme.2,In Progress
+ADOPT-0034,Mobile Platform,mobile-platform-svc-5,2026-Q1,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0035,Order Services,order-services-svc-10,2026-Q3,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0036,Search,search-svc-8,2026-Q3,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0037,Search,search-svc-7,2026-Q1,jre,LUL-4.x,Migrated
+ADOPT-0038,Reporting,reporting-svc-1,2026-Q3,android,33.7.2-jre-acme.3,Not Started
+ADOPT-0039,Billing,billing-svc-6,2026-Q2,jre,32.1.3-jre-acme.2,In Progress
+ADOPT-0040,Data Platform,data-platform-svc-6,2026-Q1,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0041,Order Services,order-services-svc-9,2026-Q2,jre,LUL-4.x,Migrated
+ADOPT-0042,Data Platform,data-platform-svc-4,2026-Q1,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0043,Catalog,catalog-svc-10,2026-Q1,android,33.7.2-jre-acme.3,Migrated
+ADOPT-0044,Data Platform,data-platform-svc-10,2026-Q1,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0045,Fraud,fraud-svc-6,2026-Q3,jre,LUL-4.x,Migrated
+ADOPT-0046,Shipping,shipping-svc-9,2026-Q2,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0047,Order Services,order-services-svc-1,2026-Q1,jre,LUL-4.x,Migrated
+ADOPT-0048,Order Services,order-services-svc-8,2026-Q3,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0049,Catalog,catalog-svc-6,2026-Q1,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0050,Order Services,order-services-svc-10,2026-Q1,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0051,Payments,payments-svc-12,2026-Q2,android,LUL-4.x,Migrated
+ADOPT-0052,Identity,identity-svc-6,2026-Q2,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0053,Catalog,catalog-svc-8,2026-Q3,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0054,Mobile Platform,mobile-platform-svc-10,2026-Q3,jre,32.1.3-jre-acme.2,In Progress
+ADOPT-0055,Fraud,fraud-svc-5,2026-Q3,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0056,Fraud,fraud-svc-7,2026-Q3,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0057,Analytics Platform,analytics-platform-svc-4,2026-Q3,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0058,Identity,identity-svc-2,2026-Q3,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0059,Data Platform,data-platform-svc-2,2026-Q3,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0060,Gateway,gateway-svc-4,2026-Q1,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0061,Catalog,catalog-svc-12,2026-Q1,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0062,Notifications,notifications-svc-7,2026-Q3,jre,32.1.3-jre-acme.2,Not Started
+ADOPT-0063,Analytics Platform,analytics-platform-svc-6,2026-Q2,android,33.7.2-jre-acme.1,Not Started
+ADOPT-0064,Catalog,catalog-svc-11,2026-Q3,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0065,Payments,payments-svc-5,2026-Q1,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0066,Payments,payments-svc-6,2026-Q1,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0067,Fraud,fraud-svc-9,2026-Q1,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0068,Fraud,fraud-svc-7,2026-Q1,jre,LUL-4.x,Not Started
+ADOPT-0069,Data Platform,data-platform-svc-2,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0070,Search,search-svc-9,2026-Q3,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0071,Mobile Platform,mobile-platform-svc-1,2026-Q1,android,LUL-4.x,Not Started
+ADOPT-0072,Data Platform,data-platform-svc-6,2026-Q1,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0073,Gateway,gateway-svc-11,2026-Q3,android,33.7.2-jre-acme.2,Migrated
+ADOPT-0074,Order Services,order-services-svc-3,2026-Q1,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0075,Shipping,shipping-svc-5,2026-Q1,android,32.1.3-jre-acme.2,Not Started
+ADOPT-0076,Analytics Platform,analytics-platform-svc-5,2026-Q3,jre,LUL-4.x,Not Started
+ADOPT-0077,Data Platform,data-platform-svc-7,2026-Q2,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0078,Order Services,order-services-svc-8,2026-Q2,android,33.7.2-jre-acme.3,Migrated
+ADOPT-0079,Shipping,shipping-svc-10,2026-Q2,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0080,Payments,payments-svc-6,2026-Q3,android,LUL-4.x,Migrated
+ADOPT-0081,Billing,billing-svc-7,2026-Q1,android,LUL-4.x,Not Started
+ADOPT-0082,Inventory,inventory-svc-8,2026-Q1,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0083,Analytics Platform,analytics-platform-svc-1,2026-Q3,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0084,Data Platform,data-platform-svc-4,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0085,Search,search-svc-11,2026-Q1,android,33.7.2-jre-acme.2,Migrated
+ADOPT-0086,Shipping,shipping-svc-5,2026-Q3,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0087,Search,search-svc-7,2026-Q3,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0088,Analytics Platform,analytics-platform-svc-12,2026-Q1,android,33.7.2-jre-acme.1,Not Started
+ADOPT-0089,Data Platform,data-platform-svc-10,2026-Q1,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0090,Catalog,catalog-svc-9,2026-Q2,jre,32.1.3-jre-acme.2,In Progress
+ADOPT-0091,Search,search-svc-8,2026-Q3,android,33.7.2-jre-acme.1,Migrated
+ADOPT-0092,Gateway,gateway-svc-3,2026-Q2,android,33.7.2-jre-acme.1,Not Started
+ADOPT-0093,Analytics Platform,analytics-platform-svc-12,2026-Q2,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0094,Analytics Platform,analytics-platform-svc-6,2026-Q2,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0095,Gateway,gateway-svc-8,2026-Q2,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0096,Gateway,gateway-svc-8,2026-Q3,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0097,Inventory,inventory-svc-2,2026-Q3,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0098,Analytics Platform,analytics-platform-svc-12,2026-Q2,android,LUL-4.x,In Progress
+ADOPT-0099,Shipping,shipping-svc-9,2026-Q1,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0100,Fraud,fraud-svc-7,2026-Q3,jre,LUL-4.x,Migrated
+ADOPT-0101,Data Platform,data-platform-svc-4,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0102,Notifications,notifications-svc-6,2026-Q1,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0103,Shipping,shipping-svc-9,2026-Q2,android,33.7.2-jre-acme.1,Migrated
+ADOPT-0104,Mobile Platform,mobile-platform-svc-8,2026-Q2,android,33.7.2-jre-acme.2,Not Started
+ADOPT-0105,Inventory,inventory-svc-6,2026-Q3,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0106,Fraud,fraud-svc-2,2026-Q3,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0107,Order Services,order-services-svc-10,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0108,Reporting,reporting-svc-5,2026-Q1,android,LUL-4.x,Migrated
+ADOPT-0109,Shipping,shipping-svc-1,2026-Q3,android,33.7.2-jre-acme.2,Migrated
+ADOPT-0110,Inventory,inventory-svc-4,2026-Q1,jre,LUL-4.x,In Progress
+ADOPT-0111,Fraud,fraud-svc-11,2026-Q3,jre,32.1.3-jre-acme.2,Not Started
+ADOPT-0112,Shipping,shipping-svc-8,2026-Q2,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0113,Gateway,gateway-svc-9,2026-Q3,android,LUL-4.x,Migrated
+ADOPT-0114,Order Services,order-services-svc-11,2026-Q3,jre,LUL-4.x,In Progress
+ADOPT-0115,Gateway,gateway-svc-2,2026-Q3,android,33.7.2-jre-acme.1,In Progress
+ADOPT-0116,Gateway,gateway-svc-6,2026-Q3,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0117,Mobile Platform,mobile-platform-svc-9,2026-Q1,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0118,Reporting,reporting-svc-11,2026-Q2,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0119,Gateway,gateway-svc-7,2026-Q2,android,32.1.3-jre-acme.2,Migrated
+ADOPT-0120,Inventory,inventory-svc-10,2026-Q3,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0121,Reporting,reporting-svc-11,2026-Q3,android,33.7.2-jre-acme.3,In Progress
+ADOPT-0122,Shipping,shipping-svc-11,2026-Q1,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0123,Notifications,notifications-svc-12,2026-Q1,jre,LUL-4.x,Migrated
+ADOPT-0124,Reporting,reporting-svc-11,2026-Q2,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0125,Mobile Platform,mobile-platform-svc-5,2026-Q3,android,33.7.2-jre-acme.3,In Progress
+ADOPT-0126,Gateway,gateway-svc-5,2026-Q3,android,33.7.2-jre-acme.1,Not Started
+ADOPT-0127,Order Services,order-services-svc-10,2026-Q3,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0128,Billing,billing-svc-11,2026-Q1,android,LUL-4.x,In Progress
+ADOPT-0129,Search,search-svc-3,2026-Q1,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0130,Search,search-svc-8,2026-Q3,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0131,Catalog,catalog-svc-8,2026-Q1,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0132,Reporting,reporting-svc-1,2026-Q1,android,33.7.2-jre-acme.3,Migrated
+ADOPT-0133,Catalog,catalog-svc-10,2026-Q1,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0134,Data Platform,data-platform-svc-7,2026-Q3,android,32.1.3-jre-acme.2,Not Started
+ADOPT-0135,Notifications,notifications-svc-1,2026-Q2,jre,LUL-4.x,Migrated
+ADOPT-0136,Fraud,fraud-svc-1,2026-Q2,jre,LUL-4.x,Migrated
+ADOPT-0137,Order Services,order-services-svc-1,2026-Q3,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0138,Gateway,gateway-svc-2,2026-Q1,android,LUL-4.x,In Progress
+ADOPT-0139,Data Platform,data-platform-svc-1,2026-Q1,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0140,Fraud,fraud-svc-10,2026-Q3,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0141,Identity,identity-svc-6,2026-Q2,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0142,Order Services,order-services-svc-4,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0143,Inventory,inventory-svc-3,2026-Q3,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0144,Search,search-svc-5,2026-Q3,jre,LUL-4.x,Migrated
+ADOPT-0145,Reporting,reporting-svc-11,2026-Q1,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0146,Search,search-svc-7,2026-Q2,jre,LUL-4.x,In Progress
+ADOPT-0147,Notifications,notifications-svc-3,2026-Q3,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0148,Search,search-svc-2,2026-Q3,jre,LUL-4.x,Migrated
+ADOPT-0149,Search,search-svc-9,2026-Q1,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0150,Catalog,catalog-svc-8,2026-Q1,jre,LUL-4.x,Migrated
+ADOPT-0151,Catalog,catalog-svc-9,2026-Q2,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0152,Gateway,gateway-svc-1,2026-Q1,android,33.7.2-jre-acme.2,Not Started
+ADOPT-0153,Identity,identity-svc-1,2026-Q1,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0154,Shipping,shipping-svc-11,2026-Q3,android,33.7.2-jre-acme.2,Migrated
+ADOPT-0155,Catalog,catalog-svc-2,2026-Q3,jre,33.7.2-jre-acme.3,Migrated
+ADOPT-0156,Notifications,notifications-svc-5,2026-Q2,android,33.7.2-jre-acme.1,Migrated
+ADOPT-0157,Shipping,shipping-svc-1,2026-Q1,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0158,Search,search-svc-2,2026-Q3,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0159,Shipping,shipping-svc-11,2026-Q1,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0160,Analytics Platform,analytics-platform-svc-10,2026-Q2,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0161,Shipping,shipping-svc-3,2026-Q2,jre,32.1.3-jre-acme.2,Not Started
+ADOPT-0162,Notifications,notifications-svc-7,2026-Q2,android,32.1.3-jre-acme.2,Migrated
+ADOPT-0163,Payments,payments-svc-12,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0164,Search,search-svc-8,2026-Q3,android,33.7.2-jre-acme.2,Not Started
+ADOPT-0165,Catalog,catalog-svc-10,2026-Q2,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0166,Analytics Platform,analytics-platform-svc-2,2026-Q2,android,32.1.3-jre-acme.2,Migrated
+ADOPT-0167,Payments,payments-svc-11,2026-Q2,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0168,Reporting,reporting-svc-9,2026-Q2,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0169,Notifications,notifications-svc-11,2026-Q2,android,33.7.2-jre-acme.2,Migrated
+ADOPT-0170,Order Services,order-services-svc-3,2026-Q3,android,32.1.3-jre-acme.2,Migrated
+ADOPT-0171,Payments,payments-svc-6,2026-Q2,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0172,Order Services,order-services-svc-4,2026-Q3,android,32.1.3-jre-acme.2,Migrated
+ADOPT-0173,Payments,payments-svc-8,2026-Q2,android,33.7.2-jre-acme.1,Not Started
+ADOPT-0174,Notifications,notifications-svc-2,2026-Q2,android,33.7.2-jre-acme.1,Migrated
+ADOPT-0175,Search,search-svc-1,2026-Q2,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0176,Analytics Platform,analytics-platform-svc-9,2026-Q3,jre,32.1.3-jre-acme.2,In Progress
+ADOPT-0177,Identity,identity-svc-4,2026-Q1,android,33.7.2-jre-acme.3,Not Started
+ADOPT-0178,Fraud,fraud-svc-6,2026-Q3,android,33.7.2-jre-acme.1,Migrated
+ADOPT-0179,Catalog,catalog-svc-4,2026-Q3,jre,33.7.2-jre-acme.3,In Progress
+ADOPT-0180,Shipping,shipping-svc-5,2026-Q3,jre,33.7.2-jre-acme.1,Migrated
+ADOPT-0181,Analytics Platform,analytics-platform-svc-8,2026-Q1,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0182,Gateway,gateway-svc-4,2026-Q3,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0183,Mobile Platform,mobile-platform-svc-4,2026-Q2,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0184,Order Services,order-services-svc-11,2026-Q3,jre,32.1.3-jre-acme.2,Not Started
+ADOPT-0185,Reporting,reporting-svc-9,2026-Q3,jre,32.1.3-jre-acme.2,Migrated
+ADOPT-0186,Billing,billing-svc-1,2026-Q3,android,LUL-4.x,Not Started
+ADOPT-0187,Analytics Platform,analytics-platform-svc-3,2026-Q3,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0188,Search,search-svc-10,2026-Q3,jre,LUL-4.x,Not Started
+ADOPT-0189,Search,search-svc-12,2026-Q3,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0190,Identity,identity-svc-8,2026-Q2,jre,33.7.2-jre-acme.2,Not Started
+ADOPT-0191,Inventory,inventory-svc-12,2026-Q3,jre,LUL-4.x,In Progress
+ADOPT-0192,Fraud,fraud-svc-9,2026-Q3,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0193,Inventory,inventory-svc-5,2026-Q3,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0194,Billing,billing-svc-12,2026-Q3,jre,33.7.2-jre-acme.1,In Progress
+ADOPT-0195,Billing,billing-svc-10,2026-Q2,android,LUL-4.x,In Progress
+ADOPT-0196,Analytics Platform,analytics-platform-svc-1,2026-Q2,jre,33.7.2-jre-acme.1,Not Started
+ADOPT-0197,Data Platform,data-platform-svc-11,2026-Q1,jre,33.7.2-jre-acme.2,In Progress
+ADOPT-0198,Catalog,catalog-svc-5,2026-Q1,jre,33.7.2-jre-acme.2,Migrated
+ADOPT-0199,Fraud,fraud-svc-4,2026-Q2,jre,33.7.2-jre-acme.3,Not Started
+ADOPT-0200,Payments,payments-svc-11,2026-Q3,jre,LUL-4.x,Not Started

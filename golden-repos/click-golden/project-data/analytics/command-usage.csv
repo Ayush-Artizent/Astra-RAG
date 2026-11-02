@@ -1,0 +1,9 @@
+metric_id,command_name,month,invocations,error_rate_pct
+M001,build,2026-08,18420,1.2
+M002,deploy,2026-08,6310,2.8
+M003,lint,2026-08,22750,0.9
+M004,release,2026-08,740,3.5
+M005,build,2026-09,19980,1.1
+M006,deploy,2026-09,6890,2.4
+M007,lint,2026-09,24100,0.8
+M008,release,2026-09,810,3.1

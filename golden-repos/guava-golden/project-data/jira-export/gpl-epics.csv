@@ -1,0 +1,21 @@
+epic_key,name,owner_role,status,target_date,story_points
+GPL-E01,Cache governance,Documentation Lead,Done,2026-10-22,16
+GPL-E02,Hashing hardening,Data Platform Lead,Planned,2026-02-19,9
+GPL-E03,Collections helpers,Core Collections Lead,In Progress,2026-05-02,8
+GPL-E04,Concurrency facade,Documentation Lead,Done,2026-06-21,37
+GPL-E05,Documentation portal,Documentation Lead,In Progress,2026-08-03,39
+GPL-E06,Release automation,Mobile Platform Lead,Done,2026-04-09,10
+GPL-E07,SBOM and compliance,Platform Architect,Planned,2026-10-07,14
+GPL-E08,Android flavor,Mobile Platform Lead,In Progress,2026-08-19,9
+GPL-E09,Legacy retirement,Platform Architect,Done,2026-08-24,20
+GPL-E10,Benchmark suite,Core Collections Lead,Planned,2026-03-14,12
+GPL-E11,Gateway rate limiting,Data Platform Lead,Done,2026-11-02,24
+GPL-E12,Bloom filter ingestion,QA Lead,Planned,2026-02-23,13
+GPL-E13,Security review queue,Core Collections Lead,Planned,2026-09-12,38
+GPL-E14,Migration checker,Mobile Platform Lead,Done,2026-06-06,28
+GPL-E15,Javadoc site,QA Lead,Done,2026-06-24,12
+GPL-E16,Dependency BOM,Core Collections Lead,In Progress,2026-08-09,38
+GPL-E17,Error message catalog,Security Architect,In Progress,2026-11-21,9
+GPL-E18,Consumer onboarding,Data Platform Lead,In Progress,2026-10-12,8
+GPL-E19,Metrics export,Data Platform Lead,Done,2026-04-12,15
+GPL-E20,Upstream sync,Platform Architect,Planned,2026-11-22,12

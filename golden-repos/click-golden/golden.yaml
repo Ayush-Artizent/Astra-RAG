@@ -1,0 +1,58 @@
+version: 1
+doc_types:
+  BRD:
+    aliases: [business-requirements]
+  TEST-PLAN:
+    aliases: [test-plan, tp]
+  ADR:
+    aliases: [architecture-decision]
+  RELEASE-NOTES:
+    aliases: [rn, release-note]
+  RUNBOOK:
+    aliases: [ops-runbook]
+stages: [draft, review, approved, released]
+tags: [typing, naming, release, testing, security, deprecation, docs]
+rules:
+  - file: nomenclature.md
+    always: true
+    priority: 5
+  - file: policies.md
+    section: data-handling
+    always: true
+    priority: 10
+  - file: policies.md
+    section: security
+    applies_to:
+      doc_types: [ADR, BRD]
+    priority: 20
+  - file: policies.md
+    section: versioning
+    applies_to:
+      doc_types: [RELEASE-NOTES, BRD]
+      tags: [release, deprecation]
+    priority: 30
+  - file: policies.md
+    section: release-approval
+    applies_to:
+      doc_types: [RELEASE-NOTES]
+      stages: [review, approved]
+    priority: 40
+  - file: rules/coding-standards.md
+    applies_to:
+      tags: [typing, naming]
+  - file: rules/release-rules.md
+    applies_to:
+      doc_types: [RELEASE-NOTES]
+  - file: rules/testing-rules.md
+    applies_to:
+      doc_types: [TEST-PLAN]
+      tags: [testing]
+    priority: 50
+  - file: rules/doc-writing.md
+    always: true
+    priority: 60
+templates:
+  RUNBOOK:
+    default: incident
+project_data:
+  exclude: []

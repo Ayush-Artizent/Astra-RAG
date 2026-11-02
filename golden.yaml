@@ -17,7 +17,7 @@ rules:
     always: true
     priority: 5
   - file: policies.md
-    section: data-handling
+    section: Data Handling
     always: true
     priority: 10
   - file: policies.md
@@ -32,7 +32,7 @@ rules:
       tags: [release, deprecation]
     priority: 30
   - file: policies.md
-    section: release-approval
+    section: Release Approval
     applies_to:
       doc_types: [RELEASE-NOTES]
       stages: [review, approved]
@@ -52,7 +52,8 @@ rules:
     always: true
     priority: 60
 templates:
-  RUNBOOK:
-    default: incident
+  - type: RUNBOOK
+    variant: incident
+    default: true
 project_data:
   exclude: []

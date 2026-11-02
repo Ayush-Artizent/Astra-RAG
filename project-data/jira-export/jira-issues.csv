@@ -1,0 +1,11 @@
+issue_key,summary,type,status,assignee_role,fix_version,created
+CLK-101,Add PowerShell completion,Story,Done,Maintainer,8.5.0,2026-02-21
+CLK-102,Remove Colorama dependency,Story,Done,Maintainer,8.5.0,2026-02-21
+CLK-103,Add help parameter to Argument,Story,Done,Maintainer,8.5.0,2026-03-10
+CLK-104,Fix pytest 9.1 failures,Bug,Done,QA Lead,8.5.0,2026-06-11
+CLK-105,Fix deepcopy and pickle on Parameter,Bug,In Review,Maintainer,8.5.1,2026-09-02
+CLK-106,Deprecate isolated_filesystem,Story,In Progress,QA Lead,8.6.0,2026-07-20
+CLK-107,Add Parameter.spec,Story,In Progress,Maintainer,8.6.0,2026-09-18
+CLK-108,Reserve _click_default_help name,Bug,Done,Maintainer,8.6.0,2026-08-05
+CLK-109,Upgrade guide for 8.6,Task,To Do,Documentation Lead,8.6.0,2026-09-19
+CLK-110,Black color index 0 dropped in style,Bug,Done,Maintainer,8.5.0,2026-05-30

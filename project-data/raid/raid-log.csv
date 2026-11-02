@@ -1,0 +1,7 @@
+id,type,title,owner,status,date,severity
+R-001,risk,Nested use of one limiter causes deadlock,Tech Lead,open,2026-02-01,high
+R-002,risk,yocto-queue becomes unmaintained,Tech Lead,open,2026-02-01,medium
+I-001,issue,Pending promises never settle after clearQueue,Payments Platform Lead,closed,2026-02-10,high
+A-001,assumption,All consumers run Node.js 20 or newer,Platform Operations Manager,open,2026-03-02,medium
+D-001,dependency,yocto-queue 1.2.1 or newer 1.x,Tech Lead,open,2026-01-25,low
+R-003,risk,Unhandled rejections when map iterable throws,QA Lead,closed,2026-03-20,high

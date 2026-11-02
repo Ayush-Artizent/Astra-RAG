@@ -1,0 +1,8 @@
+key,type,summary,status,assignee,priority,created
+LIM-201,Story,Add rejectOnClear option to pLimit,Done,Tech Lead,High,2026-02-18
+LIM-202,Story,Add rejectOnClear to limitFunction,Done,Tech Lead,Medium,2026-03-13
+LIM-214,Bug,Map leaves unhandled rejections when iterable throws,Done,QA Lead,High,2026-03-18
+LIM-220,Task,Raise minimum Node.js to 20,Done,Release Manager,High,2026-03-05
+LIM-231,Bug,Concurrency setter does not start waiting tasks,Done,Tech Lead,High,2026-04-01
+LIM-240,Task,Publish benchmark results,To Do,Documentation Lead,Low,2026-04-09
+LIM-245,Story,Define maximum queue length,To Do,Product Owner,Low,2026-04-10

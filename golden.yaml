@@ -1,0 +1,84 @@
+version: 1
+doc_types:
+  BRD:
+    aliases: [business-requirements, business-requirements-document]
+  TEST-PLAN:
+    aliases: [test-plan, testplan, TP]
+  ADR:
+    aliases: [architecture-decision-record, decision-record]
+  RELEASE-NOTES:
+    aliases: [release-notes, RN]
+  CHANGE-REQUEST:
+    aliases: [change-request, CR]
+  RUNBOOK:
+    aliases: [runbook, RB]
+  DESIGN-SPEC:
+    aliases: [design-spec, DS, design]
+  RFC:
+    aliases: [request-for-comments]
+stages: [draft, review, approved, release, post-release]
+tags: [security, api, collections, cache, concurrency, hash, base, compliance, release, testing, docs, dependencies]
+rules:
+  - file: nomenclature.md
+    always: true
+    priority: 10
+  - file: policies.md
+    section: data-handling
+    applies_to:
+      doc_types: [BRD, ADR, DESIGN-SPEC, CHANGE-REQUEST]
+      tags: [cache, security]
+    priority: 20
+  - file: policies.md
+    section: hashing-and-integrity
+    applies_to:
+      tags: [hash, security]
+    priority: 20
+  - file: policies.md
+    section: deprecation-and-support
+    applies_to:
+      doc_types: [CHANGE-REQUEST, RELEASE-NOTES, ADR]
+    priority: 30
+  - file: policies.md
+    section: access-and-ownership
+    applies_to:
+      stages: [review, approved]
+    priority: 40
+  - file: rules/coding-standards.md
+    applies_to:
+      doc_types: [DESIGN-SPEC, ADR, RFC]
+      tags: [collections, base, concurrency]
+    priority: 50
+  - file: rules/api-compatibility.md
+    applies_to:
+      doc_types: [ADR, CHANGE-REQUEST, RELEASE-NOTES, DESIGN-SPEC]
+      tags: [api]
+    priority: 30
+  - file: rules/dependency-management.md
+    applies_to:
+      tags: [dependencies]
+      doc_types: [CHANGE-REQUEST, ADR]
+    priority: 60
+  - file: rules/release-process.md
+    applies_to:
+      doc_types: [RELEASE-NOTES, RUNBOOK, CHANGE-REQUEST]
+      stages: [release, post-release]
+    priority: 40
+  - file: rules/security-review.md
+    applies_to:
+      tags: [security]
+    priority: 15
+  - file: rules/testing-standards.md
+    applies_to:
+      doc_types: [TEST-PLAN]
+    priority: 50
+  - file: rules/documentation-standards.md
+    applies_to:
+      doc_types: [BRD, TEST-PLAN, DESIGN-SPEC]
+    priority: 80
+templates:
+  runbook:
+    default: standard
+  design-spec:
+    default: short
+project_data:
+  exclude: []

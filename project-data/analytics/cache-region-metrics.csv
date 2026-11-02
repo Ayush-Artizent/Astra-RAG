@@ -1,0 +1,121 @@
+region_key,region,team,maximum_size,concurrency_level,hit_ratio,customer_data,expire_after_write_minutes
+REG-001,cache-region-001,Order Services,25000,8,0.91,no,60
+REG-002,cache-region-002,Data Platform,25000,8,0.92,no,120
+REG-003,cache-region-003,Catalog,25000,8,0.75,yes,60
+REG-004,cache-region-004,Payments,5000,8,0.91,yes,1440
+REG-005,cache-region-005,Gateway,25000,4,0.86,yes,1440
+REG-006,cache-region-006,Shipping,10000,8,0.87,yes,60
+REG-007,cache-region-007,Gateway,5000,8,0.82,yes,120
+REG-008,cache-region-008,Mobile Platform,50000,8,0.61,yes,120
+REG-009,cache-region-009,Billing,25000,4,0.83,yes,1440
+REG-010,cache-region-010,Notifications,25000,4,0.63,yes,1440
+REG-011,cache-region-011,Identity,50000,4,0.64,no,60
+REG-012,cache-region-012,Gateway,10000,8,0.65,yes,1440
+REG-013,cache-region-013,Search,25000,8,0.94,yes,60
+REG-014,cache-region-014,Payments,25000,8,0.9,no,1440
+REG-015,cache-region-015,Inventory,5000,4,0.71,no,120
+REG-016,cache-region-016,Reporting,5000,4,0.77,no,60
+REG-017,cache-region-017,Search,5000,8,0.89,no,120
+REG-018,cache-region-018,Analytics Platform,50000,4,0.76,yes,120
+REG-019,cache-region-019,Mobile Platform,25000,4,0.77,no,60
+REG-020,cache-region-020,Data Platform,25000,4,0.7,yes,1440
+REG-021,cache-region-021,Search,25000,8,0.85,no,1440
+REG-022,cache-region-022,Notifications,50000,4,0.8,no,60
+REG-023,cache-region-023,Order Services,25000,4,0.79,yes,60
+REG-024,cache-region-024,Order Services,5000,4,0.57,no,60
+REG-025,cache-region-025,Search,5000,4,0.92,no,60
+REG-026,cache-region-026,Notifications,25000,8,0.91,yes,60
+REG-027,cache-region-027,Inventory,50000,4,0.88,yes,1440
+REG-028,cache-region-028,Gateway,5000,4,0.85,no,120
+REG-029,cache-region-029,Inventory,5000,4,0.65,no,60
+REG-030,cache-region-030,Order Services,10000,4,0.77,no,60
+REG-031,cache-region-031,Payments,5000,4,0.75,yes,1440
+REG-032,cache-region-032,Catalog,5000,4,0.59,yes,1440
+REG-033,cache-region-033,Shipping,5000,4,0.93,no,1440
+REG-034,cache-region-034,Identity,50000,4,0.84,no,60
+REG-035,cache-region-035,Catalog,50000,8,0.7,yes,120
+REG-036,cache-region-036,Gateway,25000,8,0.87,yes,120
+REG-037,cache-region-037,Analytics Platform,5000,8,0.66,yes,1440
+REG-038,cache-region-038,Inventory,10000,4,0.77,no,1440
+REG-039,cache-region-039,Fraud,25000,8,0.72,yes,60
+REG-040,cache-region-040,Reporting,50000,8,0.66,no,1440
+REG-041,cache-region-041,Inventory,25000,8,0.97,no,60
+REG-042,cache-region-042,Billing,50000,8,0.63,no,120
+REG-043,cache-region-043,Inventory,25000,8,0.88,no,1440
+REG-044,cache-region-044,Shipping,25000,4,0.86,no,1440
+REG-045,cache-region-045,Payments,25000,4,0.76,no,1440
+REG-046,cache-region-046,Fraud,5000,4,0.62,yes,60
+REG-047,cache-region-047,Notifications,25000,8,0.59,no,60
+REG-048,cache-region-048,Payments,25000,4,0.85,no,1440
+REG-049,cache-region-049,Gateway,5000,4,0.95,yes,1440
+REG-050,cache-region-050,Notifications,50000,4,0.63,no,60
+REG-051,cache-region-051,Catalog,10000,4,0.81,yes,120
+REG-052,cache-region-052,Reporting,25000,4,0.96,yes,120
+REG-053,cache-region-053,Identity,50000,8,0.72,yes,1440
+REG-054,cache-region-054,Fraud,10000,4,0.94,no,1440
+REG-055,cache-region-055,Analytics Platform,5000,8,0.7,no,60
+REG-056,cache-region-056,Mobile Platform,5000,8,0.94,yes,120
+REG-057,cache-region-057,Search,25000,4,0.78,no,120
+REG-058,cache-region-058,Catalog,10000,8,0.92,no,1440
+REG-059,cache-region-059,Search,50000,8,0.87,no,120
+REG-060,cache-region-060,Analytics Platform,50000,4,0.75,no,60
+REG-061,cache-region-061,Reporting,50000,4,0.83,yes,120
+REG-062,cache-region-062,Identity,50000,4,0.84,no,60
+REG-063,cache-region-063,Payments,25000,8,0.83,no,60
+REG-064,cache-region-064,Analytics Platform,5000,4,0.75,no,60
+REG-065,cache-region-065,Gateway,5000,4,0.95,yes,120
+REG-066,cache-region-066,Mobile Platform,25000,4,0.92,yes,60
+REG-067,cache-region-067,Shipping,25000,4,0.9,no,60
+REG-068,cache-region-068,Payments,10000,4,0.83,no,1440
+REG-069,cache-region-069,Catalog,10000,4,0.91,no,1440
+REG-070,cache-region-070,Notifications,25000,8,0.76,no,120
+REG-071,cache-region-071,Catalog,25000,4,0.57,no,120
+REG-072,cache-region-072,Order Services,5000,8,0.72,yes,120
+REG-073,cache-region-073,Fraud,10000,8,0.68,yes,60
+REG-074,cache-region-074,Search,25000,4,0.69,no,60
+REG-075,cache-region-075,Gateway,5000,4,0.66,no,120
+REG-076,cache-region-076,Notifications,25000,8,0.64,no,120
+REG-077,cache-region-077,Gateway,50000,8,0.63,yes,1440
+REG-078,cache-region-078,Shipping,25000,4,0.85,yes,1440
+REG-079,cache-region-079,Shipping,50000,8,0.63,yes,120
+REG-080,cache-region-080,Data Platform,10000,8,0.76,no,120
+REG-081,cache-region-081,Gateway,25000,4,0.72,yes,60
+REG-082,cache-region-082,Shipping,25000,8,0.75,yes,120
+REG-083,cache-region-083,Gateway,25000,8,0.7,no,120
+REG-084,cache-region-084,Search,10000,4,0.7,yes,1440
+REG-085,cache-region-085,Reporting,5000,4,0.96,no,120
+REG-086,cache-region-086,Reporting,25000,8,0.88,no,60
+REG-087,cache-region-087,Inventory,50000,8,0.74,yes,60
+REG-088,cache-region-088,Search,25000,8,0.91,yes,60
+REG-089,cache-region-089,Identity,25000,4,0.68,no,1440
+REG-090,cache-region-090,Inventory,25000,8,0.66,no,120
+REG-091,cache-region-091,Billing,5000,8,0.72,yes,60
+REG-092,cache-region-092,Fraud,25000,4,0.83,yes,60
+REG-093,cache-region-093,Search,25000,4,0.59,no,1440
+REG-094,cache-region-094,Order Services,10000,8,0.77,yes,60
+REG-095,cache-region-095,Inventory,25000,4,0.59,no,120
+REG-096,cache-region-096,Mobile Platform,25000,8,0.74,yes,60
+REG-097,cache-region-097,Shipping,5000,4,0.56,no,120
+REG-098,cache-region-098,Notifications,50000,8,0.78,yes,1440
+REG-099,cache-region-099,Data Platform,5000,8,0.82,no,1440
+REG-100,cache-region-100,Gateway,5000,8,0.75,yes,60
+REG-101,cache-region-101,Gateway,50000,8,0.72,yes,120
+REG-102,cache-region-102,Order Services,10000,4,0.69,no,1440
+REG-103,cache-region-103,Fraud,10000,8,0.95,no,120
+REG-104,cache-region-104,Catalog,10000,8,0.89,yes,60
+REG-105,cache-region-105,Identity,5000,4,0.72,no,120
+REG-106,cache-region-106,Data Platform,25000,8,0.9,yes,120
+REG-107,cache-region-107,Search,10000,4,0.77,no,120
+REG-108,cache-region-108,Catalog,5000,8,0.72,yes,60
+REG-109,cache-region-109,Gateway,25000,4,0.82,no,120
+REG-110,cache-region-110,Notifications,5000,4,0.68,yes,60
+REG-111,cache-region-111,Order Services,5000,4,0.96,no,120
+REG-112,cache-region-112,Fraud,25000,8,0.86,yes,60
+REG-113,cache-region-113,Order Services,25000,8,0.64,no,120
+REG-114,cache-region-114,Identity,50000,8,0.84,yes,120
+REG-115,cache-region-115,Shipping,10000,4,0.57,no,60
+REG-116,cache-region-116,Notifications,5000,4,0.63,no,120
+REG-117,cache-region-117,Payments,10000,4,0.71,no,60
+REG-118,cache-region-118,Mobile Platform,10000,8,0.86,yes,1440
+REG-119,cache-region-119,Notifications,25000,8,0.84,no,120
+REG-120,cache-region-120,Reporting,25000,4,0.86,yes,120

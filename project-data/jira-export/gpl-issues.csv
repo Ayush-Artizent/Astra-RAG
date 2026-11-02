@@ -1,0 +1,301 @@
+issue_key,type,summary,status,priority,assignee_role,component,fix_version,created
+GPL-1001,Task,Add GraphBuilder behavior in graph,Done,Medium,QA Lead,com.google.common.graph,33.7.2-jre-acme.1,2026-09-03
+GPL-1002,Bug,Add EventBus behavior in eventbus,In Progress,Medium,Release Manager,com.google.common.eventbus,34.0.0-jre-acme.1,2026-01-18
+GPL-1003,Defect,Benchmark Funnels behavior in hash,Done,Low,QA Lead,com.google.common.hash,33.7.2-jre-acme.4,2026-06-09
+GPL-1004,Bug,Deprecate Joiner behavior in base,In Progress,Critical,Security Architect,com.google.common.base,33.7.2-jre-acme.3,2026-06-20
+GPL-1005,Bug,Review Futures behavior in util.concurrent,Closed,Low,Mobile Platform Lead,com.google.common.util.concurrent,33.7.2-jre-acme.3,2026-06-19
+GPL-1006,Story,Add Hashing behavior in hash,Done,Low,Release Manager,com.google.common.hash,33.7.2-jre-acme.1,2026-07-09
+GPL-1007,Task,Document LongMath behavior in math,Done,Medium,Platform Architect,com.google.common.math,33.7.2-jre-acme.1,2026-03-18
+GPL-1008,Defect,Review BloomFilter behavior in hash,Done,Medium,Build Engineering Lead,com.google.common.hash,33.7.2-jre-acme.1,2026-04-27
+GPL-1009,Defect,Deprecate Iterables behavior in collect,Done,Low,Release Manager,com.google.common.collect,34.0.0-jre-acme.1,2026-06-07
+GPL-1010,Defect,Harden ValueGraph behavior in graph,In Review,High,QA Lead,com.google.common.graph,33.7.2-jre-acme.2,2026-09-18
+GPL-1011,Defect,Harden ServiceManager behavior in util.concurrent,Done,Medium,QA Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-08-03
+GPL-1012,Story,Fix Iterables behavior in collect,In Review,Critical,Security Architect,com.google.common.collect,33.7.2-jre-acme.4,2026-07-20
+GPL-1013,Bug,Add LongMath behavior in math,Done,High,Security Architect,com.google.common.math,33.7.2-jre-acme.3,2026-07-06
+GPL-1014,Story,Migrate IntMath behavior in math,In Progress,High,Mobile Platform Lead,com.google.common.math,34.0.0-jre-acme.1,2026-04-05
+GPL-1015,Task,Add Files behavior in io,Won't Fix,Low,Security Architect,com.google.common.io,33.7.2-jre-acme.3,2026-05-08
+GPL-1016,Bug,Fix ImmutableMap behavior in collect,Won't Fix,Low,Mobile Platform Lead,com.google.common.collect,33.7.2-jre-acme.2,2026-03-22
+GPL-1017,Defect,Migrate IntMath behavior in math,Done,Medium,Platform Architect,com.google.common.math,33.7.2-jre-acme.4,2026-06-15
+GPL-1018,Story,Fix InetAddresses behavior in net,Done,Low,Build Engineering Lead,com.google.common.net,33.7.2-jre-acme.1,2026-09-08
+GPL-1019,Bug,Add EventBus behavior in eventbus,Open,Medium,Security Architect,com.google.common.eventbus,33.7.2-jre-acme.1,2026-06-03
+GPL-1020,Defect,Migrate HostAndPort behavior in net,Done,Medium,Data Platform Lead,com.google.common.net,33.7.2-jre-acme.2,2026-08-26
+GPL-1021,Bug,Fix Ints behavior in primitives,Closed,High,Documentation Lead,com.google.common.primitives,33.7.2-jre-acme.4,2026-08-28
+GPL-1022,Bug,Fix Table behavior in collect,Closed,High,Security Architect,com.google.common.collect,33.7.2-jre-acme.2,2026-04-07
+GPL-1023,Defect,Document InetAddresses behavior in net,In Review,High,Data Platform Lead,com.google.common.net,33.7.2-jre-acme.2,2026-02-15
+GPL-1024,Bug,Add HostAndPort behavior in net,In Progress,Medium,QA Lead,com.google.common.net,33.7.2-jre-acme.4,2026-08-16
+GPL-1025,Story,Add Funnels behavior in hash,Closed,Low,Documentation Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-08-10
+GPL-1026,Story,Document Longs behavior in primitives,Done,Medium,Core Collections Lead,com.google.common.primitives,34.0.0-jre-acme.1,2026-09-02
+GPL-1027,Defect,Add ByteStreams behavior in io,In Review,Low,Mobile Platform Lead,com.google.common.io,33.7.2-jre-acme.1,2026-03-03
+GPL-1028,Defect,Benchmark EventBus behavior in eventbus,In Progress,Medium,Core Collections Lead,com.google.common.eventbus,34.0.0-jre-acme.1,2026-02-14
+GPL-1029,Story,Migrate ValueGraph behavior in graph,Done,Medium,Platform Architect,com.google.common.graph,33.7.2-jre-acme.4,2026-03-22
+GPL-1030,Task,Review ValueGraph behavior in graph,In Progress,Low,Data Platform Lead,com.google.common.graph,34.0.0-jre-acme.1,2026-02-03
+GPL-1031,Story,Migrate HostAndPort behavior in net,Done,Low,Release Manager,com.google.common.net,33.7.2-jre-acme.3,2026-05-06
+GPL-1032,Task,Add LongMath behavior in math,In Progress,Medium,Platform Architect,com.google.common.math,33.7.2-jre-acme.1,2026-02-24
+GPL-1033,Task,Migrate HostAndPort behavior in net,Done,High,Release Manager,com.google.common.net,33.7.2-jre-acme.3,2026-09-16
+GPL-1034,Defect,Fix Futures behavior in util.concurrent,Done,Low,Core Collections Lead,com.google.common.util.concurrent,33.7.2-jre-acme.3,2026-03-21
+GPL-1035,Defect,Review ListenableFuture behavior in util.concurrent,Open,Low,Security Architect,com.google.common.util.concurrent,33.7.2-jre-acme.2,2026-09-02
+GPL-1036,Story,Harden Files behavior in io,Open,High,Build Engineering Lead,com.google.common.io,33.7.2-jre-acme.1,2026-06-07
+GPL-1037,Task,Fix GraphBuilder behavior in graph,Closed,Medium,Release Manager,com.google.common.graph,33.7.2-jre-acme.2,2026-03-14
+GPL-1038,Defect,Deprecate ImmutableMap behavior in collect,Done,High,QA Lead,com.google.common.collect,33.7.2-jre-acme.1,2026-07-28
+GPL-1039,Story,Review Iterables behavior in collect,Done,Critical,Build Engineering Lead,com.google.common.collect,33.7.2-jre-acme.3,2026-04-08
+GPL-1040,Defect,Benchmark Table behavior in collect,Done,High,Security Architect,com.google.common.collect,33.7.2-jre-acme.3,2026-06-21
+GPL-1041,Bug,Deprecate InetAddresses behavior in net,In Progress,High,QA Lead,com.google.common.net,34.0.0-jre-acme.1,2026-05-02
+GPL-1042,Bug,Flaky test in ExecutionSequencer wrapper,Open,Medium,QA Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-04-06
+GPL-1043,Bug,Harden Table behavior in collect,Done,High,Documentation Lead,com.google.common.collect,33.7.2-jre-acme.1,2026-06-20
+GPL-1044,Task,Migrate ByteStreams behavior in io,Closed,High,Documentation Lead,com.google.common.io,33.7.2-jre-acme.3,2026-09-05
+GPL-1045,Story,Harden Funnels behavior in hash,Done,Critical,Mobile Platform Lead,com.google.common.hash,33.7.2-jre-acme.1,2026-05-10
+GPL-1046,Defect,Deprecate Funnels behavior in hash,Won't Fix,Critical,Release Manager,com.google.common.hash,34.0.0-jre-acme.1,2026-08-26
+GPL-1047,Task,Fix Optional behavior in base,Done,Low,Release Manager,com.google.common.base,33.7.2-jre-acme.3,2026-04-26
+GPL-1048,Bug,Add BloomFilter behavior in hash,Done,Critical,Security Architect,com.google.common.hash,33.7.2-jre-acme.4,2026-07-21
+GPL-1049,Defect,Harden EventBus behavior in eventbus,Closed,Medium,QA Lead,com.google.common.eventbus,33.7.2-jre-acme.1,2026-02-25
+GPL-1050,Defect,Document Ints behavior in primitives,Open,Medium,Security Architect,com.google.common.primitives,33.7.2-jre-acme.4,2026-03-26
+GPL-1051,Defect,Review LongMath behavior in math,Won't Fix,Medium,Data Platform Lead,com.google.common.math,33.7.2-jre-acme.4,2026-05-25
+GPL-1052,Story,Review HashCode behavior in hash,Done,Critical,Security Architect,com.google.common.hash,33.7.2-jre-acme.3,2026-04-09
+GPL-1053,Story,Fix CharStreams behavior in io,In Review,Medium,Documentation Lead,com.google.common.io,33.7.2-jre-acme.2,2026-04-03
+GPL-1054,Defect,Deprecate Longs behavior in primitives,Closed,Low,Release Manager,com.google.common.primitives,33.7.2-jre-acme.4,2026-07-25
+GPL-1055,Defect,Harden EventBus behavior in eventbus,Open,High,Platform Architect,com.google.common.eventbus,33.7.2-jre-acme.4,2026-07-18
+GPL-1056,Story,Review HostAndPort behavior in net,Done,Critical,Data Platform Lead,com.google.common.net,33.7.2-jre-acme.1,2026-07-11
+GPL-1057,Defect,Document ValueGraph behavior in graph,In Review,Low,Documentation Lead,com.google.common.graph,34.0.0-jre-acme.1,2026-01-03
+GPL-1058,Defect,Document ValueGraph behavior in graph,In Review,Low,Platform Architect,com.google.common.graph,33.7.2-jre-acme.4,2026-06-07
+GPL-1059,Defect,Deprecate LongMath behavior in math,Done,Critical,Platform Architect,com.google.common.math,33.7.2-jre-acme.1,2026-08-01
+GPL-1060,Story,Deprecate HostAndPort behavior in net,In Progress,Low,Core Collections Lead,com.google.common.net,33.7.2-jre-acme.2,2026-04-27
+GPL-1061,Story,Document RangeSet behavior in collect,In Review,Critical,Security Architect,com.google.common.collect,34.0.0-jre-acme.1,2026-04-15
+GPL-1062,Bug,Document RateLimiter behavior in util.concurrent,In Review,High,Security Architect,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-01-10
+GPL-1063,Story,Harden EventBus behavior in eventbus,In Progress,Medium,Security Architect,com.google.common.eventbus,33.7.2-jre-acme.3,2026-02-26
+GPL-1064,Defect,Deprecate EventBus behavior in eventbus,Done,Low,Mobile Platform Lead,com.google.common.eventbus,33.7.2-jre-acme.3,2026-01-28
+GPL-1065,Defect,Fix Longs behavior in primitives,Done,Critical,QA Lead,com.google.common.primitives,33.7.2-jre-acme.4,2026-03-24
+GPL-1066,Defect,Review InetAddresses behavior in net,Closed,High,Build Engineering Lead,com.google.common.net,33.7.2-jre-acme.2,2026-02-09
+GPL-1067,Defect,Review IntMath behavior in math,Done,Low,Data Platform Lead,com.google.common.math,33.7.2-jre-acme.3,2026-03-16
+GPL-1068,Task,Migrate HashCode behavior in hash,Done,High,Mobile Platform Lead,com.google.common.hash,33.7.2-jre-acme.1,2026-09-07
+GPL-1069,Defect,Harden LoadingCache behavior in cache,Done,Critical,Data Platform Lead,com.google.common.cache,33.7.2-jre-acme.4,2026-01-03
+GPL-1070,Story,Harden ListenableFuture behavior in util.concurrent,Done,High,Data Platform Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-09-12
+GPL-1071,Defect,Deprecate Longs behavior in primitives,Done,High,Platform Architect,com.google.common.primitives,33.7.2-jre-acme.2,2026-02-24
+GPL-1072,Story,Fix HashCode behavior in hash,Done,Medium,Data Platform Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-09-20
+GPL-1073,Task,Benchmark Futures behavior in util.concurrent,Done,High,QA Lead,com.google.common.util.concurrent,33.7.2-jre-acme.3,2026-01-23
+GPL-1074,Bug,Migrate HostAndPort behavior in net,Open,High,QA Lead,com.google.common.net,33.7.2-jre-acme.4,2026-02-28
+GPL-1075,Defect,Migrate RangeSet behavior in collect,Won't Fix,Critical,Build Engineering Lead,com.google.common.collect,33.7.2-jre-acme.2,2026-01-09
+GPL-1076,Defect,Fix IntMath behavior in math,Won't Fix,Low,Core Collections Lead,com.google.common.math,33.7.2-jre-acme.2,2026-03-26
+GPL-1077,Story,Fix EventBus behavior in eventbus,In Progress,Critical,Release Manager,com.google.common.eventbus,34.0.0-jre-acme.1,2026-07-15
+GPL-1078,Task,Harden LongMath behavior in math,Open,Low,Release Manager,com.google.common.math,33.7.2-jre-acme.2,2026-05-22
+GPL-1079,Story,Benchmark LoadingCache behavior in cache,In Progress,Medium,Core Collections Lead,com.google.common.cache,33.7.2-jre-acme.4,2026-08-23
+GPL-1080,Bug,Migrate EventBus behavior in eventbus,Done,High,Platform Architect,com.google.common.eventbus,33.7.2-jre-acme.4,2026-02-22
+GPL-1081,Defect,Benchmark HashCode behavior in hash,In Progress,Medium,QA Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-03-03
+GPL-1082,Task,Migrate ImmutableMap behavior in collect,Won't Fix,Low,Data Platform Lead,com.google.common.collect,33.7.2-jre-acme.3,2026-07-09
+GPL-1083,Bug,Review InetAddresses behavior in net,Open,Critical,Build Engineering Lead,com.google.common.net,34.0.0-jre-acme.1,2026-05-01
+GPL-1084,Task,Add LoadingCache behavior in cache,Open,Medium,Data Platform Lead,com.google.common.cache,34.0.0-jre-acme.1,2026-08-09
+GPL-1085,Defect,Harden Strings behavior in base,In Progress,Critical,Build Engineering Lead,com.google.common.base,33.7.2-jre-acme.4,2026-06-11
+GPL-1086,Task,Document GraphBuilder behavior in graph,Closed,Critical,Platform Architect,com.google.common.graph,33.7.2-jre-acme.4,2026-09-02
+GPL-1087,Task,Deprecate IntMath behavior in math,Done,Low,Documentation Lead,com.google.common.math,34.0.0-jre-acme.1,2026-01-22
+GPL-1088,Bug,Harden InetAddresses behavior in net,Done,High,Data Platform Lead,com.google.common.net,33.7.2-jre-acme.4,2026-01-07
+GPL-1089,Task,Document Striped behavior in util.concurrent,Won't Fix,Critical,Security Architect,com.google.common.util.concurrent,33.7.2-jre-acme.1,2026-04-23
+GPL-1090,Defect,Add Splitter behavior in base,In Progress,Medium,Security Architect,com.google.common.base,33.7.2-jre-acme.4,2026-02-21
+GPL-1091,Task,Migrate Stopwatch behavior in base,Closed,Critical,Data Platform Lead,com.google.common.base,33.7.2-jre-acme.2,2026-08-18
+GPL-1092,Story,Benchmark Stopwatch behavior in base,In Progress,High,Documentation Lead,com.google.common.base,33.7.2-jre-acme.3,2026-09-09
+GPL-1093,Defect,Migrate Multimap behavior in collect,In Review,Critical,Mobile Platform Lead,com.google.common.collect,33.7.2-jre-acme.4,2026-06-11
+GPL-1094,Task,Review InetAddresses behavior in net,Done,Medium,Documentation Lead,com.google.common.net,33.7.2-jre-acme.2,2026-07-02
+GPL-1095,Defect,Harden ByteSource behavior in io,In Review,Critical,Core Collections Lead,com.google.common.io,33.7.2-jre-acme.2,2026-09-19
+GPL-1096,Bug,Review ByteStreams behavior in io,Won't Fix,Low,QA Lead,com.google.common.io,33.7.2-jre-acme.4,2026-03-03
+GPL-1097,Defect,Deprecate LongMath behavior in math,In Progress,High,Mobile Platform Lead,com.google.common.math,33.7.2-jre-acme.4,2026-06-21
+GPL-1098,Story,Fix IntMath behavior in math,Done,Medium,Security Architect,com.google.common.math,33.7.2-jre-acme.4,2026-02-25
+GPL-1099,Story,Review GraphBuilder behavior in graph,Done,Low,Core Collections Lead,com.google.common.graph,33.7.2-jre-acme.3,2026-01-10
+GPL-1100,Story,Harden CharStreams behavior in io,Done,Critical,QA Lead,com.google.common.io,33.7.2-jre-acme.2,2026-03-03
+GPL-1101,Defect,Benchmark EventBus behavior in eventbus,In Review,Medium,Data Platform Lead,com.google.common.eventbus,33.7.2-jre-acme.3,2026-08-09
+GPL-1102,Task,Review GraphBuilder behavior in graph,In Review,Low,Data Platform Lead,com.google.common.graph,33.7.2-jre-acme.3,2026-05-21
+GPL-1103,Task,Review Longs behavior in primitives,Done,Critical,Data Platform Lead,com.google.common.primitives,33.7.2-jre-acme.1,2026-04-13
+GPL-1104,Task,Migrate EventBus behavior in eventbus,Open,Critical,Platform Architect,com.google.common.eventbus,33.7.2-jre-acme.1,2026-01-20
+GPL-1105,Task,Benchmark LongMath behavior in math,Done,Medium,Platform Architect,com.google.common.math,33.7.2-jre-acme.2,2026-02-21
+GPL-1106,Defect,Migrate GraphBuilder behavior in graph,Open,High,QA Lead,com.google.common.graph,33.7.2-jre-acme.1,2026-05-11
+GPL-1107,Story,Benchmark Ints behavior in primitives,Done,High,QA Lead,com.google.common.primitives,33.7.2-jre-acme.3,2026-08-26
+GPL-1108,Bug,Deprecate ServiceManager behavior in util.concurrent,Won't Fix,Low,QA Lead,com.google.common.util.concurrent,33.7.2-jre-acme.2,2026-07-28
+GPL-1109,Defect,Fix InetAddresses behavior in net,Open,High,Mobile Platform Lead,com.google.common.net,33.7.2-jre-acme.1,2026-08-12
+GPL-1110,Task,Harden ValueGraph behavior in graph,In Progress,Medium,Data Platform Lead,com.google.common.graph,33.7.2-jre-acme.1,2026-09-11
+GPL-1111,Defect,Fix EventBus behavior in eventbus,Done,Critical,Security Architect,com.google.common.eventbus,33.7.2-jre-acme.2,2026-01-02
+GPL-1112,Bug,Fix MoreExecutors behavior in util.concurrent,Done,Medium,Documentation Lead,com.google.common.util.concurrent,33.7.2-jre-acme.4,2026-06-22
+GPL-1113,Defect,Document InetAddresses behavior in net,In Progress,Critical,Documentation Lead,com.google.common.net,33.7.2-jre-acme.3,2026-01-23
+GPL-1114,Defect,Review Files behavior in io,Done,High,Security Architect,com.google.common.io,33.7.2-jre-acme.3,2026-09-21
+GPL-1115,Task,Harden ByteStreams behavior in io,Done,Low,Data Platform Lead,com.google.common.io,33.7.2-jre-acme.1,2026-04-21
+GPL-1116,Task,Add GraphBuilder behavior in graph,Done,Medium,Release Manager,com.google.common.graph,33.7.2-jre-acme.1,2026-09-07
+GPL-1117,Task,Benchmark EventBus behavior in eventbus,In Review,Low,Platform Architect,com.google.common.eventbus,33.7.2-jre-acme.2,2026-03-18
+GPL-1118,Bug,Fix ListenableFuture behavior in util.concurrent,In Review,Low,Build Engineering Lead,com.google.common.util.concurrent,33.7.2-jre-acme.2,2026-06-01
+GPL-1119,Story,Add Splitter behavior in base,Closed,Low,Security Architect,com.google.common.base,33.7.2-jre-acme.4,2026-08-25
+GPL-1120,Story,Review ByteStreams behavior in io,Open,High,Data Platform Lead,com.google.common.io,33.7.2-jre-acme.1,2026-01-16
+GPL-1121,Defect,Fix Longs behavior in primitives,Won't Fix,Low,Security Architect,com.google.common.primitives,33.7.2-jre-acme.3,2026-03-03
+GPL-1122,Defect,Deprecate Splitter behavior in base,Done,Critical,Mobile Platform Lead,com.google.common.base,34.0.0-jre-acme.1,2026-07-04
+GPL-1123,Defect,Harden LoadingCache behavior in cache,Done,Critical,Build Engineering Lead,com.google.common.cache,33.7.2-jre-acme.4,2026-07-14
+GPL-1124,Task,Harden CacheLoader behavior in cache,Done,High,QA Lead,com.google.common.cache,33.7.2-jre-acme.4,2026-02-03
+GPL-1125,Bug,Harden CacheBuilder behavior in cache,Done,Medium,Mobile Platform Lead,com.google.common.cache,33.7.2-jre-acme.1,2026-09-18
+GPL-1126,Task,Harden ByteStreams behavior in io,Closed,Low,Platform Architect,com.google.common.io,34.0.0-jre-acme.1,2026-05-12
+GPL-1127,Defect,Document LoadingCache behavior in cache,Done,Low,Build Engineering Lead,com.google.common.cache,34.0.0-jre-acme.1,2026-06-04
+GPL-1128,Defect,Benchmark Striped behavior in util.concurrent,Open,High,Core Collections Lead,com.google.common.util.concurrent,33.7.2-jre-acme.2,2026-05-23
+GPL-1129,Bug,Deprecate RateLimiter behavior in util.concurrent,In Review,Medium,Documentation Lead,com.google.common.util.concurrent,33.7.2-jre-acme.1,2026-03-24
+GPL-1130,Story,Fix GraphBuilder behavior in graph,Closed,Critical,Data Platform Lead,com.google.common.graph,33.7.2-jre-acme.3,2026-03-12
+GPL-1131,Bug,Deprecate ServiceManager behavior in util.concurrent,Open,Medium,QA Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-01-22
+GPL-1132,Defect,Review CacheLoader behavior in cache,Won't Fix,Critical,Documentation Lead,com.google.common.cache,33.7.2-jre-acme.3,2026-04-25
+GPL-1133,Defect,Deprecate HostAndPort behavior in net,In Progress,High,Data Platform Lead,com.google.common.net,34.0.0-jre-acme.1,2026-05-02
+GPL-1134,Bug,Add Funnels behavior in hash,Done,High,Release Manager,com.google.common.hash,33.7.2-jre-acme.2,2026-05-10
+GPL-1135,Defect,Add ByteStreams behavior in io,Closed,Medium,QA Lead,com.google.common.io,33.7.2-jre-acme.4,2026-09-23
+GPL-1136,Defect,Fix HashCode behavior in hash,Open,Critical,Core Collections Lead,com.google.common.hash,33.7.2-jre-acme.4,2026-02-28
+GPL-1137,Defect,Harden ByteSource behavior in io,Done,Low,Documentation Lead,com.google.common.io,33.7.2-jre-acme.1,2026-06-06
+GPL-1138,Bug,Deprecate EventBus behavior in eventbus,Closed,Low,Release Manager,com.google.common.eventbus,33.7.2-jre-acme.4,2026-07-17
+GPL-1139,Task,Migrate RemovalListener behavior in cache,Done,High,QA Lead,com.google.common.cache,33.7.2-jre-acme.1,2026-09-21
+GPL-1140,Task,Deprecate LoadingCache behavior in cache,In Review,Medium,Security Architect,com.google.common.cache,33.7.2-jre-acme.2,2026-05-07
+GPL-1141,Bug,Document Strings behavior in base,In Review,Critical,Data Platform Lead,com.google.common.base,34.0.0-jre-acme.1,2026-08-22
+GPL-1142,Story,Deprecate EventBus behavior in eventbus,Won't Fix,Low,Data Platform Lead,com.google.common.eventbus,33.7.2-jre-acme.4,2026-05-26
+GPL-1143,Task,Add Striped behavior in util.concurrent,In Progress,High,Data Platform Lead,com.google.common.util.concurrent,33.7.2-jre-acme.4,2026-01-02
+GPL-1144,Bug,Fix CharStreams behavior in io,Closed,Critical,Mobile Platform Lead,com.google.common.io,33.7.2-jre-acme.1,2026-08-26
+GPL-1145,Defect,Deprecate EventBus behavior in eventbus,In Review,Low,Data Platform Lead,com.google.common.eventbus,33.7.2-jre-acme.1,2026-06-23
+GPL-1146,Story,Add LoadingCache behavior in cache,Won't Fix,Critical,Mobile Platform Lead,com.google.common.cache,34.0.0-jre-acme.1,2026-03-12
+GPL-1147,Defect,Harden CharStreams behavior in io,Done,Low,Build Engineering Lead,com.google.common.io,33.7.2-jre-acme.1,2026-06-04
+GPL-1148,Task,Migrate InetAddresses behavior in net,In Review,High,Security Architect,com.google.common.net,34.0.0-jre-acme.1,2026-03-12
+GPL-1149,Story,Harden ServiceManager behavior in util.concurrent,In Progress,High,Mobile Platform Lead,com.google.common.util.concurrent,33.7.2-jre-acme.4,2026-06-27
+GPL-1150,Defect,Fix Optional behavior in base,Done,Low,Build Engineering Lead,com.google.common.base,33.7.2-jre-acme.3,2026-03-07
+GPL-1151,Story,Benchmark ByteSource behavior in io,In Review,Medium,Security Architect,com.google.common.io,33.7.2-jre-acme.3,2026-02-17
+GPL-1152,Story,Deprecate HostAndPort behavior in net,Closed,Medium,QA Lead,com.google.common.net,33.7.2-jre-acme.2,2026-03-24
+GPL-1153,Task,Harden IntMath behavior in math,Done,Critical,Platform Architect,com.google.common.math,33.7.2-jre-acme.4,2026-04-18
+GPL-1154,Story,Review HashCode behavior in hash,Done,Critical,Data Platform Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-07-17
+GPL-1155,Story,Document InetAddresses behavior in net,In Review,High,Core Collections Lead,com.google.common.net,33.7.2-jre-acme.4,2026-06-18
+GPL-1156,Bug,Migrate CacheBuilder behavior in cache,In Review,High,Data Platform Lead,com.google.common.cache,34.0.0-jre-acme.1,2026-03-27
+GPL-1157,Defect,Benchmark Ints behavior in primitives,Done,Low,Documentation Lead,com.google.common.primitives,33.7.2-jre-acme.1,2026-07-17
+GPL-1158,Bug,Harden Files behavior in io,Done,Medium,Core Collections Lead,com.google.common.io,33.7.2-jre-acme.3,2026-02-27
+GPL-1159,Story,Document ValueGraph behavior in graph,Open,High,Data Platform Lead,com.google.common.graph,33.7.2-jre-acme.2,2026-08-15
+GPL-1160,Bug,Fix EventBus behavior in eventbus,Done,Medium,QA Lead,com.google.common.eventbus,34.0.0-jre-acme.1,2026-09-14
+GPL-1161,Task,Benchmark CacheLoader behavior in cache,In Progress,Low,Release Manager,com.google.common.cache,33.7.2-jre-acme.4,2026-08-03
+GPL-1162,Story,Add RemovalListener behavior in cache,In Review,High,Documentation Lead,com.google.common.cache,33.7.2-jre-acme.1,2026-06-08
+GPL-1163,Bug,Document EventBus behavior in eventbus,Done,Low,Mobile Platform Lead,com.google.common.eventbus,34.0.0-jre-acme.1,2026-09-26
+GPL-1164,Defect,Harden HostAndPort behavior in net,Open,Critical,Build Engineering Lead,com.google.common.net,33.7.2-jre-acme.3,2026-01-12
+GPL-1165,Bug,Benchmark CacheLoader behavior in cache,Done,Medium,Core Collections Lead,com.google.common.cache,33.7.2-jre-acme.3,2026-09-11
+GPL-1166,Defect,Review GraphBuilder behavior in graph,In Review,Medium,Security Architect,com.google.common.graph,33.7.2-jre-acme.4,2026-01-10
+GPL-1167,Bug,Benchmark Hashing behavior in hash,Done,High,Mobile Platform Lead,com.google.common.hash,33.7.2-jre-acme.4,2026-09-16
+GPL-1168,Task,Benchmark Futures behavior in util.concurrent,Done,Low,Build Engineering Lead,com.google.common.util.concurrent,33.7.2-jre-acme.3,2026-02-26
+GPL-1169,Defect,Harden ByteSource behavior in io,Closed,High,QA Lead,com.google.common.io,33.7.2-jre-acme.4,2026-08-12
+GPL-1170,Defect,Fix InetAddresses behavior in net,In Progress,Critical,QA Lead,com.google.common.net,34.0.0-jre-acme.1,2026-05-11
+GPL-1171,Task,Deprecate CacheBuilder behavior in cache,Done,Critical,Documentation Lead,com.google.common.cache,33.7.2-jre-acme.2,2026-08-12
+GPL-1172,Defect,Deprecate IntMath behavior in math,Done,Low,Security Architect,com.google.common.math,33.7.2-jre-acme.4,2026-06-17
+GPL-1173,Story,Add GraphBuilder behavior in graph,Won't Fix,Low,QA Lead,com.google.common.graph,33.7.2-jre-acme.1,2026-04-25
+GPL-1174,Defect,Deprecate ValueGraph behavior in graph,Open,Medium,Data Platform Lead,com.google.common.graph,33.7.2-jre-acme.3,2026-06-15
+GPL-1175,Defect,Deprecate LoadingCache behavior in cache,Done,High,Release Manager,com.google.common.cache,33.7.2-jre-acme.1,2026-01-24
+GPL-1176,Bug,Harden Stopwatch behavior in base,Done,High,Data Platform Lead,com.google.common.base,33.7.2-jre-acme.2,2026-05-23
+GPL-1177,Story,Fix IntMath behavior in math,In Progress,Critical,QA Lead,com.google.common.math,33.7.2-jre-acme.4,2026-02-26
+GPL-1178,Bug,Deprecate ValueGraph behavior in graph,Done,High,QA Lead,com.google.common.graph,33.7.2-jre-acme.2,2026-06-17
+GPL-1179,Story,Benchmark Hashing behavior in hash,Done,Critical,Core Collections Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-09-19
+GPL-1180,Bug,Document ByteSource behavior in io,In Progress,High,Documentation Lead,com.google.common.io,33.7.2-jre-acme.4,2026-09-14
+GPL-1181,Task,Document Ints behavior in primitives,In Progress,Critical,Data Platform Lead,com.google.common.primitives,34.0.0-jre-acme.1,2026-06-05
+GPL-1182,Defect,Document HostAndPort behavior in net,Open,Low,Mobile Platform Lead,com.google.common.net,33.7.2-jre-acme.2,2026-05-06
+GPL-1183,Task,Benchmark Splitter behavior in base,Done,Low,Platform Architect,com.google.common.base,33.7.2-jre-acme.2,2026-09-09
+GPL-1184,Bug,Migrate Optional behavior in base,In Review,Medium,QA Lead,com.google.common.base,34.0.0-jre-acme.1,2026-06-27
+GPL-1185,Bug,Add EventBus behavior in eventbus,Open,High,Release Manager,com.google.common.eventbus,34.0.0-jre-acme.1,2026-07-20
+GPL-1186,Task,Review GraphBuilder behavior in graph,Done,Critical,Release Manager,com.google.common.graph,33.7.2-jre-acme.4,2026-05-15
+GPL-1187,Defect,Document CacheBuilder behavior in cache,Closed,Critical,Data Platform Lead,com.google.common.cache,33.7.2-jre-acme.2,2026-06-20
+GPL-1188,Task,Deprecate Splitter behavior in base,Closed,Medium,Build Engineering Lead,com.google.common.base,34.0.0-jre-acme.1,2026-09-04
+GPL-1189,Bug,Review Files behavior in io,Done,Critical,Release Manager,com.google.common.io,33.7.2-jre-acme.2,2026-02-02
+GPL-1190,Story,Harden MoreExecutors behavior in util.concurrent,In Review,High,Build Engineering Lead,com.google.common.util.concurrent,33.7.2-jre-acme.2,2026-03-16
+GPL-1191,Task,Review InetAddresses behavior in net,Won't Fix,Low,Security Architect,com.google.common.net,33.7.2-jre-acme.4,2026-09-15
+GPL-1192,Bug,Deprecate BloomFilter behavior in hash,Open,High,Data Platform Lead,com.google.common.hash,34.0.0-jre-acme.1,2026-08-10
+GPL-1193,Defect,Fix HostAndPort behavior in net,In Review,High,Build Engineering Lead,com.google.common.net,33.7.2-jre-acme.4,2026-06-02
+GPL-1194,Task,Benchmark Ints behavior in primitives,Done,Low,Documentation Lead,com.google.common.primitives,34.0.0-jre-acme.1,2026-08-25
+GPL-1195,Story,Fix InetAddresses behavior in net,In Progress,Critical,Build Engineering Lead,com.google.common.net,33.7.2-jre-acme.3,2026-09-12
+GPL-1196,Bug,Harden Joiner behavior in base,Open,Low,QA Lead,com.google.common.base,33.7.2-jre-acme.3,2026-08-17
+GPL-1197,Task,Document IntMath behavior in math,Done,Medium,Documentation Lead,com.google.common.math,34.0.0-jre-acme.1,2026-05-19
+GPL-1198,Defect,Migrate ByteSource behavior in io,Open,High,Build Engineering Lead,com.google.common.io,33.7.2-jre-acme.1,2026-07-19
+GPL-1199,Defect,Add ServiceManager behavior in util.concurrent,Done,Medium,Core Collections Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-08-06
+GPL-1200,Story,Document InetAddresses behavior in net,Open,Low,Release Manager,com.google.common.net,33.7.2-jre-acme.1,2026-08-11
+GPL-1201,Story,Harden Ints behavior in primitives,Closed,Critical,Core Collections Lead,com.google.common.primitives,33.7.2-jre-acme.2,2026-09-07
+GPL-1202,Defect,Review InetAddresses behavior in net,Done,Medium,Data Platform Lead,com.google.common.net,34.0.0-jre-acme.1,2026-06-18
+GPL-1203,Story,Review CharStreams behavior in io,Done,High,Mobile Platform Lead,com.google.common.io,33.7.2-jre-acme.3,2026-04-10
+GPL-1204,Defect,Benchmark ServiceManager behavior in util.concurrent,Done,Critical,Build Engineering Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-05-10
+GPL-1205,Task,Harden RemovalListener behavior in cache,In Review,High,Core Collections Lead,com.google.common.cache,33.7.2-jre-acme.3,2026-02-12
+GPL-1206,Story,Review LongMath behavior in math,Done,High,Mobile Platform Lead,com.google.common.math,33.7.2-jre-acme.3,2026-03-04
+GPL-1207,Bug,Benchmark EventBus behavior in eventbus,Done,Medium,Core Collections Lead,com.google.common.eventbus,33.7.2-jre-acme.1,2026-07-11
+GPL-1208,Bug,Document IntMath behavior in math,In Review,Critical,Data Platform Lead,com.google.common.math,33.7.2-jre-acme.4,2026-04-25
+GPL-1209,Bug,Migrate RateLimiter behavior in util.concurrent,In Progress,Medium,Mobile Platform Lead,com.google.common.util.concurrent,33.7.2-jre-acme.1,2026-03-14
+GPL-1210,Defect,Harden Preconditions behavior in base,In Review,High,Core Collections Lead,com.google.common.base,33.7.2-jre-acme.1,2026-05-19
+GPL-1211,Task,Deprecate EventBus behavior in eventbus,Won't Fix,Critical,QA Lead,com.google.common.eventbus,34.0.0-jre-acme.1,2026-08-09
+GPL-1212,Story,Deprecate Hashing behavior in hash,Won't Fix,High,QA Lead,com.google.common.hash,33.7.2-jre-acme.1,2026-06-26
+GPL-1213,Story,Benchmark Striped behavior in util.concurrent,Closed,Critical,Mobile Platform Lead,com.google.common.util.concurrent,33.7.2-jre-acme.3,2026-02-13
+GPL-1214,Story,Document GraphBuilder behavior in graph,Won't Fix,High,Release Manager,com.google.common.graph,33.7.2-jre-acme.1,2026-05-13
+GPL-1215,Task,Migrate Funnels behavior in hash,Done,Low,Platform Architect,com.google.common.hash,33.7.2-jre-acme.3,2026-04-02
+GPL-1216,Task,Review GraphBuilder behavior in graph,In Review,Critical,Mobile Platform Lead,com.google.common.graph,33.7.2-jre-acme.3,2026-02-21
+GPL-1217,Story,Benchmark RateLimiter behavior in util.concurrent,In Review,Critical,QA Lead,com.google.common.util.concurrent,33.7.2-jre-acme.4,2026-06-14
+GPL-1218,Story,Benchmark InetAddresses behavior in net,In Progress,Critical,Mobile Platform Lead,com.google.common.net,33.7.2-jre-acme.3,2026-02-19
+GPL-1219,Story,Benchmark CacheBuilder behavior in cache,In Review,High,Mobile Platform Lead,com.google.common.cache,33.7.2-jre-acme.4,2026-02-22
+GPL-1220,Defect,Fix Funnels behavior in hash,Open,Critical,QA Lead,com.google.common.hash,34.0.0-jre-acme.1,2026-07-15
+GPL-1221,Task,Review EventBus behavior in eventbus,Open,Critical,Platform Architect,com.google.common.eventbus,33.7.2-jre-acme.1,2026-04-19
+GPL-1222,Task,Harden CacheBuilder behavior in cache,In Progress,Low,Security Architect,com.google.common.cache,33.7.2-jre-acme.4,2026-01-10
+GPL-1223,Defect,Document Ints behavior in primitives,Done,Critical,Data Platform Lead,com.google.common.primitives,33.7.2-jre-acme.4,2026-07-03
+GPL-1224,Bug,Deprecate GraphBuilder behavior in graph,In Review,Critical,Mobile Platform Lead,com.google.common.graph,33.7.2-jre-acme.2,2026-04-27
+GPL-1225,Task,Add Iterables behavior in collect,Won't Fix,Critical,Mobile Platform Lead,com.google.common.collect,33.7.2-jre-acme.4,2026-04-08
+GPL-1226,Task,Document LongMath behavior in math,Done,Low,Core Collections Lead,com.google.common.math,33.7.2-jre-acme.4,2026-01-08
+GPL-1227,Bug,Fix Hashing behavior in hash,Won't Fix,Low,Release Manager,com.google.common.hash,33.7.2-jre-acme.1,2026-07-15
+GPL-1228,Story,Add BloomFilter behavior in hash,Done,Medium,Build Engineering Lead,com.google.common.hash,34.0.0-jre-acme.1,2026-06-08
+GPL-1229,Defect,Benchmark ListenableFuture behavior in util.concurrent,Done,High,Core Collections Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-03-21
+GPL-1230,Bug,Review ValueGraph behavior in graph,Done,Critical,Mobile Platform Lead,com.google.common.graph,33.7.2-jre-acme.3,2026-07-14
+GPL-1231,Story,Harden Splitter behavior in base,Won't Fix,Medium,Release Manager,com.google.common.base,33.7.2-jre-acme.3,2026-03-26
+GPL-1232,Defect,Harden IntMath behavior in math,In Review,Critical,Release Manager,com.google.common.math,33.7.2-jre-acme.3,2026-04-11
+GPL-1233,Task,Review GraphBuilder behavior in graph,In Progress,Medium,Core Collections Lead,com.google.common.graph,33.7.2-jre-acme.3,2026-07-22
+GPL-1234,Story,Fix EventBus behavior in eventbus,Done,Critical,Release Manager,com.google.common.eventbus,33.7.2-jre-acme.3,2026-05-01
+GPL-1235,Defect,Fix BloomFilter behavior in hash,Done,Medium,Documentation Lead,com.google.common.hash,33.7.2-jre-acme.2,2026-09-11
+GPL-1236,Task,Review MoreExecutors behavior in util.concurrent,Done,High,Build Engineering Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-08-15
+GPL-1237,Story,Deprecate RemovalListener behavior in cache,Done,High,Documentation Lead,com.google.common.cache,33.7.2-jre-acme.1,2026-04-24
+GPL-1238,Defect,Migrate Preconditions behavior in base,Done,Medium,Release Manager,com.google.common.base,33.7.2-jre-acme.3,2026-04-13
+GPL-1239,Task,Review EventBus behavior in eventbus,Done,Critical,Data Platform Lead,com.google.common.eventbus,33.7.2-jre-acme.4,2026-03-24
+GPL-1240,Defect,Document Files behavior in io,In Review,Low,Mobile Platform Lead,com.google.common.io,33.7.2-jre-acme.1,2026-02-27
+GPL-1241,Defect,Add GraphBuilder behavior in graph,In Review,Medium,Security Architect,com.google.common.graph,33.7.2-jre-acme.2,2026-01-07
+GPL-1242,Bug,Deprecate InetAddresses behavior in net,Won't Fix,Critical,Core Collections Lead,com.google.common.net,33.7.2-jre-acme.1,2026-09-18
+GPL-1243,Task,Add Ints behavior in primitives,Done,Low,Mobile Platform Lead,com.google.common.primitives,33.7.2-jre-acme.4,2026-03-04
+GPL-1244,Story,Benchmark LoadingCache behavior in cache,Done,High,Platform Architect,com.google.common.cache,33.7.2-jre-acme.4,2026-02-12
+GPL-1245,Story,Benchmark Longs behavior in primitives,Done,Low,Core Collections Lead,com.google.common.primitives,33.7.2-jre-acme.1,2026-07-13
+GPL-1246,Bug,Add Longs behavior in primitives,In Review,Low,Data Platform Lead,com.google.common.primitives,33.7.2-jre-acme.4,2026-06-19
+GPL-1247,Story,Benchmark CacheBuilder behavior in cache,Won't Fix,High,Core Collections Lead,com.google.common.cache,33.7.2-jre-acme.1,2026-05-18
+GPL-1248,Task,Document EventBus behavior in eventbus,Open,Medium,QA Lead,com.google.common.eventbus,33.7.2-jre-acme.4,2026-02-10
+GPL-1249,Defect,Benchmark Strings behavior in base,Done,Critical,QA Lead,com.google.common.base,33.7.2-jre-acme.1,2026-09-24
+GPL-1250,Defect,Fix ByteStreams behavior in io,Done,Low,Build Engineering Lead,com.google.common.io,34.0.0-jre-acme.1,2026-07-25
+GPL-1251,Defect,Migrate ByteStreams behavior in io,Won't Fix,Medium,Build Engineering Lead,com.google.common.io,34.0.0-jre-acme.1,2026-07-14
+GPL-1252,Bug,Harden Optional behavior in base,Done,Medium,Security Architect,com.google.common.base,33.7.2-jre-acme.1,2026-05-05
+GPL-1253,Task,Harden Ints behavior in primitives,Done,Low,Security Architect,com.google.common.primitives,33.7.2-jre-acme.1,2026-05-15
+GPL-1254,Story,Fix CharStreams behavior in io,In Progress,Medium,Documentation Lead,com.google.common.io,33.7.2-jre-acme.4,2026-09-18
+GPL-1255,Bug,Fix InetAddresses behavior in net,In Progress,High,Mobile Platform Lead,com.google.common.net,33.7.2-jre-acme.1,2026-06-28
+GPL-1256,Defect,Migrate Ints behavior in primitives,Closed,Low,Mobile Platform Lead,com.google.common.primitives,33.7.2-jre-acme.2,2026-09-06
+GPL-1257,Story,Document ValueGraph behavior in graph,Done,High,Platform Architect,com.google.common.graph,33.7.2-jre-acme.4,2026-03-03
+GPL-1258,Defect,Migrate Stopwatch behavior in base,Done,Critical,Security Architect,com.google.common.base,33.7.2-jre-acme.3,2026-05-08
+GPL-1259,Defect,Benchmark ValueGraph behavior in graph,In Progress,Medium,Platform Architect,com.google.common.graph,33.7.2-jre-acme.1,2026-07-11
+GPL-1260,Defect,Deprecate EventBus behavior in eventbus,Done,Critical,QA Lead,com.google.common.eventbus,33.7.2-jre-acme.3,2026-06-20
+GPL-1261,Story,Deprecate Funnels behavior in hash,Closed,High,Platform Architect,com.google.common.hash,33.7.2-jre-acme.4,2026-04-11
+GPL-1262,Task,Harden Longs behavior in primitives,In Progress,Medium,Mobile Platform Lead,com.google.common.primitives,33.7.2-jre-acme.2,2026-09-01
+GPL-1263,Task,Review IntMath behavior in math,In Progress,Critical,Data Platform Lead,com.google.common.math,33.7.2-jre-acme.2,2026-05-08
+GPL-1264,Defect,Document ServiceManager behavior in util.concurrent,Closed,Low,Data Platform Lead,com.google.common.util.concurrent,34.0.0-jre-acme.1,2026-08-19
+GPL-1265,Task,Add Longs behavior in primitives,In Progress,Low,Release Manager,com.google.common.primitives,33.7.2-jre-acme.3,2026-03-21
+GPL-1266,Task,Harden EventBus behavior in eventbus,Closed,Low,Core Collections Lead,com.google.common.eventbus,33.7.2-jre-acme.1,2026-05-08
+GPL-1267,Task,Review HostAndPort behavior in net,Closed,Critical,Mobile Platform Lead,com.google.common.net,33.7.2-jre-acme.2,2026-06-01
+GPL-1268,Defect,Migrate IntMath behavior in math,In Progress,Low,QA Lead,com.google.common.math,33.7.2-jre-acme.3,2026-05-11
+GPL-1269,Task,Review IntMath behavior in math,Won't Fix,Low,Data Platform Lead,com.google.common.math,33.7.2-jre-acme.4,2026-06-03
+GPL-1270,Bug,Fix Futures behavior in util.concurrent,Done,Low,QA Lead,com.google.common.util.concurrent,33.7.2-jre-acme.2,2026-09-06
+GPL-1271,Defect,Deprecate HostAndPort behavior in net,Won't Fix,Medium,Documentation Lead,com.google.common.net,33.7.2-jre-acme.2,2026-03-21
+GPL-1272,Bug,Harden ValueGraph behavior in graph,Done,Critical,Documentation Lead,com.google.common.graph,33.7.2-jre-acme.4,2026-01-23
+GPL-1273,Bug,Migrate BloomFilter behavior in hash,In Progress,Medium,Build Engineering Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-04-15
+GPL-1274,Task,Review CacheLoader behavior in cache,Closed,Critical,Security Architect,com.google.common.cache,33.7.2-jre-acme.3,2026-06-28
+GPL-1275,Bug,Migrate IntMath behavior in math,In Review,High,Security Architect,com.google.common.math,33.7.2-jre-acme.2,2026-05-04
+GPL-1276,Defect,Document Splitter behavior in base,Closed,Medium,Documentation Lead,com.google.common.base,33.7.2-jre-acme.4,2026-03-16
+GPL-1277,Defect,Document GraphBuilder behavior in graph,Done,Medium,QA Lead,com.google.common.graph,33.7.2-jre-acme.3,2026-08-20
+GPL-1278,Bug,Deprecate Iterables behavior in collect,Won't Fix,Medium,Release Manager,com.google.common.collect,33.7.2-jre-acme.4,2026-09-17
+GPL-1279,Defect,Harden ValueGraph behavior in graph,Closed,Critical,Data Platform Lead,com.google.common.graph,33.7.2-jre-acme.2,2026-02-19
+GPL-1280,Task,Benchmark Iterables behavior in collect,Open,High,Release Manager,com.google.common.collect,34.0.0-jre-acme.1,2026-05-06
+GPL-1281,Bug,Fix LongMath behavior in math,Done,High,Mobile Platform Lead,com.google.common.math,33.7.2-jre-acme.1,2026-08-18
+GPL-1282,Story,Fix Funnels behavior in hash,Done,Low,Data Platform Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-06-28
+GPL-1283,Story,Fix RemovalListener behavior in cache,Done,High,Documentation Lead,com.google.common.cache,33.7.2-jre-acme.2,2026-03-26
+GPL-1284,Task,Add BloomFilter behavior in hash,Done,Medium,Build Engineering Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-05-19
+GPL-1285,Story,Fix Striped behavior in util.concurrent,Closed,Low,Platform Architect,com.google.common.util.concurrent,33.7.2-jre-acme.2,2026-03-08
+GPL-1286,Story,Deprecate Optional behavior in base,Closed,Critical,QA Lead,com.google.common.base,34.0.0-jre-acme.1,2026-05-21
+GPL-1287,Bug,Review Longs behavior in primitives,In Progress,Critical,Mobile Platform Lead,com.google.common.primitives,33.7.2-jre-acme.3,2026-06-15
+GPL-1288,Bug,Add LongMath behavior in math,Won't Fix,High,Security Architect,com.google.common.math,34.0.0-jre-acme.1,2026-07-07
+GPL-1289,Task,Review Ints behavior in primitives,Done,High,Build Engineering Lead,com.google.common.primitives,34.0.0-jre-acme.1,2026-03-19
+GPL-1290,Bug,Add LongMath behavior in math,In Progress,Critical,Core Collections Lead,com.google.common.math,33.7.2-jre-acme.1,2026-03-15
+GPL-1291,Story,Harden IntMath behavior in math,In Review,High,QA Lead,com.google.common.math,33.7.2-jre-acme.3,2026-02-21
+GPL-1292,Task,Fix CharStreams behavior in io,In Review,Low,Documentation Lead,com.google.common.io,33.7.2-jre-acme.3,2026-04-14
+GPL-1293,Bug,Fix GraphBuilder behavior in graph,Done,Critical,Security Architect,com.google.common.graph,33.7.2-jre-acme.2,2026-04-17
+GPL-1294,Bug,Add ValueGraph behavior in graph,Done,Low,Documentation Lead,com.google.common.graph,33.7.2-jre-acme.2,2026-08-03
+GPL-1295,Bug,Fix Funnels behavior in hash,In Progress,High,Build Engineering Lead,com.google.common.hash,33.7.2-jre-acme.3,2026-03-13
+GPL-1296,Bug,Document Optional behavior in base,Open,Medium,Data Platform Lead,com.google.common.base,33.7.2-jre-acme.3,2026-04-21
+GPL-1297,Story,Review Stopwatch behavior in base,In Progress,Low,QA Lead,com.google.common.base,33.7.2-jre-acme.1,2026-07-12
+GPL-1298,Story,Document Longs behavior in primitives,Done,Low,Release Manager,com.google.common.primitives,34.0.0-jre-acme.1,2026-05-25
+GPL-1299,Story,Migrate Iterables behavior in collect,Done,Critical,Platform Architect,com.google.common.collect,33.7.2-jre-acme.1,2026-04-16
+GPL-1300,Defect,Benchmark Ints behavior in primitives,In Progress,Low,Build Engineering Lead,com.google.common.primitives,33.7.2-jre-acme.3,2026-03-13
